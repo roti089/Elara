@@ -1,0 +1,119 @@
+.background-video{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+}
+
+#logo {
+    display: flex;
+    position: top left;
+    max-width: 150px;
+    max-height: 140px;
+    margin-left: 30px;
+    margin-top: 20px;
+    gap: 0px;
+}
+
+#logo-name{
+    display: flex;
+    font-family:Arial, Helvetica, sans-serif;
+    margin-top: 25px;
+    color: white;
+    gap: 0p;
+
+
+}
+
+#logo-container {
+    display: flex;
+     align-items: center;
+}
+
+#nav-container {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    width: 65%;                      
+    margin: 40px auto;               
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: white;
+}
+
+#nav-container a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+#nav-container a:hover {
+    transform: scale(1.1);
+    transform:rotate(-1deg);
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+    color: coral;
+}
+
+
+.body h1 {
+    color: white;
+    margin-top: 10px;
+    margin-left: 200px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 40px;
+    text-align: left;
+
+}
+
+.body h2 {
+    color: white;
+    margin-left: 200px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 40px;
+
+}
+
+.body h3 {
+    color: white;
+    margin-top: 150px;
+    margin-bottom: 0px;
+    margin-left: 200px;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.body p {
+    color: white;
+    text-align:justify;
+    margin-left: 200px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.video1 {
+  width: 50%;
+  height: 50px; 
+}
