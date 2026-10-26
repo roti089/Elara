@@ -443,7 +443,7 @@
         if (range === "month") return { from: addDays(sod, -29).getTime(), days: 30 };
         return { from: addDays(sod, -6).getTime(), days: 7 };
     }
-    function integrate(range, to, offsetPeriods) {
+    function integrate(range, to, offsetPeriods, realOnly) {
         var now = to || Date.now();
         var b = rangeBounds(range, now);
         var spanMs = b.days * 86400000;
@@ -475,8 +475,9 @@
             var evs = logAll.filter(function (e) { return e.id === d.id; }).sort(function (a, c) { return a.t - c.t; });
             var kw = d.watts * (d.duty || 1) / 1000;
             var m = meterState[d.id];                      // real meter readings exist for this device
+            if (realOnly && !m) return;                    // real-readings mode: devices without a meter are left out
             var limit = m ? m.first : Infinity;            // before the first reading: rated-power estimate
-            intervalsFor(d, evs, now).forEach(function (iv) {
+            if (!(realOnly && m)) intervalsFor(d, evs, now).forEach(function (iv) {
                 put(d, Math.max(iv[0], from), Math.min(iv[1], end, limit), kw);
             });
             if (m) {
@@ -491,25 +492,42 @@
         });
         return res;
     }
+    // With a power meter connected, Analytics shows only what the meter really measured.
+    // The person can switch estimates for the other devices back on (elaraIncludeEstimates = "1").
+    function realOnlyMode() {
+        return localStorage.getItem("elaraEnergySample") !== "1" &&
+               Object.keys(load("elaraMeterState", {})).length > 0 &&
+               localStorage.getItem("elaraIncludeEstimates") !== "1";
+    }
     function energy(range) {
-        var cur = integrate(range), prev = integrate(range, null, 1);
+        var realOnly = realOnlyMode();
+        var cur = integrate(range, null, 0, realOnly), prev = integrate(range, null, 1, realOnly);
         var tariff = Number(localStorage.getItem("elaraTariff")) || cfg.tariffPerKwh || 2.5;
         var meterNow = load("elaraMeterState", {});
-        var rows = devices().map(function (d) { return { id: d.id, name: d.name, room: d.room, icon: d.icon, kwh: cur.byDevice[d.id] || 0, measured: !!meterNow[d.id], watts: meterNow[d.id] ? meterNow[d.id].lastW : null }; })
+        var shown = devices().filter(function (d) { return !realOnly || meterNow[d.id]; });
+        var rows = shown.map(function (d) { return { id: d.id, name: d.name, room: d.room, icon: d.icon, kwh: cur.byDevice[d.id] || 0, measured: !!meterNow[d.id], watts: meterNow[d.id] ? meterNow[d.id].lastW : null }; })
             .sort(function (a, b) { return b.kwh - a.kwh; });
         var rooms = Object.keys(cur.byRoom).map(function (r) { return { room: r, kwh: cur.byRoom[r] }; }).sort(function (a, b) { return b.kwh - a.kwh; });
-        var autos = load("elaraAutomations", null), autoPct = 0;
+        var autos = load("elaraAutomations", null), autoPct = null;
         if (autos && autos.length) autoPct = Math.round(autos.filter(function (a) { return a.on; }).length / autos.length * 100);
-        var peakShare = cur.total ? (cur.parts.evening / cur.total) : 0;
-        var saving = prev.total > 0 ? Math.max(0, Math.round((prev.total - cur.total) / prev.total * 100)) : 0;
-        var deviceEff = Math.round(Math.max(40, 100 - peakShare * 60));
-        var overall = Math.round((Math.min(100, 70 + saving) + deviceEff + (autoPct || 60)) / 3);
+
+        // the efficiency figures need real history behind them: otherwise they stay empty instead of inventing a score
+        var enough = cur.total >= 0.5;
+        var saving = null, deviceEff = null, overall = null;
+        if (enough) {
+            var peakShare = cur.parts.evening / cur.total;
+            deviceEff = Math.round(Math.max(40, 100 - peakShare * 60));
+            if (prev.total > 0) saving = Math.max(0, Math.round((prev.total - cur.total) / prev.total * 100));
+            var bits = [deviceEff]; if (saving !== null) bits.push(Math.min(100, 70 + saving)); if (autoPct !== null) bits.push(autoPct);
+            overall = Math.round(bits.reduce(function (s, v) { return s + v; }, 0) / bits.length);
+        }
         return {
             range: range, total: cur.total, prevTotal: prev.total, cost: cur.total * tariff, tariff: tariff,
             devices: rows, rooms: rooms, parts: cur.parts, series: cur.series,
-            active: devices().filter(function (d) { return d.on; }).length, deviceCount: devices().length,
-            saving: saving, deviceEff: deviceEff, autoPct: autoPct, efficiency: overall,
-            hasData: cur.total >= 0.005 || prev.total >= 0.005, metered: Object.keys(meterNow).length, sample: localStorage.getItem("elaraEnergySample") === "1",
+            active: shown.filter(function (d) { return d.on; }).length, deviceCount: shown.length,
+            saving: saving, deviceEff: deviceEff, autoPct: autoPct, efficiency: overall, enough: enough,
+            hasData: cur.total >= 0.005 || prev.total >= 0.005, metered: Object.keys(meterNow).length, realOnly: realOnly,
+            sample: localStorage.getItem("elaraEnergySample") === "1",
             change: prev.total > 0 ? Math.round((cur.total - prev.total) / prev.total * 100) : null
         };
     }

@@ -332,10 +332,10 @@
     }
     function renderEnergyCards() {
         var today = D.energy.compute("today"), week = D.energy.compute("week"), month = D.energy.compute("month");
-        setCard(cardByTitle(".energy-card", "Today"), today.total.toFixed(1) + " kWh", compare(today.change, "yesterday"));
-        setCard(cardByTitle(".energy-card", "This Week"), week.total.toFixed(1) + " kWh", compare(week.change, "last week"));
-        setCard(cardByTitle(".energy-card", "This Month"), month.total.toFixed(1) + " kWh", "About R" + month.cost.toFixed(0) + " at R" + month.tariff.toFixed(2) + "/kWh");
-        setCard(cardByTitle(".stats .card", "Power Usage"), today.total.toFixed(1) + " kWh", "Today\u2019s Usage");
+        setCard(cardByTitle(".energy-card", "Today"), (today.total < 1 ? today.total.toFixed(2) : today.total.toFixed(1)) + " kWh", compare(today.change, "yesterday"));
+        setCard(cardByTitle(".energy-card", "This Week"), (week.total < 1 ? week.total.toFixed(2) : week.total.toFixed(1)) + " kWh", compare(week.change, "last week"));
+        setCard(cardByTitle(".energy-card", "This Month"), (month.total < 1 ? month.total.toFixed(2) : month.total.toFixed(1)) + " kWh", "About R" + month.cost.toFixed(0) + " at R" + month.tariff.toFixed(2) + "/kWh");
+        setCard(cardByTitle(".stats .card", "Power Usage"), (today.total < 1 ? today.total.toFixed(2) : today.total.toFixed(1)) + " kWh", "Today\u2019s Usage");
     }
 
     /* outside temperature (the page has no indoor sensor): real weather for the home's place */

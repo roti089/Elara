@@ -706,27 +706,29 @@ function updateAnalyticsValues(period) {
     });
 
     /* ---- stat cards ---- */
+    const kwhTxt = (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1));
+    const NA = "\u2014";
     const setCard = (id, value, note) => {
         const el = $(id); if (!el) return;
         el.textContent = value;
         const p = el.parentElement.querySelector("p"); if (p && note) p.textContent = note;
     };
-    setCard("totalUsage", e.total.toFixed(1) + " kWh", label);
+    setCard("totalUsage", kwhTxt(e.total) + " kWh", label);
     setCard("estimatedCost", "R" + e.cost.toFixed(2), "At R" + e.tariff.toFixed(2) + " per kWh");
     setCard("activeDevices", e.active, "of " + e.deviceCount + " devices are on");
-    setCard("efficiencyValue", e.efficiency + "%", e.efficiency >= 80 ? "Excellent performance" : e.efficiency >= 60 ? "Good performance" : "Room to improve");
+    setCard("efficiencyValue", e.efficiency === null ? NA : e.efficiency + "%", e.efficiency === null ? "Needs more readings" : e.efficiency >= 80 ? "Excellent performance" : e.efficiency >= 60 ? "Good performance" : "Room to improve");
 
     /* ---- efficiency panel ---- */
     const ep = panelByTitle(/^\s*Efficiency/i);
     if (ep) {
-        const verdict = e.efficiency >= 80 ? "Excellent" : e.efficiency >= 60 ? "Good" : "Needs attention";
+        const verdict = e.efficiency === null ? "Not enough data" : e.efficiency >= 80 ? "Excellent" : e.efficiency >= 60 ? "Good" : "Needs attention";
         const h3 = ep.querySelector(".efficiency-score h3"), p = ep.querySelector(".efficiency-score p");
         if (h3) h3.textContent = verdict;
-        if (p) p.textContent = e.efficiency >= 80 ? "Your home is operating efficiently." : e.efficiency >= 60 ? "Your home is doing well. A few habits could help." : "Try shifting heavy appliances out of the evening peak.";
+        if (p) p.textContent = e.efficiency === null ? "A score appears once Elara has recorded about half a kWh of real usage." : e.efficiency >= 80 ? "Your home is operating efficiently." : e.efficiency >= 60 ? "Your home is doing well. A few habits could help." : "Try shifting heavy appliances out of the evening peak.";
         const rows = ep.querySelectorAll(".efficiency-details strong");
-        if (rows[0]) rows[0].textContent = e.saving + "%";
-        if (rows[1]) rows[1].textContent = e.deviceEff + "%";
-        if (rows[2]) rows[2].textContent = e.autoPct + "%";
+        if (rows[0]) rows[0].textContent = e.saving === null ? NA : e.saving + "%";
+        if (rows[1]) rows[1].textContent = e.deviceEff === null ? NA : e.deviceEff + "%";
+        if (rows[2]) rows[2].textContent = e.autoPct === null ? NA : e.autoPct + "%";
     }
 
     /* ---- device consumption ---- */
@@ -737,7 +739,7 @@ function updateAnalyticsValues(period) {
         box.innerHTML = top.length ? top.map(d =>
             '<div class="analytics-device" data-href="dashboard-smart-home.html" style="cursor:pointer"><div class="analytics-device-left"><div class="analytics-icon"><i class="fa-solid ' + esc(d.icon) + '"></i></div>' +
             '<div><h4>' + esc(d.name) + '</h4><p>' + esc(d.room) + '</p></div></div>' +
-            '<div class="analytics-value"><strong>' + d.kwh.toFixed(1) + ' kWh</strong><span>' + (e.total ? Math.round(d.kwh / e.total * 100) : 0) + '%</span></div></div>'
+            '<div class="analytics-value"><strong>' + kwhTxt(d.kwh) + ' kWh</strong><span>' + (e.total ? Math.round(d.kwh / e.total * 100) : 0) + '%' + (d.measured ? ' \u2022 live meter' : '') + '</span></div></div>'
         ).join("") : '<p style="opacity:.65;padding:18px">No device usage recorded for this period yet.</p>';
     }
 
@@ -748,7 +750,7 @@ function updateAnalyticsValues(period) {
         const rooms = e.rooms.slice(0, 4);
         box.innerHTML = rooms.length ? rooms.map(r => {
             const pct = e.total ? Math.round(r.kwh / e.total * 100) : 0;
-            return '<div class="room-stat"><div><h4>' + esc(r.room) + '</h4><p>' + r.kwh.toFixed(1) + ' kWh</p></div><strong>' + pct + '%</strong></div>' +
+            return '<div class="room-stat"><div><h4>' + esc(r.room) + '</h4><p>' + kwhTxt(r.kwh) + ' kWh</p></div><strong>' + pct + '%</strong></div>' +
                    '<div class="progress"><span style="width:' + pct + '%"></span></div>';
         }).join("") : '<p style="opacity:.65;padding:18px">No room usage recorded for this period yet.</p>';
     }
@@ -758,7 +760,7 @@ function updateAnalyticsValues(period) {
     if (tp) {
         const order = ["morning", "afternoon", "evening", "night"];
         tp.querySelectorAll(".trend-card strong").forEach((el, i) => {
-            el.textContent = (e.total ? Math.round(e.parts[order[i]] / e.total * 100) : 0) + "%";
+            el.textContent = e.total >= 0.05 ? Math.round(e.parts[order[i]] / e.total * 100) + "%" : NA;
         });
     }
 
@@ -767,14 +769,14 @@ function updateAnalyticsValues(period) {
     if (ap) {
         const list = ap.querySelector(".activity-list");
         const insights = [];
-        if (e.change !== null) {
+        if (e.change !== null && e.total >= 0.05 && e.prevTotal >= 0.05) {
             insights.push({ icon: e.change <= 0 ? "fa-arrow-trend-down" : "fa-arrow-trend-up", title: e.change <= 0 ? "Energy usage decreased" : "Energy usage increased",
                 text: "Your household used " + Math.abs(e.change) + "% " + (e.change <= 0 ? "less" : "more") + " energy than the previous " + (range === "today" ? "day" : range) + ".", when: label });
         }
         const top = e.devices[0];
-        if (top && top.kwh > 0) insights.push({ icon: "fa-bolt", title: top.name + " is your biggest consumer",
-            text: top.name + " used " + top.kwh.toFixed(1) + " kWh, " + Math.round(top.kwh / e.total * 100) + "% of the total.", when: label });
-        if (e.total > 0) {
+        if (top && top.kwh >= 0.05) insights.push({ icon: "fa-bolt", title: top.name + " is your biggest consumer",
+            text: top.name + " used " + kwhTxt(top.kwh) + " kWh, " + Math.round(top.kwh / e.total * 100) + "% of the total.", when: label });
+        if (e.total >= 0.05) {
             const peak = Object.keys(e.parts).sort((a, b) => e.parts[b] - e.parts[a])[0];
             insights.push({ icon: "fa-clock", title: "Peak usage in the " + peak,
                 text: Math.round(e.parts[peak] / e.total * 100) + "% of your energy is used in the " + peak + ".", when: label });
@@ -797,7 +799,14 @@ function updateAnalyticsValues(period) {
         banner.innerHTML = '<i class="fa-solid fa-flask"></i><span>You are looking at <strong>sample data</strong> (30 days of made-up usage).</span><button type="button" data-banner="clear">Clear sample data</button>';
         banner.style.display = "flex";
     } else if (!e.hasData) {
-        banner.innerHTML = '<i class="fa-solid fa-circle-info"></i><span>No usage recorded yet. Your numbers build up as you switch devices on the Smart Home page.</span><button type="button" data-banner="sample">Load sample data</button>';
+        banner.innerHTML = e.metered
+            ? '<i class="fa-solid fa-plug-circle-bolt"></i><span>Your CBi meter is connected. Readings are recorded while the Smart Home page is open, so usage will appear here shortly.</span>'
+            : '<i class="fa-solid fa-circle-info"></i><span>No usage recorded yet. Your numbers build up as you switch devices on the Smart Home page.</span><button type="button" data-banner="sample">Load sample data</button>';
+        banner.style.display = "flex";
+    } else if (e.metered) {
+        banner.innerHTML = e.realOnly
+            ? '<i class="fa-solid fa-plug-circle-bolt"></i><span>Showing <strong>real readings</strong> from your power meter only. Devices without a meter are left out.</span><button type="button" data-banner="estimates-on">Include estimates</button>'
+            : '<i class="fa-solid fa-plug-circle-bolt"></i><span>Devices marked <strong>live meter</strong> use real readings. Other devices are <strong>estimated</strong> from how long they were on.</span><button type="button" data-banner="estimates-off">Real readings only</button>';
         banner.style.display = "flex";
     } else {
         banner.style.display = "none";
@@ -912,6 +921,13 @@ console.log(
 document.addEventListener("click", function (ev) {
     const b = ev.target.closest("[data-banner]");
     if (b) {
+        if (b.dataset.banner === "estimates-on" || b.dataset.banner === "estimates-off") {
+            localStorage.setItem("elaraIncludeEstimates", b.dataset.banner === "estimates-on" ? "1" : "0");
+            updateAnalytics();
+            const per = document.getElementById("analyticsPeriod");
+            updateEnergyChart(per ? per.value : "week");
+            return;
+        }
         if (b.dataset.banner === "sample") ElaraData.energy.generateSample(30);
         else ElaraData.energy.clear();
         updateAnalytics();
