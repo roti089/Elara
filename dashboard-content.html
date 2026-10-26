@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elara Dashboard</title>
+
+    <link rel="stylesheet" href="dashboard-content.css">
+    <link rel="stylesheet" href="elara-sidebar.css">
+
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <img src="Elara logo.png" alt="Elara">
+
+            <div>
+                <h2>Elara</h2>
+                <span>Smart Home</span>
+            </div>
+
+        </div>
+
+        <ul class="menu">
+
+    <li class="active">
+        <a href="dashboard-content.html">
+            <i class="fa-solid fa-house"></i>
+            <span>Dashboard</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-tasks.html">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Tasks</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-shopping.html">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span>Shopping</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-schedule.html">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Schedule</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-smart-home.html">
+            <i class="fa-solid fa-lightbulb"></i>
+            <span>Smart Home</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-analytics.html">
+            <i class="fa-solid fa-chart-simple"></i>
+            <span>Analytics</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-members.html">
+            <i class="fa-solid fa-users"></i>
+            <span>Members</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-settings.html">
+            <i class="fa-solid fa-gear"></i>
+            <span>Settings</span>
+        </a>
+    </li>
+
+</ul>
+
+        <div class="sidebar-bottom">
+
+            <button class="logout">
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <div class="welcome">
+
+                <h1 id="greetingText">
+
+                    Good Evening, Justin 👋
+
+                </h1>
+
+                <p>
+
+                    Welcome back to Elara Home Management
+
+                </p>
+
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        placeholder="Search anything...">
+
+                </div>
+
+                <button>
+
+                    <i class="fa-solid fa-bell"></i>
+
+                </button>
+
+                <button id="themeBtn" aria-label="Toggle theme">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+
+                <div class="profile">
+
+                    <img src="DSC_0156.JPG">
+
+                    <div>
+
+                        <h4 id="userName">
+
+                            Justin
+
+                        </h4>
+
+                        <span>
+
+                            Home Owner
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- STATISTICS -->
+
+        <section class="stats">
+
+            <div class="card">
+
+                <i class="fa-solid fa-list-check"></i>
+
+                <h3>Tasks</h3>
+
+                <h2 id="taskCount">12</h2>
+
+                <p>3 due today</p>
+
+            </div>
+
+            <div class="card">
+
+                <i class="fa-solid fa-cart-shopping"></i>
+
+                <h3>Shopping</h3>
+
+                <h2 id="shoppingCount">7</h2>
+
+                <p>Low stock items</p>
+
+            </div>
+
+            <div class="card">
+
+                <i class="fa-solid fa-plug"></i>
+
+                <h3>Devices</h3>
+
+                <h2 id="deviceCount">15</h2>
+
+                <p>12 Online</p>
+
+            </div>
+
+            <div class="card">
+
+                <i class="fa-solid fa-bolt"></i>
+
+                <h3>Energy</h3>
+
+                <h2 id="energyCount">24.8</h2>
+
+                <p>kWh Today</p>
+
+            </div>
+
+        </section>
+
+                <!-- MAIN GRID -->
+
+        <section class="dashboard-grid">
+
+            <!-- ENERGY CHART -->
+
+            <div class="panel energy-panel">
+
+                <div class="panel-header">
+
+                    <h2>Energy Consumption</h2>
+
+                    <span>Last 7 Days</span>
+
+                </div>
+
+                <canvas id="energyChart"></canvas>
+
+            </div>
+
+            <!-- SMART HOME -->
+
+            <div class="panel smart-panel">
+
+                <div class="panel-header">
+
+                    <h2>Smart Home</h2>
+
+                    <a href="#">View All</a>
+
+                </div>
+
+                <div class="device">
+
+                    <div>
+
+                        <i class="fa-solid fa-lightbulb"></i>
+
+                        <div>
+
+                            <h4>Living Room Lights</h4>
+
+                            <span>Connected</span>
+
+                        </div>
+
+                    </div>
+
+                    <label class="switch">
+
+                        <input type="checkbox" checked>
+
+                        <span class="slider"></span>
+
+                    </label>
+
+                </div>
+
+                <div class="device">
+
+                    <div>
+
+                        <i class="fa-solid fa-fire"></i>
+
+                        <div>
+
+                            <h4>Geyser</h4>
+
+                            <span>Currently ON</span>
+
+                        </div>
+
+                    </div>
+
+                    <label class="switch">
+
+                        <input type="checkbox" checked>
+
+                        <span class="slider"></span>
+
+                    </label>
+
+                </div>
+
+                <div class="device">
+
+                    <div>
+
+                        <i class="fa-solid fa-door-open"></i>
+
+                        <div>
+
+                            <h4>Garage Door</h4>
+
+                            <span>Closed</span>
+
+                        </div>
+
+                    </div>
+
+                    <label class="switch">
+
+                        <input type="checkbox">
+
+                        <span class="slider"></span>
+
+                    </label>
+
+                </div>
+
+                            </div>
+
+            <!-- QUICK ACTIONS -->
+
+            <div class="panel action-panel">
+
+                <div class="panel-header">
+
+                    <h2>Quick Actions</h2>
+
+                </div>
+
+                <button>
+
+                    <i class="fa-solid fa-plus"></i>
+
+                    Add Task
+
+                </button>
+
+                <button>
+
+                    <i class="fa-solid fa-cart-plus"></i>
+
+                    Add Grocery
+
+                </button>
+
+                <button>
+
+                    <i class="fa-solid fa-user-plus"></i>
+
+                    Invite Member
+
+                </button>
+
+                <button>
+
+                    <i class="fa-solid fa-plug-circle-plus"></i>
+
+                    Add Smart Device
+
+                </button>
+
+            </div>
+
+        </section>
+
+        <!-- LOWER GRID -->
+
+        <section class="lower-grid">
+
+            <!-- TASKS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h2>Today's Tasks</h2>
+
+                    <a href="#">View All</a>
+
+                </div>
+
+                <ul class="task-list">
+
+                    <li>
+
+                        <input type="checkbox">
+
+                        Clean Kitchen
+
+                    </li>
+
+                    <li>
+
+                        <input type="checkbox">
+
+                        Grocery Shopping
+
+                    </li>
+
+                    <li>
+
+                        <input type="checkbox" checked>
+
+                        Laundry Completed
+
+                    </li>
+
+                    <li>
+
+                        <input type="checkbox">
+
+                        Take Out Trash
+
+                    </li>
+
+                </ul>
+
+            </div>
+
+            <!-- SCHEDULE -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h2>Upcoming Schedule</h2>
+
+                </div>
+
+                <div class="schedule-item">
+
+                    <strong>09:00</strong>
+
+                    <span>Plumber Visit</span>
+
+                </div>
+
+                <div class="schedule-item">
+
+                    <strong>14:30</strong>
+
+                    <span>Family Meeting</span>
+
+                </div>
+
+                <div class="schedule-item">
+
+                    <strong>18:00</strong>
+
+                    <span>Dinner Preparation</span>
+
+                </div>
+
+            </div>
+
+            <!-- RECENT ACTIVITY -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h2>Recent Activity</h2>
+
+                </div>
+
+                <div class="activity">
+
+                    <i class="fa-solid fa-circle-check"></i>
+
+                    Sarah completed Laundry
+
+                </div>
+
+                <div class="activity">
+
+                    <i class="fa-solid fa-fire"></i>
+
+                    Justin turned on the Geyser
+
+                </div>
+
+                <div class="activity">
+
+                    <i class="fa-solid fa-cart-shopping"></i>
+
+                    Milk added to Shopping List
+
+                </div>
+
+                <div class="activity">
+
+                    <i class="fa-solid fa-door-open"></i>
+
+                    Garage Door Opened
+
+                </div>
+
+            </div>
+
+        </section>
+
+                <!-- AI & EXTRA PANELS -->
+
+        <section class="bottom-grid">
+
+            <!-- ELARA AI -->
+
+            <div class="panel ai-panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+                            <i class="fa-solid fa-robot"></i>
+                            Elara AI Assistant
+                        </h2>
+
+                        <p>Your intelligent home companion</p>
+
+                    </div>
+
+                    <div class="ai-status">
+                        Online
+                    </div>
+
+                </div>
+
+                <div class="chat-window">
+
+                    <div class="message ai">
+
+                        <i class="fa-solid fa-robot"></i>
+
+                        <div>
+
+                            <strong>Elara AI</strong>
+
+                            <p id="typingMessage">
+                                Good evening Justin 👋
+                                How can I help you today?
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="chat-input">
+
+                    <input
+                        type="text"
+                        placeholder="Ask Elara anything...">
+
+                    <button>
+
+                        <i class="fa-solid fa-paper-plane"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- WEATHER -->
+
+            <div class="panel weather-panel">
+
+                <div class="panel-header">
+
+                    <h2>
+
+                        <i class="fa-solid fa-cloud-sun"></i>
+
+                        Weather
+
+                    </h2>
+
+                </div>
+
+                <div class="weather-content">
+
+                    <h1>18°C</h1>
+
+                    <h3>Johannesburg</h3>
+
+                    <p>Partly Cloudy</p>
+
+                    <div class="weather-details">
+
+                        <div>
+
+                            <strong>Humidity</strong>
+
+                            <span>62%</span>
+
+                        </div>
+
+                        <div>
+
+                            <strong>Wind</strong>
+
+                            <span>14 km/h</span>
+
+                        </div>
+
+                        <div>
+
+                            <strong>Rain</strong>
+
+                            <span>5%</span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- FAMILY MEMBERS -->
+
+            <div class="panel family-panel">
+
+                <div class="panel-header">
+
+                    <h2>
+
+                        <i class="fa-solid fa-users"></i>
+
+                        Family Members
+
+                    </h2>
+
+                </div>
+
+                <div class="member">
+
+                    <img src="DSC_0156.JPG">
+
+                    <div>
+
+                        <h4>Justin</h4>
+
+                        <span>Home Owner</span>
+
+                    </div>
+
+                    <div class="online"></div>
+
+                </div>
+
+                <div class="member">
+
+                    <img src="profile.png">
+
+                    <div>
+
+                        <h4>Sarah</h4>
+
+                        <span>Family Member</span>
+
+                    </div>
+
+                    <div class="online"></div>
+
+                </div>
+
+                <div class="member">
+
+                    <img src="profile.png">
+
+                    <div>
+
+                        <h4>James</h4>
+
+                        <span>Tenant</span>
+
+                    </div>
+
+                    <div class="offline"></div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- LIVE ACTIVITY -->
+
+        <section class="panel live-feed">
+
+            <div class="panel-header">
+
+                <h2>
+
+                    <i class="fa-solid fa-bolt"></i>
+
+                    Live Home Activity
+
+                </h2>
+
+                <span>Updated just now</span>
+
+            </div>
+
+            <div class="feed-list">
+
+                <div class="feed-item">
+
+                    <i class="fa-solid fa-fire"></i>
+
+                    <span>Geyser switched ON by Justin</span>
+
+                    <small>2 min ago</small>
+
+                </div>
+
+                <div class="feed-item">
+
+                    <i class="fa-solid fa-lightbulb"></i>
+
+                    <span>Living Room Lights turned OFF</span>
+
+                    <small>5 min ago</small>
+
+                </div>
+
+                <div class="feed-item">
+
+                    <i class="fa-solid fa-cart-shopping"></i>
+
+                    <span>Bread added to Shopping List</span>
+
+                    <small>10 min ago</small>
+
+                </div>
+
+                <div class="feed-item">
+
+                    <i class="fa-solid fa-list-check"></i>
+
+                    <span>Kitchen Cleaning Completed</span>
+
+                    <small>18 min ago</small>
+
+                </div>
+
+            </div>
+
+        </section>
+
+                <!-- FLOATING ACTION BUTTON -->
+
+        <button class="floating-btn" title="Quick Add">
+
+            <i class="fa-solid fa-plus"></i>
+
+        </button>
+
+        <!-- NOTIFICATION POPUP -->
+
+        <div id="notificationPopup" class="notification-popup">
+
+            <div class="notification-icon">
+
+                <i class="fa-solid fa-bell"></i>
+
+            </div>
+
+            <div class="notification-content">
+
+                <h4>Elara Notification</h4>
+
+                <p id="notificationText">
+                    Welcome back, Justin!
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- LOADING SCREEN -->
+
+        <div id="loadingScreen" class="loading-screen">
+
+            <div class="loader">
+
+                <img src="Elara logo.png" alt="Elara">
+
+                <h2>Loading Elara...</h2>
+
+                <div class="loading-bar">
+
+                    <div class="loading-progress"></div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <script>
+            /* Loading screen is only for the first visit after logging in.
+               Later visits (e.g. clicking Dashboard in the sidebar) skip it. */
+            try {
+                if (sessionStorage.getItem("elaraLoaded")) {
+                    document.getElementById("loadingScreen").remove();
+                }
+            } catch (e) {}
+        </script>
+
+        <!-- FOOTER -->
+
+        <footer class="dashboard-footer">
+
+            <div>
+
+                <strong>Elara Smart Home</strong>
+
+                <p>
+                    AI Powered Home Management Platform
+                </p>
+
+            </div>
+
+            <div>
+
+                <span>
+                    Version 1.0.0
+                </span>
+
+            </div>
+
+        </footer>
+
+    </main>
+
+</div>
+<script src="elara-config.js"></script>
+    <script src="elara-data.js"></script>
+    <script src="elara-theme.js"></script>
+    <script src="elara-common.js"></script>
+<script src="dashboard-content.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Elara | Members</title>
+
+    <!-- GOOGLE FONT -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- FONT AWESOME -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- MEMBERS CSS -->
+    <link
+        rel="stylesheet"
+        href="dashboard-members.css">
+    <link rel="stylesheet" href="elara-sidebar.css">
+
+</head>
+
+
+<body>
+
+
+<div class="smart-home">
+
+
+    <!-- =====================================================
+                            SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+
+        <!-- LOGO -->
+
+        <div class="logo">
+
+            <img
+                src="Elara logo.png"
+                alt="Elara Logo">
+
+            <div>
+
+                <h2>Elara</h2>
+
+                <span>Smart Home</span>
+
+            </div>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <ul class="menu">
+
+
+            <li>
+
+                <a href="dashboard-content.html">
+
+                    <i class="fa-solid fa-house"></i>
+
+                    <span>Dashboard</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-tasks.html">
+
+                    <i class="fa-solid fa-list-check"></i>
+
+                    <span>Tasks</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-shopping.html">
+
+                    <i class="fa-solid fa-cart-shopping"></i>
+
+                    <span>Shopping</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-schedule.html">
+
+                    <i class="fa-solid fa-calendar-days"></i>
+
+                    <span>Schedule</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-smart-home.html">
+
+                    <i class="fa-solid fa-lightbulb"></i>
+
+                    <span>Smart Home</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-analytics.html">
+
+                    <i class="fa-solid fa-chart-simple"></i>
+
+                    <span>Analytics</span>
+
+                </a>
+
+            </li>
+
+
+            <!-- ACTIVE PAGE -->
+
+            <li class="active">
+
+                <a href="dashboard-members.html">
+
+                    <i class="fa-solid fa-users"></i>
+
+                    <span>Members</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-settings.html">
+
+                    <i class="fa-solid fa-gear"></i>
+
+                    <span>Settings</span>
+
+                </a>
+
+            </li>
+
+
+        </ul>
+
+
+        <!-- LOGOUT -->
+
+        <div class="sidebar-bottom">
+
+            <button
+                class="logout"
+                id="logoutBtn">
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- =====================================================
+                            MAIN CONTENT
+    ====================================================== -->
+
+    <main class="main-content">
+
+
+        <!-- =================================================
+                            TOPBAR
+        ================================================== -->
+
+        <header class="topbar">
+
+
+            <!-- WELCOME -->
+
+            <div class="welcome">
+
+                <h1>Family Members</h1>
+
+                <p>
+                    Manage the people connected to your Elara home.
+                </p>
+
+            </div>
+
+
+            <!-- TOP ACTIONS -->
+
+            <div class="top-actions">
+
+
+                <!-- SEARCH -->
+
+                <div class="search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="memberSearch"
+                        placeholder="Search members...">
+
+                </div>
+
+
+                <!-- NOTIFICATIONS -->
+
+                <button
+                    id="notificationBtn"
+                    aria-label="Notifications">
+
+                    <i class="fa-solid fa-bell"></i>
+
+                </button>
+
+
+                <!-- THEME -->
+
+                <button id="themeBtn" aria-label="Toggle theme">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+
+
+                <!-- PROFILE -->
+
+                <div class="profile">
+
+                    <img
+                        src="DSC_0156.JPG"
+                        alt="Profile">
+
+                    <div>
+
+                        <h4 id="userName">
+                            Justin
+                        </h4>
+
+                        <span>
+                            Home Owner
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </header>
+
+
+
+        <!-- =================================================
+                        MEMBER STATISTICS
+        ================================================== -->
+
+<section class="stats">
+
+    <!-- TOTAL MEMBERS -->
+    <div class="card">
+
+        <i class="fa-solid fa-users"></i>
+
+        <h3>Total Members</h3>
+
+        <h2 id="totalMembers">5</h2>
+
+        <p>People connected to your home</p>
+
+    </div>
+
+
+    <!-- AT HOME -->
+    <div class="card">
+
+        <i class="fa-solid fa-house-user"></i>
+
+        <h3>At Home</h3>
+
+        <h2 id="membersAtHome">3</h2>
+
+        <p>Members currently at home</p>
+
+    </div>
+
+
+    <!-- HOME OWNERS -->
+    <div class="card">
+
+        <i class="fa-solid fa-user-shield"></i>
+
+        <h3>Home Owners</h3>
+
+        <h2 id="homeOwners">1</h2>
+
+        <p>Members with full access</p>
+
+    </div>
+
+
+    <!-- PENDING INVITES -->
+    <div class="card">
+
+        <i class="fa-solid fa-user-clock"></i>
+
+        <h3>Pending Invites</h3>
+
+        <h2 id="pendingMembers">1</h2>
+
+        <p>Invitations awaiting response</p>
+
+    </div>
+
+</section>
+
+
+
+        <!-- =================================================
+                        MEMBER SECTION
+        ================================================== -->
+
+        <section class="panel members-panel">
+
+
+            <!-- PANEL HEADER -->
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+
+                        <i class="fa-solid fa-people-group"></i>
+
+                        Household Members
+
+                    </h2>
+
+                    <p class="panel-subtitle">
+
+                        Manage access and permissions
+
+                    </p>
+
+                </div>
+
+
+                <button
+                    class="add-member-btn"
+                    id="addMemberBtn">
+
+                    <i class="fa-solid fa-user-plus"></i>
+
+                    Add Member
+
+                </button>
+
+            </div>
+
+
+
+            <!-- MEMBER LIST -->
+
+            <div
+                class="members-list"
+                id="membersList">
+
+
+                <!-- =================================================
+                            MEMBER 1
+                ================================================== -->
+
+                <div
+                    class="member-card"
+                    data-name="Justin">
+
+
+                    <div class="member-left">
+
+
+                        <div class="member-avatar">
+
+                            <img
+                                src="DSC_0156.JPG"
+                                alt="Justin">
+
+                            <span class="online-dot"></span>
+
+                        </div>
+
+
+                        <div class="member-info">
+
+                            <h3>
+                                Justin
+                            </h3>
+
+                            <p>
+                                justin@example.com
+                            </p>
+
+                            <span class="member-location">
+
+                                <i class="fa-solid fa-location-dot"></i>
+
+                                Home
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="member-middle">
+
+                        <span class="role-badge owner">
+
+                            <i class="fa-solid fa-crown"></i>
+
+                            Home Owner
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="member-right">
+
+                        <span class="member-status online">
+
+                            Online
+
+                        </span>
+
+
+                        <button
+                            class="member-menu"
+                            aria-label="Member options">
+
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+
+                        </button>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =================================================
+                            MEMBER 2
+                ================================================== -->
+
+                <div
+                    class="member-card"
+                    data-name="Nkosazana">
+
+
+                    <div class="member-left">
+
+
+                        <div class="member-avatar">
+
+                            <div class="avatar-placeholder">
+                                N
+                            </div>
+
+                            <span class="online-dot"></span>
+
+                        </div>
+
+
+                        <div class="member-info">
+
+                            <h3>
+                                Nkosazana
+                            </h3>
+
+                            <p>
+                                nkosazana@example.com
+                            </p>
+
+                            <span class="member-location">
+
+                                <i class="fa-solid fa-location-dot"></i>
+
+                                Home
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="member-middle">
+
+                        <span class="role-badge adult">
+
+                            <i class="fa-solid fa-user"></i>
+
+                            Adult
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="member-right">
+
+                        <span class="member-status online">
+
+                            Online
+
+                        </span>
+
+
+                        <button
+                            class="member-menu"
+                            aria-label="Member options">
+
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+
+                        </button>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =================================================
+                            MEMBER 3
+                ================================================== -->
+
+                <div
+                    class="member-card"
+                    data-name="Thabo">
+
+
+                    <div class="member-left">
+
+
+                        <div class="member-avatar">
+
+                            <div class="avatar-placeholder blue">
+                                T
+                            </div>
+
+                        </div>
+
+
+                        <div class="member-info">
+
+                            <h3>
+                                Thabo
+                            </h3>
+
+                            <p>
+                                thabo@example.com
+                            </p>
+
+                            <span class="member-location">
+
+                                <i class="fa-solid fa-location-dot"></i>
+
+                                Away
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="member-middle">
+
+                        <span class="role-badge member">
+
+                            <i class="fa-solid fa-user"></i>
+
+                            Member
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="member-right">
+
+                        <span class="member-status away">
+
+                            Away
+
+                        </span>
+
+
+                        <button
+                            class="member-menu"
+                            aria-label="Member options">
+
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+
+                        </button>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =================================================
+                            MEMBER 4
+                ================================================== -->
+
+                <div
+                    class="member-card"
+                    data-name="Lerato">
+
+
+                    <div class="member-left">
+
+
+                        <div class="member-avatar">
+
+                            <div class="avatar-placeholder pink">
+                                L
+                            </div>
+
+                        </div>
+
+
+                        <div class="member-info">
+
+                            <h3>
+                                Lerato
+                            </h3>
+
+                            <p>
+                                lerato@example.com
+                            </p>
+
+                            <span class="member-location">
+
+                                <i class="fa-solid fa-location-dot"></i>
+
+                                Home
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="member-middle">
+
+                        <span class="role-badge member">
+
+                            <i class="fa-solid fa-user"></i>
+
+                            Member
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="member-right">
+
+                        <span class="member-status online">
+
+                            Online
+
+                        </span>
+
+
+                        <button
+                            class="member-menu"
+                            aria-label="Member options">
+
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+
+                        </button>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =================================================
+                            PENDING MEMBER
+                ================================================== -->
+
+                <div
+                    class="member-card pending-member"
+                    data-name="Sipho">
+
+
+                    <div class="member-left">
+
+
+                        <div class="member-avatar">
+
+                            <div class="avatar-placeholder orange">
+                                S
+                            </div>
+
+                        </div>
+
+
+                        <div class="member-info">
+
+                            <h3>
+                                Sipho
+                            </h3>
+
+                            <p>
+                                sipho@example.com
+                            </p>
+
+                            <span class="member-location">
+
+                                <i class="fa-solid fa-envelope"></i>
+
+                                Invitation sent
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="member-middle">
+
+                        <span class="role-badge guest">
+
+                            <i class="fa-solid fa-user-clock"></i>
+
+                            Pending
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="member-right">
+
+                        <span class="member-status pending">
+
+                            Pending
+
+                        </span>
+
+
+                        <button
+                            class="member-menu"
+                            aria-label="Member options">
+
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+
+                        </button>
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+                    PERMISSIONS SECTION
+        ================================================== -->
+
+        <section class="smart-grid">
+
+
+            <!-- PERMISSIONS -->
+
+            <div class="panel">
+
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+
+                            <i class="fa-solid fa-shield-halved"></i>
+
+                            Access Permissions
+
+                        </h2>
+
+                        <p class="panel-subtitle">
+
+                            Control what household members can access
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="permission-list">
+
+
+                    <div class="permission-item">
+
+                        <div class="permission-left">
+
+                            <i class="fa-solid fa-lightbulb"></i>
+
+                            <div>
+
+                                <h4>
+                                    Smart Home
+                                </h4>
+
+                                <p>
+                                    Control lights and connected devices
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <span class="permission-status active">
+                            Enabled
+                        </span>
+
+                    </div>
+
+
+                    <div class="permission-item">
+
+                        <div class="permission-left">
+
+                            <i class="fa-solid fa-list-check"></i>
+
+                            <div>
+
+                                <h4>
+                                    Tasks
+                                </h4>
+
+                                <p>
+                                    View and manage household tasks
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <span class="permission-status active">
+                            Enabled
+                        </span>
+
+                    </div>
+
+
+                    <div class="permission-item">
+
+                        <div class="permission-left">
+
+                            <i class="fa-solid fa-cart-shopping"></i>
+
+                            <div>
+
+                                <h4>
+                                    Shopping
+                                </h4>
+
+                                <p>
+                                    Access household shopping lists
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <span class="permission-status active">
+                            Enabled
+                        </span>
+
+                    </div>
+
+
+                    <div class="permission-item">
+
+                        <div class="permission-left">
+
+                            <i class="fa-solid fa-chart-line"></i>
+
+                            <div>
+
+                                <h4>
+                                    Analytics
+                                </h4>
+
+                                <p>
+                                    View household usage analytics
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <span class="permission-status restricted">
+                            Owners Only
+                        </span>
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- HOUSEHOLD ACTIVITY -->
+
+            <div class="panel">
+
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+
+                            Member Activity
+
+                        </h2>
+
+                        <p class="panel-subtitle">
+
+                            Recent household activity
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="activity-list">
+
+
+                    <div class="activity-item">
+
+                        <div class="activity-left">
+
+                            <div class="activity-icon">
+
+                                <i class="fa-solid fa-lightbulb"></i>
+
+                            </div>
+
+
+                            <div class="activity-info">
+
+                                <h4>
+                                    Justin turned on Living Room Lights
+                                </h4>
+
+                                <p>
+                                    2 minutes ago
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="activity-item">
+
+                        <div class="activity-left">
+
+                            <div class="activity-icon">
+
+                                <i class="fa-solid fa-list-check"></i>
+
+                            </div>
+
+
+                            <div class="activity-info">
+
+                                <h4>
+                                    Nkosazana completed a task
+                                </h4>
+
+                                <p>
+                                    18 minutes ago
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="activity-item">
+
+                        <div class="activity-left">
+
+                            <div class="activity-icon">
+
+                                <i class="fa-solid fa-user-plus"></i>
+
+                            </div>
+
+
+                            <div class="activity-info">
+
+                                <h4>
+                                    Sipho was invited to Elara
+                                </h4>
+
+                                <p>
+                                    1 hour ago
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+                        FLOATING ADD BUTTON
+        ================================================== -->
+
+        <button
+            class="fab"
+            id="addMemberFab"
+            aria-label="Add member">
+
+            <i class="fa-solid fa-plus"></i>
+
+        </button>
+
+
+
+    </main>
+
+</div>
+
+
+
+<!-- ==========================================================
+                    ADD MEMBER MODAL
+========================================================== -->
+
+<div
+    class="modal"
+    id="memberModal">
+
+
+    <div class="modal-content">
+
+
+        <!-- MODAL HEADER -->
+
+        <div class="modal-header">
+
+
+            <div>
+
+                <h2>
+                    Add Household Member
+                </h2>
+
+                <p>
+                    Invite someone to join your Elara home.
+                </p>
+
+            </div>
+
+
+            <button
+                class="close-modal"
+                id="closeMemberModal"
+                aria-label="Close">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+
+        </div>
+
+
+
+        <!-- FORM -->
+
+        <form id="memberForm">
+
+
+            <!-- NAME -->
+
+            <div class="form-group">
+
+                <label for="memberName">
+                    Full Name
+                </label>
+
+                <input
+                    type="text"
+                    id="memberName"
+                    placeholder="Enter full name"
+                    required>
+
+            </div>
+
+
+
+            <!-- EMAIL -->
+
+            <div class="form-group">
+
+                <label for="memberEmail">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    id="memberEmail"
+                    placeholder="member@example.com"
+                    required>
+
+            </div>
+
+
+
+            <!-- ROLE -->
+
+            <div class="form-group">
+
+                <label for="memberRole">
+                    Household Role
+                </label>
+
+                <select id="memberRole">
+
+                    <option value="adult">
+                        Adult
+                    </option>
+
+                    <option value="member">
+                        Member
+                    </option>
+
+                    <option value="guest">
+                        Guest
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- ACCESS -->
+
+            <div class="form-group">
+
+                <label>
+                    Access Level
+                </label>
+
+
+                <div class="access-options">
+
+
+                    <label class="access-option">
+
+                        <input
+                            type="radio"
+                            name="access"
+                            value="standard"
+                            checked>
+
+                        <div>
+
+                            <strong>
+                                Standard Access
+                            </strong>
+
+                            <span>
+                                Smart home, tasks and shopping
+                            </span>
+
+                        </div>
+
+                    </label>
+
+
+                    <label class="access-option">
+
+                        <input
+                            type="radio"
+                            name="access"
+                            value="full">
+
+                        <div>
+
+                            <strong>
+                                Full Access
+                            </strong>
+
+                            <span>
+                                Includes analytics and settings
+                            </span>
+
+                        </div>
+
+                    </label>
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- BUTTONS -->
+
+            <div class="modal-buttons">
+
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    id="cancelMember">
+
+                    Cancel
+
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="save-btn">
+
+                    <i class="fa-solid fa-paper-plane"></i>
+
+                    Send Invitation
+
+                </button>
+
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+</div>
+
+
+
+<!-- ==========================================================
+                    TOAST CONTAINER
+========================================================== -->
+
+<div id="toastContainer"></div>
+
+
+
+<!-- ==========================================================
+                    JAVASCRIPT
+========================================================== -->
+<script src="elara-config.js"></script>
+    <script src="elara-data.js"></script>
+    <script src="elara-theme.js"></script>
+    <script src="elara-common.js"></script>
+<script src="dashboard-members.js"></script>
+
+
+</body>
+
+</html>

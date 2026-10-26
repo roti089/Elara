@@ -1,0 +1,1996 @@
+/* ==========================================================
+                    ELARA SMART HOME
+========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* ==========================================================
+                        VARIABLES
+========================================================== */
+
+:root{
+
+    --bg:#090913;
+    --bg-secondary:#0F1226;
+    --sidebar:#0C0F1D;
+
+    --card:rgba(20,24,44,.75);
+    --card-hover:rgba(30,35,60,.90);
+
+    --primary:#7C6CFF;
+    --primary-light:#9588FF;
+
+    --cyan:#64E4FF;
+
+    --green:#22C55E;
+    --orange:#FBBF24;
+    --red:#FB7185;
+
+    --text:#FFFFFF;
+    --text-secondary:#A7B2D1;
+
+    --border:rgba(255,255,255,.08);
+
+    --radius:24px;
+
+    --shadow:
+        0 15px 40px rgba(0,0,0,.35);
+
+    --transition:.35s ease;
+
+}
+
+/* ==========================================================
+                        RESET
+========================================================== */
+
+*{
+
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+
+}
+
+html{
+
+    scroll-behavior:smooth;
+
+}
+
+body{
+
+    font-family:"Outfit",sans-serif;
+
+    color:var(--text);
+
+    background:
+
+        radial-gradient(circle at top right,
+        rgba(124,108,255,.15),
+        transparent 35%),
+
+        radial-gradient(circle at bottom left,
+        rgba(100,228,255,.10),
+        transparent 30%),
+
+        var(--bg);
+
+    overflow-x:hidden;
+
+}
+
+/* ==========================================================
+                        SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar{
+
+    width:8px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:var(--primary);
+
+    border-radius:20px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:transparent;
+
+}
+
+/* ==========================================================
+                        PAGE LAYOUT
+========================================================== */
+
+.smart-home{
+
+    display:flex;
+
+    min-height:100vh;
+
+}
+
+/* ==========================================================
+                        SIDEBAR
+========================================================== */
+
+.sidebar{
+
+    position:fixed;
+
+    left:0;
+    top:0;
+
+    width:260px;
+    height:100vh;
+
+    display:flex;
+    flex-direction:column;
+
+    padding:28px;
+
+    background:rgba(10,12,26,.95);
+
+    backdrop-filter:blur(25px);
+
+    border-right:1px solid rgba(255,255,255,.05);
+
+    z-index:999;
+
+}
+
+/* ==========================================================
+                    MAIN CONTENT
+========================================================== */
+
+.main-content{
+
+    flex:1;
+
+    margin-left:260px;
+
+    padding:35px;
+
+}
+
+/* ==========================================================
+                    TOP BAR
+========================================================== */
+
+.topbar{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:35px;
+
+}
+
+.welcome h1{
+
+    font-size:38px;
+
+}
+
+.welcome p{
+
+    color:var(--text-secondary);
+
+}
+
+.top-actions{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+/* Search */
+
+.search{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    width:300px;
+
+    padding:15px 20px;
+
+    background:var(--card);
+
+    border-radius:18px;
+
+    border:1px solid var(--border);
+
+}
+
+.search input{
+
+    flex:1;
+
+    background:none;
+
+    border:none;
+
+    outline:none;
+
+    color:white;
+
+}
+
+/* Buttons */
+
+.top-actions button{
+
+    width:52px;
+    height:52px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:var(--card);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.top-actions button:hover{
+
+    background:var(--primary);
+
+}
+
+/* Profile */
+
+.profile{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:10px 18px;
+
+    background:var(--card);
+
+    border-radius:20px;
+
+}
+
+.profile img{
+
+    width:50px;
+
+    height:50px;
+
+    border-radius:50%;
+
+}
+
+/* ==========================================================
+                    STATISTICS
+========================================================== */
+
+.stats{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:24px;
+
+    margin-bottom:35px;
+
+}
+
+.card{
+
+    position:relative;
+
+    overflow:hidden;
+
+    padding:28px;
+
+    border-radius:28px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    backdrop-filter:blur(20px);
+
+    transition:var(--transition);
+
+    box-shadow:var(--shadow);
+
+}
+
+.card:hover{
+
+    transform:translateY(-8px);
+
+    border-color:rgba(124,108,255,.35);
+
+}
+
+.card i{
+
+    width:62px;
+
+    height:62px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:18px;
+
+    margin-bottom:20px;
+
+    font-size:24px;
+
+    color:white;
+
+}
+
+.stats .card:nth-child(1) i{
+
+    background:linear-gradient(135deg,#7C6CFF,#5C4DFF);
+
+}
+
+.stats .card:nth-child(2) i{
+
+    background:linear-gradient(135deg,#64E4FF,#2196F3);
+
+}
+
+.stats .card:nth-child(3) i{
+
+    background:linear-gradient(135deg,#22C55E,#16A34A);
+
+}
+
+.stats .card:nth-child(4) i{
+
+    background:linear-gradient(135deg,#FB7185,#E11D48);
+
+}
+
+.card h3{
+
+    color:var(--text-secondary);
+
+    font-size:15px;
+
+    margin-bottom:12px;
+
+}
+
+.card h2{
+
+    font-size:36px;
+
+    margin-bottom:10px;
+
+}
+
+.card p{
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+}
+
+/* ==========================================================
+                    QUICK CONTROLS
+========================================================== */
+
+.quick-controls{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:20px;
+
+    margin-bottom:35px;
+
+}
+
+.quick-btn{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:14px;
+
+    padding:28px;
+
+    border:none;
+
+    border-radius:24px;
+
+    background:var(--card);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+    border:1px solid var(--border);
+
+}
+
+.quick-btn:hover{
+
+    transform:translateY(-6px);
+
+    background:var(--card-hover);
+
+}
+
+.quick-btn i{
+
+    font-size:30px;
+
+    color:var(--cyan);
+
+}
+
+.quick-btn span{
+
+    font-size:15px;
+
+    font-weight:600;
+
+}
+
+/* ==========================================================
+                    SMART HOME GRID
+========================================================== */
+
+.rooms-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:30px;
+
+    margin-bottom:35px;
+
+}
+
+/* ==========================================================
+                    ROOM CARD
+========================================================== */
+
+.room-card{
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:28px;
+
+    padding:28px;
+
+    backdrop-filter:blur(20px);
+
+    transition:var(--transition);
+
+    box-shadow:var(--shadow);
+
+}
+
+.room-card:hover{
+
+    transform:translateY(-8px);
+
+    border-color:rgba(124,108,255,.30);
+
+}
+
+/* ==========================================================
+                    ROOM HEADER
+========================================================== */
+
+.room-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+}
+
+.room-title{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+.room-title i{
+
+    width:58px;
+
+    height:58px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:18px;
+
+    background:linear-gradient(135deg,var(--primary),#5C4DFF);
+
+    color:white;
+
+    font-size:24px;
+
+}
+
+.room-title h3{
+
+    font-size:22px;
+
+}
+
+.room-title p{
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+}
+
+/* ==========================================================
+                    DEVICES
+========================================================== */
+
+.device-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.device{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px;
+
+    border-radius:18px;
+
+    background:rgba(255,255,255,.04);
+
+    transition:var(--transition);
+
+}
+
+.device:hover{
+
+    background:rgba(124,108,255,.08);
+
+}
+
+.device-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.device-left i{
+
+    width:48px;
+
+    height:48px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:15px;
+
+    background:rgba(124,108,255,.18);
+
+    color:var(--cyan);
+
+}
+
+.device-info h4{
+
+    font-size:16px;
+
+    margin-bottom:4px;
+
+}
+
+.device-info p{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+                    SMART SWITCHES
+========================================================== */
+
+.device-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+/* ==========================================================
+                    DEVICE STATUS
+========================================================== */
+
+.device-status{
+
+    font-size:13px;
+
+    font-weight:600;
+
+    padding:7px 14px;
+
+    border-radius:30px;
+
+}
+
+.device-status.online{
+
+    background:rgba(34,197,94,.15);
+
+    color:var(--green);
+
+}
+
+.device-status.offline{
+
+    background:rgba(251,113,133,.15);
+
+    color:var(--red);
+
+}
+
+.device-status.standby{
+
+    background:rgba(251,191,36,.15);
+
+    color:var(--orange);
+
+}
+
+/* ==========================================================
+                    IOS SWITCH
+========================================================== */
+
+.switch{
+
+    position:relative;
+
+    display:inline-block;
+
+    width:62px;
+
+    height:34px;
+
+}
+
+.switch input{
+
+    opacity:0;
+
+    width:0;
+
+    height:0;
+
+}
+
+/* ==========================================================
+                    SLIDER
+========================================================== */
+
+.slider{
+
+    position:absolute;
+
+    cursor:pointer;
+
+    inset:0;
+
+    border-radius:40px;
+
+    background:#44485F;
+
+    transition:.35s;
+
+}
+
+/* ==========================================================
+                    SWITCH CIRCLE
+========================================================== */
+
+.slider::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:28px;
+
+    height:28px;
+
+    left:3px;
+
+    top:3px;
+
+    border-radius:50%;
+
+    background:white;
+
+    transition:.35s;
+
+    box-shadow:
+
+        0 4px 12px rgba(0,0,0,.35);
+
+}
+
+/* ==========================================================
+                    ON STATE
+========================================================== */
+
+.switch input:checked + .slider{
+
+    background:
+
+        linear-gradient(
+            135deg,
+            var(--green),
+            #16A34A
+        );
+
+    box-shadow:
+
+        0 0 18px rgba(34,197,94,.45);
+
+}
+
+.switch input:checked + .slider::before{
+
+    transform:translateX(28px);
+
+}
+
+/* ==========================================================
+                    HOVER
+========================================================== */
+
+.switch:hover{
+
+    transform:scale(1.05);
+
+}
+
+/* ==========================================================
+                    DEVICE FOOTER
+========================================================== */
+
+.device-footer{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-top:16px;
+
+}
+
+/* ==========================================================
+                    POWER USAGE
+========================================================== */
+
+.power-usage{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+.power-usage i{
+
+    color:var(--orange);
+
+}
+
+/* ==========================================================
+                    SIGNAL STRENGTH
+========================================================== */
+
+.signal{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    font-size:13px;
+
+    color:var(--cyan);
+
+}
+
+.signal i{
+
+    color:var(--cyan);
+
+}
+
+/* ==========================================================
+                    DEVICE BADGES
+========================================================== */
+
+.device-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:6px 12px;
+
+    border-radius:30px;
+
+    font-size:12px;
+
+    font-weight:600;
+
+}
+
+.device-badge.energy{
+
+    background:rgba(100,228,255,.12);
+
+    color:var(--cyan);
+
+}
+
+.device-badge.smart{
+
+    background:rgba(124,108,255,.15);
+
+    color:var(--primary-light);
+
+}
+
+/* ==========================================================
+                    ROOM FOOTER
+========================================================== */
+
+.room-footer{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-top:25px;
+
+    padding-top:20px;
+
+    border-top:1px solid rgba(255,255,255,.05);
+
+}
+
+.room-footer span{
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+}
+
+.room-footer button{
+
+    padding:12px 20px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            var(--primary),
+            #5C4DFF
+        );
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.room-footer button:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:
+
+        0 15px 30px rgba(124,108,255,.35);
+
+}
+
+/* ==========================================================
+                    ENERGY & SECURITY LAYOUT
+========================================================== */
+
+.smart-grid{
+
+    display:grid;
+
+    grid-template-columns:2fr 1fr;
+
+    gap:30px;
+
+    margin-top:35px;
+
+}
+
+/* ==========================================================
+                        PANEL
+========================================================== */
+
+.panel{
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:28px;
+
+    padding:28px;
+
+    backdrop-filter:blur(20px);
+
+    box-shadow:var(--shadow);
+
+    transition:var(--transition);
+
+}
+
+.panel:hover{
+
+    border-color:rgba(124,108,255,.30);
+
+    transform:translateY(-5px);
+
+}
+
+.panel-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+}
+
+.panel-header h2{
+
+    font-size:24px;
+
+}
+
+.panel-subtitle{
+
+    margin-top:6px;
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+}
+
+/* ==========================================================
+                    ENERGY CARDS
+========================================================== */
+
+.energy-cards{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:20px;
+
+    margin-bottom:30px;
+
+}
+
+.energy-card{
+
+    padding:24px;
+
+    border-radius:22px;
+
+    background:rgba(255,255,255,.04);
+
+    transition:var(--transition);
+
+    border:1px solid rgba(255,255,255,.05);
+
+}
+
+.energy-card:hover{
+
+    transform:translateY(-6px);
+
+    background:rgba(124,108,255,.08);
+
+}
+
+.energy-card i{
+
+    width:58px;
+
+    height:58px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:18px;
+
+    font-size:24px;
+
+    margin-bottom:18px;
+
+    color:white;
+
+}
+
+.energy-card:nth-child(1) i{
+
+    background:linear-gradient(135deg,#F59E0B,#D97706);
+
+}
+
+.energy-card:nth-child(2) i{
+
+    background:linear-gradient(135deg,#22C55E,#16A34A);
+
+}
+
+.energy-card:nth-child(3) i{
+
+    background:linear-gradient(135deg,#7C6CFF,#5C4DFF);
+
+}
+
+.energy-card h3{
+
+    font-size:15px;
+
+    color:var(--text-secondary);
+
+    margin-bottom:10px;
+
+}
+
+.energy-card h2{
+
+    font-size:30px;
+
+    margin-bottom:8px;
+
+}
+
+.energy-card p{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+                    CHART CONTAINER
+========================================================== */
+
+.chart-box{
+
+    width:100%;
+
+    height:340px;
+
+    padding:20px;
+
+    border-radius:24px;
+
+    background:rgba(255,255,255,.03);
+
+}
+
+.chart-box canvas{
+
+    width:100% !important;
+
+    height:100% !important;
+
+}
+
+/* ==========================================================
+                    AUTOMATION LIST
+========================================================== */
+
+.automation-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.automation-item{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px;
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.04);
+
+    transition:var(--transition);
+
+}
+
+.automation-item:hover{
+
+    background:rgba(124,108,255,.08);
+
+    transform:translateX(6px);
+
+}
+
+.automation-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.automation-left i{
+
+    width:52px;
+
+    height:52px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:16px;
+
+    background:linear-gradient(135deg,var(--primary),#5C4DFF);
+
+    color:white;
+
+    font-size:20px;
+
+}
+
+.automation-left h4{
+
+    font-size:16px;
+
+    margin-bottom:5px;
+
+}
+
+.automation-left p{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+                    RECENT ACTIVITY
+========================================================== */
+
+.activity-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.activity-item{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:18px;
+
+    padding:18px;
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.04);
+
+    border:1px solid rgba(255,255,255,.05);
+
+    transition:var(--transition);
+
+}
+
+.activity-item:hover{
+
+    transform:translateX(6px);
+
+    background:rgba(124,108,255,.08);
+
+}
+
+.activity-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+.activity-icon{
+
+    width:52px;
+
+    height:52px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:16px;
+
+    background:linear-gradient(135deg,var(--primary),#5C4DFF);
+
+    color:white;
+
+    font-size:20px;
+
+}
+
+.activity-info h4{
+
+    margin-bottom:5px;
+
+}
+
+.activity-info p{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+                    FLOATING BUTTON
+========================================================== */
+
+.fab{
+
+    position:fixed;
+
+    right:35px;
+
+    bottom:35px;
+
+    width:70px;
+
+    height:70px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:linear-gradient(135deg,var(--primary),#5C4DFF);
+
+    color:white;
+
+    font-size:24px;
+
+    cursor:pointer;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    box-shadow:0 20px 45px rgba(124,108,255,.35);
+
+    transition:var(--transition);
+
+    z-index:900;
+
+}
+
+.fab:hover{
+
+    transform:translateY(-8px) scale(1.08);
+
+}
+
+/* ==========================================================
+                    MODAL
+========================================================== */
+
+.modal{
+
+    position:fixed;
+
+    inset:0;
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:rgba(0,0,0,.65);
+
+    backdrop-filter:blur(8px);
+
+    z-index:9999;
+
+}
+
+.modal.active{
+
+    display:flex;
+
+}
+
+.modal-content{
+    position:relative;
+
+    width:100%;
+
+    max-width:720px;
+
+    padding:35px;
+
+    border-radius:28px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    backdrop-filter:blur(25px);
+
+    animation:scaleIn .35s ease;
+
+}
+
+.modal-close{
+    position:absolute;
+    top:18px;
+    right:18px;
+    width:36px;
+    height:36px;
+    border:none;
+    border-radius:50%;
+    background:rgba(255,255,255,.08);
+    color:white;
+    font-size:22px;
+    line-height:1;
+    cursor:pointer;
+}
+
+.form-group{
+
+    margin-bottom:22px;
+
+}
+
+.form-row{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:20px;
+
+}
+
+.form-group label{
+
+    display:block;
+
+    margin-bottom:10px;
+
+    color:var(--text-secondary);
+
+}
+
+.form-group input,
+.form-group select{
+
+    width:100%;
+
+    padding:15px 18px;
+
+    border-radius:18px;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    background:rgba(255,255,255,.04);
+
+    color:white;
+
+    outline:none;
+
+}
+
+.form-group input:focus,
+.form-group select:focus{
+
+    border-color:var(--primary);
+
+}
+
+.modal-buttons{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:15px;
+
+    margin-top:30px;
+
+}
+
+.cancel-btn,
+.save-btn{
+
+    padding:14px 24px;
+
+    border:none;
+
+    border-radius:18px;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.cancel-btn{
+
+    background:rgba(255,255,255,.08);
+
+    color:white;
+
+}
+
+.save-btn{
+
+    background:linear-gradient(135deg,var(--primary),#5C4DFF);
+
+    color:white;
+
+}
+
+.save-btn:hover,
+.cancel-btn:hover{
+
+    transform:translateY(-3px);
+
+}
+
+/* ==========================================================
+                    LOADING
+========================================================== */
+
+#loadingOverlay{
+
+    position:fixed;
+
+    inset:0;
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    flex-direction:column;
+
+    gap:20px;
+
+    background:rgba(9,9,19,.9);
+
+    z-index:10000;
+
+}
+
+.loader{
+
+    width:70px;
+
+    height:70px;
+
+    border:6px solid rgba(255,255,255,.15);
+
+    border-top:6px solid var(--primary);
+
+    border-radius:50%;
+
+    animation:spin 1s linear infinite;
+
+}
+
+@keyframes spin{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+/* ==========================================================
+                    ANIMATIONS
+========================================================== */
+
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(25px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+@keyframes scaleIn{
+
+    from{
+
+        opacity:0;
+
+        transform:scale(.9);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:scale(1);
+
+    }
+
+}
+
+/* ==========================================================
+                    RESPONSIVE
+========================================================== */
+
+@media (max-width:1200px){
+
+    .stats,
+    .quick-controls{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+    .rooms-grid,
+    .smart-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+@media (max-width:768px){
+
+    .sidebar{
+
+        display:none;
+
+    }
+
+    .main-content{
+
+        margin-left:0;
+
+        padding:20px;
+
+    }
+
+    .topbar{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+    }
+
+    .top-actions{
+
+        width:100%;
+
+        flex-wrap:wrap;
+
+    }
+
+    .search{
+
+        width:100%;
+
+    }
+
+    .stats,
+    .quick-controls,
+    .camera-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .form-row{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+/* ==========================================================
+                    TOAST
+========================================================== */
+
+#toastContainer{
+
+    position:fixed;
+
+    top:25px;
+    right:25px;
+
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+
+    z-index:99999;
+
+}
+
+.toast{
+
+    min-width:280px;
+
+    padding:18px 22px;
+
+    border-radius:18px;
+
+    background:var(--card);
+
+    color:white;
+
+    border-left:5px solid var(--green);
+
+    backdrop-filter:blur(15px);
+
+    transform:translateX(120%);
+
+    opacity:0;
+
+    transition:.35s;
+
+}
+
+.toast.show{
+
+    transform:translateX(0);
+
+    opacity:1;
+
+}
+
+.toast.info{
+
+    border-left-color:var(--cyan);
+
+}
+
+.toast.error{
+
+    border-left-color:var(--red);
+
+}
+
+body.light{
+
+    --bg:#ECEFF8;
+
+    --bg-secondary:#F8F9FC;
+
+    --sidebar:#FFFFFF;
+
+    --card:#FFFFFF;
+
+    --card-hover:#F2F5FA;
+
+    --text:#151515;
+
+    --text-secondary:#5E6473;
+
+    --border:#D7DBE7;
+
+}
+
+/* ==========================================================
+                    ELARA LIGHT THEME
+========================================================== */
+
+body.light-theme {
+
+    --bg: #f4f6fb;
+    --bg-secondary: #ffffff;
+    --sidebar: #ffffff;
+
+    --card: rgba(255,255,255,.92);
+    --card-hover: #ffffff;
+
+    --text: #17182b;
+    --text-secondary: #68708a;
+
+    --border: rgba(0,0,0,.08);
+
+    background: #f4f6fb;
+    color: #17182b;
+}
+
+/* PANELS */
+
+body.light-theme .panel {
+
+    background: rgba(255,255,255,.92);
+
+    border-color:
+        rgba(0,0,0,.08);
+
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.08);
+}
+
+/* CARDS */
+
+body.light-theme .card,
+body.light-theme .summary-card,
+body.light-theme .member-card {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* SEARCH */
+
+body.light-theme .search {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* TOP BUTTONS */
+
+body.light-theme .top-actions button {
+
+    background: #ffffff;
+
+    color: #17182b;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* PROFILE */
+
+body.light-theme .profile {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* INPUTS */
+
+body.light-theme input,
+body.light-theme select,
+body.light-theme textarea {
+
+    color: #17182b;
+
+    background: #f8f9fd;
+
+    border-color:
+        rgba(0,0,0,.10);
+}
+
+body.light-theme input::placeholder,
+body.light-theme textarea::placeholder {
+
+    color: #8b93a8;
+}
+
+/* SECONDARY TEXT */
+
+body.light-theme p,
+body.light-theme .panel-subtitle {
+
+    color: #68708a;
+}
+
+/* ==========================================================
+   FIXES: states the smart-home JS relies on
+========================================================== */
+#loadingOverlay.active{ display:flex; }
+.quick-btn.active{
+    border-color:var(--primary);
+    background:rgba(124,108,255,.18);
+}
+
+/* ==========================================================
+   FIXES v2: device removal + CBi connection
+========================================================== */
+#loadingOverlay.active{ display:flex; }
+.device-remove{
+    width:28px; height:28px; margin-left:10px; border:none; border-radius:8px; background:transparent; color:inherit;
+    opacity:0; cursor:pointer; transition:.2s;
+}
+.device:hover .device-remove{ opacity:.55; }
+.device-remove:hover{ opacity:1 !important; background:rgba(255,77,109,.18); color:#ff6b86; }
+@media (hover:none){ .device-remove{ opacity:.55; } }
+.top-actions > .cbi-btn{
+    display:inline-flex; align-items:center; gap:8px; width:auto; height:auto; padding:12px 18px; border:none; border-radius:16px;
+    background:linear-gradient(135deg,#6c63ff,#4f46e5); color:#fff; font:inherit; font-size:14px; cursor:pointer; white-space:nowrap;
+    box-shadow:0 10px 24px rgba(108,99,255,.28); transition:transform .2s;
+}
+.top-actions > .cbi-btn:hover{ transform:translateY(-2px); }
+.cbi-box .cbi-steps{ text-align:left; margin:0 0 22px 18px; color:#9ba6c6; line-height:1.7; font-size:14px; }
+.cbi-box code{ background:rgba(255,255,255,.08); padding:2px 6px; border-radius:6px; font-size:12px; }
+.cbi-status{ margin-bottom:20px; padding:10px 14px; border-radius:12px; background:rgba(255,255,255,.06); font-size:14px; }
+.cbi-status.ok{ background:rgba(34,197,94,.14); color:#22c55e; }
+body.light-theme .cbi-box code{ background:rgba(0,0,0,.07); }
+
+
+/* three stat cards and three quick buttons now: fill the row evenly */
+.stats{ grid-template-columns:repeat(3,1fr) !important; }
+.quick-controls{ grid-template-columns:repeat(auto-fit,minmax(180px,1fr)) !important; }

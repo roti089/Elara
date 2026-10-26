@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks</title>
+    <link rel="stylesheet" href="dashboard-tasks.css">
+    <link rel="stylesheet" href="elara-sidebar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <div class="tasks">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <img src="Elara logo.png" alt="Elara">
+
+            <div>
+                <h2>Elara</h2>
+                <span>Smart Home</span>
+            </div>
+
+        </div>
+
+ <ul class="menu">
+
+    <li>
+        <a href="dashboard-content.html">
+            <i class="fa-solid fa-house"></i>
+            <span>Dashboard</span>
+        </a>
+    </li>
+
+    <li class="active">
+        <a href="dashboard-tasks.html">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Tasks</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-shopping.html">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span>Shopping</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-schedule.html">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Schedule</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-smart-home.html">
+            <i class="fa-solid fa-lightbulb"></i>
+            <span>Smart Home</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-analytics.html">
+            <i class="fa-solid fa-chart-simple"></i>
+            <span>Analytics</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-members.html">
+            <i class="fa-solid fa-users"></i>
+            <span>Members</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-settings.html">
+            <i class="fa-solid fa-gear"></i>
+            <span>Settings</span>
+        </a>
+    </li>
+
+</ul>
+
+        <div class="sidebar-bottom">
+
+            <button class="logout">
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <div class="welcome">
+
+                <h1 id="heading">
+
+                    Tasks
+
+                </h1>
+
+                <p>
+
+                    Organize, prioritize and get things done.
+
+                </p>
+
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        placeholder="Search anything...">
+
+                </div>
+
+                <button>
+
+                    <i class="fa-solid fa-bell"></i>
+
+                </button>
+
+                <button id="themeBtn" aria-label="Toggle theme">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+
+                <div class="profile">
+
+                    <img src="DSC_0156.JPG">
+
+                    <div>
+
+                        <h4 id="userName">
+
+                            Justin
+
+                        </h4>
+
+                        <span>
+
+                            Home Owner
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- STATISTICS -->
+
+        <section class="stats">
+
+            <!-- Total Tasks -->
+            <div class="card">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <h3>Total Tasks</h3>
+                <h2 id="taskCount">12</h2>
+                <p>3 due today</p>
+            </div>
+
+            <!-- Completed -->
+            <div class="card">
+                <i class="fa-solid fa-circle-check"></i>
+                <h3>Completed</h3>
+                <h2 id="shoppingCount">7</h2>
+                <p>This week</p>
+            </div>
+
+            <!-- In Progress -->
+            <div class="card">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <h3>In Progress</h3>
+                <h2 id="deviceCount">4</h2>
+                <p>Currently active</p>
+            </div>
+
+            <!-- Overdue -->
+            <div class="card">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <h3>Overdue</h3>
+                <h2 id="energyCount">2</h2>
+                <p>Needs attention</p>
+            </div>
+
+        </section>
+
+        <!-- TASK CONTROLS -->
+
+<section class="task-controls">
+
+    <button class="add-task">
+
+        <i class="fa-solid fa-plus"></i>
+
+        Add Task
+
+    </button>
+
+    <div class="task-search">
+
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input type="text" placeholder="Search tasks...">
+
+    </div>
+
+    <select>
+
+        <option>All Priorities</option>
+        <option>High</option>
+        <option>Medium</option>
+        <option>Low</option>
+
+    </select>
+
+    <select>
+
+        <option>Sort By</option>
+        <option>Due Date</option>
+        <option>Priority</option>
+        <option>Newest</option>
+
+    </select>
+
+</section>
+
+<section class="task-tabs">
+
+    <button class="active">All</button>
+
+    <button>Today</button>
+
+    <button>Upcoming</button>
+
+    <button>Completed</button>
+
+    <button>Overdue</button>
+
+</section>
+
+<!-- TASKS SECTION -->
+
+<section class="tasks-layout">
+
+    <!-- LEFT COLUMN -->
+
+        <div class="tasks-left">
+
+    <!-- Task Card 1 -->
+
+    <div class="task-card high">
+
+        <div class="task-top">
+
+            <span class="priority high-priority">
+                High Priority
+            </span>
+
+            <span class="status in-progress">
+                In Progress
+            </span>
+
+        </div>
+
+        <h3>Clean Kitchen</h3>
+
+        <p>
+            Deep clean the kitchen and sanitize all surfaces.
+        </p>
+
+        <div class="task-details">
+
+            <span>
+                <i class="fa-solid fa-user"></i>
+                Justin
+            </span>
+
+            <span>
+                <i class="fa-solid fa-clock"></i>
+                Today • 17:00
+            </span>
+
+        </div>
+
+        <div class="task-progress">
+
+            <div class="progress-bar">
+
+                <div class="progress-fill" style="width:65%;"></div>
+
+            </div>
+
+            <span>65%</span>
+
+        </div>
+
+        <div class="task-buttons">
+
+            <button class="btn-complete">
+                Complete
+            </button>
+
+            <button class="btn-edit">
+                Edit
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- Task Card 2 -->
+
+    <div class="task-card medium">
+
+        <div class="task-top">
+
+            <span class="priority medium-priority">
+                Medium
+            </span>
+
+            <span class="status pending">
+                Pending
+            </span>
+
+        </div>
+
+        <h3>Buy Groceries</h3>
+
+        <p>
+            Purchase milk, bread, eggs and vegetables.
+        </p>
+
+        <div class="task-details">
+
+            <span>
+                <i class="fa-solid fa-user"></i>
+                Sarah
+            </span>
+
+            <span>
+                <i class="fa-solid fa-calendar"></i>
+                Tomorrow
+            </span>
+
+        </div>
+
+        <div class="task-progress">
+
+            <div class="progress-bar">
+
+                <div class="progress-fill" style="width:25%;"></div>
+
+            </div>
+
+            <span>25%</span>
+
+        </div>
+
+        <div class="task-buttons">
+
+            <button class="btn-complete">
+                Complete
+            </button>
+
+            <button class="btn-edit">
+                Edit
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- Task Card 3 -->
+
+    <div class="task-card low">
+
+        <div class="task-top">
+
+            <span class="priority low-priority">
+                Low
+            </span>
+
+            <span class="status completed">
+                Completed
+            </span>
+
+        </div>
+
+        <h3>Laundry</h3>
+
+        <p>
+            Wash, dry and fold all clothes.
+        </p>
+
+        <div class="task-details">
+
+            <span>
+                <i class="fa-solid fa-user"></i>
+                James
+            </span>
+
+            <span>
+                <i class="fa-solid fa-circle-check"></i>
+                Finished
+            </span>
+
+        </div>
+
+        <div class="task-progress">
+
+            <div class="progress-bar">
+
+                <div class="progress-fill" style="width:100%;"></div>
+
+            </div>
+
+            <span>100%</span>
+
+        </div>
+
+        <div class="task-buttons">
+
+            <button class="btn-complete">
+                View
+            </button>
+
+            <button class="btn-edit">
+                Details
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+    
+
+    <!-- RIGHT COLUMN -->
+
+    <div class="tasks-right">
+
+        <!-- Progress -->
+
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <h2>Task Progress</h2>
+
+            </div>
+
+            <div class="progress-circle">
+
+                <div class="circle">
+
+                    <span>72%</span>
+
+                </div>
+
+                <p>Overall Completion</p>
+
+            </div>
+
+        </div>
+
+        <!-- Calendar -->
+
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <h2>Calendar</h2>
+
+            </div>
+
+            <div class="calendar-box">
+
+                <h3>July 2026</h3>
+
+                <div class="calendar-grid">
+
+                    <span>20</span>
+                    <span>21</span>
+                    <span class="active-day">22</span>
+                    <span>23</span>
+                    <span>24</span>
+                    <span>25</span>
+                    <span>26</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Upcoming -->
+
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <h2>Upcoming Deadlines</h2>
+
+            </div>
+
+            <div class="deadline">
+
+                <strong>Kitchen Cleaning</strong>
+
+                <small>Today • 17:00</small>
+
+            </div>
+
+            <div class="deadline">
+
+                <strong>Buy Groceries</strong>
+
+                <small>Tomorrow • 10:00</small>
+
+            </div>
+
+            <div class="deadline">
+
+                <strong>Wash Car</strong>
+
+                <small>Friday • 14:00</small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- Recent Activity -->
+
+<section class="panel recent-panel">
+
+    <div class="panel-header">
+
+        <h2>Recent Activity</h2>
+
+    </div>
+
+    <div class="activity-item">
+
+        <i class="fa-solid fa-circle-check"></i>
+
+        Laundry completed by Justin
+
+        <span>2 mins ago</span>
+
+    </div>
+
+    <div class="activity-item">
+
+        <i class="fa-solid fa-user-plus"></i>
+
+        Sarah accepted task assignment
+
+        <span>10 mins ago</span>
+
+    </div>
+
+    <div class="activity-item">
+
+        <i class="fa-solid fa-clock"></i>
+
+        Grocery Shopping deadline updated
+
+        <span>25 mins ago</span>
+
+    </div>
+
+</section>
+
+    </main>
+    </div>
+   
+    <script src="elara-config.js"></script>
+    <script src="elara-data.js"></script>
+    <script src="elara-theme.js"></script>
+    <script src="elara-common.js"></script>
+    <script src="dashboard-tasks.js"></script>
+</body>
+</html>

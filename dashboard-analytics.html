@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Elara | Analytics</title>
+
+    <!-- Google Font -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Analytics CSS -->
+    <link
+        rel="stylesheet"
+        href="dashboard-analytics.css">
+    <link rel="stylesheet" href="elara-sidebar.css">
+
+</head>
+
+<body>
+
+<div class="smart-home">
+
+    <!-- =====================================================
+                            SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <img
+                src="Elara logo.png"
+                alt="Elara">
+
+            <div>
+
+                <h2>Elara</h2>
+
+                <span>Smart Home</span>
+
+            </div>
+
+        </div>
+
+
+        <ul class="menu">
+
+            <li>
+
+                <a href="dashboard-content.html">
+
+                    <i class="fa-solid fa-house"></i>
+
+                    <span>Dashboard</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-tasks.html">
+
+                    <i class="fa-solid fa-list-check"></i>
+
+                    <span>Tasks</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-shopping.html">
+
+                    <i class="fa-solid fa-cart-shopping"></i>
+
+                    <span>Shopping</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-schedule.html">
+
+                    <i class="fa-solid fa-calendar-days"></i>
+
+                    <span>Schedule</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-smart-home.html">
+
+                    <i class="fa-solid fa-lightbulb"></i>
+
+                    <span>Smart Home</span>
+
+                </a>
+
+            </li>
+
+
+            <li class="active">
+
+                <a href="dashboard-analytics.html">
+
+                    <i class="fa-solid fa-chart-simple"></i>
+
+                    <span>Analytics</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-members.html">
+
+                    <i class="fa-solid fa-users"></i>
+
+                    <span>Members</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-settings.html">
+
+                    <i class="fa-solid fa-gear"></i>
+
+                    <span>Settings</span>
+
+                </a>
+
+            </li>
+
+        </ul>
+
+
+        <div class="sidebar-bottom">
+
+            <button
+                class="logout"
+                id="logoutBtn">
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+                            MAIN CONTENT
+    ====================================================== -->
+
+    <main class="main-content">
+
+
+        <!-- =================================================
+                            TOP BAR
+        ================================================== -->
+
+        <header class="topbar">
+
+            <div class="welcome">
+
+                <h1>Analytics</h1>
+
+                <p>
+                    Understand your home's energy usage,
+                    efficiency and device activity.
+                </p>
+
+            </div>
+
+
+            <div class="top-actions">
+
+                <div class="search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="analyticsSearch"
+                        placeholder="Search analytics...">
+
+                </div>
+
+
+                <button id="notificationBtn">
+
+                    <i class="fa-solid fa-bell"></i>
+
+                </button>
+
+
+                <button id="themeBtn">
+
+                    <i class="fa-solid fa-moon"></i>
+
+                </button>
+
+
+                <div class="profile">
+
+                    <img
+                        src="DSC_0156.JPG"
+                        alt="Justin">
+
+                    <div>
+
+                        <h4 id="userName">
+                            Justin
+                        </h4>
+
+                        <span>
+                            Home Owner
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+                        ANALYTICS SUMMARY
+        ================================================== -->
+
+        <section class="stats">
+
+
+            <!-- Energy -->
+
+            <div class="card">
+
+                <i class="fa-solid fa-bolt"></i>
+
+                <h3>
+                    Energy Used
+                </h3>
+
+                <h2 id="totalUsage">
+                    148 kWh
+                </h2>
+
+                <p>
+                    This month
+                </p>
+
+            </div>
+
+
+            <!-- Cost -->
+
+            <div class="card">
+
+                <i class="fa-solid fa-wallet"></i>
+
+                <h3>
+                    Estimated Cost
+                </h3>
+
+                <h2 id="estimatedCost">
+                    R486
+                </h2>
+
+                <p>
+                    Based on current usage
+                </p>
+
+            </div>
+
+
+            <!-- Devices -->
+
+            <div class="card">
+
+                <i class="fa-solid fa-microchip"></i>
+
+                <h3>
+                    Active Devices
+                </h3>
+
+                <h2 id="activeDevices">
+                    18
+                </h2>
+
+                <p>
+                    Currently connected
+                </p>
+
+            </div>
+
+
+            <!-- Efficiency -->
+
+            <div class="card">
+
+                <i class="fa-solid fa-leaf"></i>
+
+                <h3>
+                    Home Efficiency
+                </h3>
+
+                <h2 id="efficiencyValue">
+                    87%
+                </h2>
+
+                <p>
+                    Excellent performance
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+                        MAIN ANALYTICS GRID
+        ================================================== -->
+
+        <section class="smart-grid">
+
+
+            <!-- =================================================
+                            ENERGY ANALYTICS
+            ================================================== -->
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+
+                            <i class="fa-solid fa-chart-line"></i>
+
+                            Energy Consumption
+
+                        </h2>
+
+                        <p class="panel-subtitle">
+
+                            Household electricity usage over time
+
+                        </p>
+
+                    </div>
+
+                <select id="analyticsPeriod">
+                    <option value="today">Today</option>
+                    <option value="week" selected>This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+
+                </div>
+
+
+                <div class="chart-box">
+
+                    <canvas
+                     id="energyChart">
+                    </canvas>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                            EFFICIENCY
+            ================================================== -->
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+
+                            <i class="fa-solid fa-gauge-high"></i>
+
+                            Efficiency
+
+                        </h2>
+
+                        <p class="panel-subtitle">
+
+                            Overall home performance
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="efficiency-score">
+
+                    <div class="efficiency-circle">
+
+                        <span>
+                            87%
+                        </span>
+
+                    </div>
+
+                    <h3>
+                        Excellent
+                    </h3>
+
+                    <p>
+                        Your home is operating efficiently.
+                    </p>
+
+                </div>
+
+
+                <div class="efficiency-details">
+
+                    <div>
+
+                        <span>
+                            Energy Saving
+                        </span>
+
+                        <strong>
+                            18%
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Device Efficiency
+                        </span>
+
+                        <strong>
+                            91%
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Automation
+                        </span>
+
+                        <strong>
+                            82%
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- =================================================
+                    DEVICE CONSUMPTION + ROOMS
+        ================================================== -->
+
+        <section class="smart-grid">
+
+
+            <!-- =================================================
+                        DEVICE CONSUMPTION
+            ================================================== -->
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+
+                            <i class="fa-solid fa-plug"></i>
+
+                            Device Consumption
+
+                        </h2>
+
+                        <p class="panel-subtitle">
+
+                            Devices using the most electricity
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="device-analytics">
+
+
+                    <div class="analytics-device">
+
+                        <div class="analytics-device-left">
+
+                            <div class="analytics-icon">
+
+                                <i class="fa-solid fa-fire-flame-simple"></i>
+
+                            </div>
+
+                            <div>
+
+                                <h4>
+                                    Geyser
+                                </h4>
+
+                                <p>
+                                    Bathroom
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="analytics-value">
+
+                            <strong>
+                                42.8 kWh
+                            </strong>
+
+                            <span>
+                                29%
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="analytics-device">
+
+                        <div class="analytics-device-left">
+
+                            <div class="analytics-icon">
+
+                                <i class="fa-solid fa-snowflake"></i>
+
+                            </div>
+
+                            <div>
+
+                                <h4>
+                                    Smart Fridge
+                                </h4>
+
+                                <p>
+                                    Kitchen
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="analytics-value">
+
+                            <strong>
+                                28.4 kWh
+                            </strong>
+
+                            <span>
+                                19%
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="analytics-device">
+
+                        <div class="analytics-device-left">
+
+                            <div class="analytics-icon">
+
+                                <i class="fa-solid fa-fan"></i>
+
+                            </div>
+
+                            <div>
+
+                                <h4>
+                                    Air Conditioner
+                                </h4>
+
+                                <p>
+                                    Living Room
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="analytics-value">
+
+                            <strong>
+                                24.7 kWh
+                            </strong>
+
+                            <span>
+                                17%
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="analytics-device">
+
+                        <div class="analytics-device-left">
+
+                            <div class="analytics-icon">
+
+                                <i class="fa-solid fa-tv"></i>
+
+                            </div>
+
+                            <div>
+
+                                <h4>
+                                    Smart TV
+                                </h4>
+
+                                <p>
+                                    Living Room
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="analytics-value">
+
+                            <strong>
+                                15.2 kWh
+                            </strong>
+
+                            <span>
+                                10%
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                            ROOM USAGE
+            ================================================== -->
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+
+                            <i class="fa-solid fa-house"></i>
+
+                            Room Usage
+
+                        </h2>
+
+                        <p class="panel-subtitle">
+
+                            Energy consumption by room
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="room-analytics">
+
+
+                    <div class="room-stat">
+
+                        <div>
+
+                            <h4>
+                                Living Room
+                            </h4>
+
+                            <p>
+                                46.2 kWh
+                            </p>
+
+                        </div>
+
+                        <strong>
+                            31%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="progress">
+
+                        <span style="width:31%">
+                        </span>
+
+                    </div>
+
+
+                    <div class="room-stat">
+
+                        <div>
+
+                            <h4>
+                                Kitchen
+                            </h4>
+
+                            <p>
+                                38.5 kWh
+                            </p>
+
+                        </div>
+
+                        <strong>
+                            26%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="progress">
+
+                        <span style="width:26%">
+                        </span>
+
+                    </div>
+
+
+                    <div class="room-stat">
+
+                        <div>
+
+                            <h4>
+                                Bedroom
+                            </h4>
+
+                            <p>
+                                27.4 kWh
+                            </p>
+
+                        </div>
+
+                        <strong>
+                            19%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="progress">
+
+                        <span style="width:19%">
+                        </span>
+
+                    </div>
+
+
+                    <div class="room-stat">
+
+                        <div>
+
+                            <h4>
+                                Garage
+                            </h4>
+
+                            <p>
+                                18.1 kWh
+                            </p>
+
+                        </div>
+
+                        <strong>
+                            12%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="progress">
+
+                        <span style="width:12%">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- =================================================
+                        USAGE TREND
+        ================================================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+
+                        <i class="fa-solid fa-clock"></i>
+
+                        Usage Trend
+
+                    </h2>
+
+                    <p class="panel-subtitle">
+
+                        When your home consumes the most energy
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="usage-trend-grid">
+
+
+                <div class="trend-card">
+
+                    <i class="fa-solid fa-sun"></i>
+
+                    <h3>
+                        Morning
+                    </h3>
+
+                    <strong>
+                        24%
+                    </strong>
+
+                    <p>
+                        06:00 – 12:00
+                    </p>
+
+                </div>
+
+
+                <div class="trend-card">
+
+                    <i class="fa-solid fa-cloud-sun"></i>
+
+                    <h3>
+                        Afternoon
+                    </h3>
+
+                    <strong>
+                        18%
+                    </strong>
+
+                    <p>
+                        12:00 – 17:00
+                    </p>
+
+                </div>
+
+
+                <div class="trend-card">
+
+                    <i class="fa-solid fa-cloud-moon"></i>
+
+                    <h3>
+                        Evening
+                    </h3>
+
+                    <strong>
+                        42%
+                    </strong>
+
+                    <p>
+                        17:00 – 22:00
+                    </p>
+
+                </div>
+
+
+                <div class="trend-card">
+
+                    <i class="fa-solid fa-moon"></i>
+
+                    <h3>
+                        Night
+                    </h3>
+
+                    <strong>
+                        16%
+                    </strong>
+
+                    <p>
+                        22:00 – 06:00
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+                        RECENT ANALYTICS ACTIVITY
+        ================================================== -->
+
+        <section class="panel recent-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+
+                        Recent Analytics
+
+                    </h2>
+
+                    <p class="panel-subtitle">
+
+                        Important changes detected in your home
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="activity-list">
+
+
+                <div class="activity-item">
+
+                    <div class="activity-left">
+
+                        <div class="activity-icon">
+
+                            <i class="fa-solid fa-arrow-trend-down"></i>
+
+                        </div>
+
+                        <div class="activity-info">
+
+                            <h4>
+                                Energy usage decreased
+                            </h4>
+
+                            <p>
+                                Your household used 12% less energy
+                                than last week.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <span class="activity-time">
+                        Today
+                    </span>
+
+                </div>
+
+
+                <div class="activity-item">
+
+                    <div class="activity-left">
+
+                        <div class="activity-icon">
+
+                            <i class="fa-solid fa-bolt"></i>
+
+                        </div>
+
+                        <div class="activity-info">
+
+                            <h4>
+                                Geyser usage increased
+                            </h4>
+
+                            <p>
+                                Geyser consumption increased by 8%.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <span class="activity-time">
+                        Yesterday
+                    </span>
+
+                </div>
+
+
+                <div class="activity-item">
+
+                    <div class="activity-left">
+
+                        <div class="activity-icon">
+
+                            <i class="fa-solid fa-leaf"></i>
+
+                        </div>
+
+                        <div class="activity-info">
+
+                            <h4>
+                                Efficiency improved
+                            </h4>
+
+                            <p>
+                                Your automation routines saved
+                                approximately 6.4 kWh.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <span class="activity-time">
+                        2 days ago
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+</div>
+
+
+<!-- Analytics JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="elara-config.js"></script>
+    <script src="elara-data.js"></script>
+    <script src="elara-theme.js"></script>
+    <script src="elara-common.js"></script>
+<script src="dashboard-analytics.js"></script>
+
+</body>
+
+</html>

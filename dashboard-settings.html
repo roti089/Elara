@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Elara | Settings</title>
+
+    <!-- Google Font -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- Settings CSS -->
+    <link rel="stylesheet" href="dashboard-settings.css">
+    <link rel="stylesheet" href="elara-sidebar.css">
+
+</head>
+
+
+<body>
+
+
+<div class="smart-home">
+
+
+    <!-- =====================================================
+                            SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+
+        <!-- LOGO -->
+
+        <div class="logo">
+
+            <img
+                src="Elara logo.png"
+                alt="Elara Logo"
+            >
+
+            <div>
+
+                <h2>Elara</h2>
+
+                <span>Smart Home</span>
+
+            </div>
+
+        </div>
+
+
+        <!-- MENU -->
+
+        <ul class="menu">
+
+
+            <li>
+
+                <a href="dashboard-content.html">
+
+                    <i class="fa-solid fa-house"></i>
+
+                    <span>Dashboard</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-tasks.html">
+
+                    <i class="fa-solid fa-list-check"></i>
+
+                    <span>Tasks</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-shopping.html">
+
+                    <i class="fa-solid fa-cart-shopping"></i>
+
+                    <span>Shopping</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-schedule.html">
+
+                    <i class="fa-solid fa-calendar-days"></i>
+
+                    <span>Schedule</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-smart-home.html">
+
+                    <i class="fa-solid fa-lightbulb"></i>
+
+                    <span>Smart Home</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-analytics.html">
+
+                    <i class="fa-solid fa-chart-simple"></i>
+
+                    <span>Analytics</span>
+
+                </a>
+
+            </li>
+
+
+            <li>
+
+                <a href="dashboard-members.html">
+
+                    <i class="fa-solid fa-users"></i>
+
+                    <span>Members</span>
+
+                </a>
+
+            </li>
+
+
+            <!-- ACTIVE -->
+
+            <li class="active">
+
+                <a href="dashboard-settings.html">
+
+                    <i class="fa-solid fa-gear"></i>
+
+                    <span>Settings</span>
+
+                </a>
+
+            </li>
+
+
+        </ul>
+
+
+        <!-- SIDEBAR BOTTOM -->
+
+        <div class="sidebar-bottom">
+
+            <button
+                class="logout"
+                id="logoutBtn"
+            >
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- =====================================================
+                        MAIN CONTENT
+    ====================================================== -->
+
+    <main class="main-content">
+
+
+        <!-- =================================================
+                            TOP BAR
+        ================================================== -->
+
+        <header class="topbar">
+
+
+            <div class="welcome">
+
+                <h1>Settings ⚙️</h1>
+
+                <p>
+                    Manage your Elara home and account preferences.
+                </p>
+
+            </div>
+
+
+            <div class="top-actions">
+
+
+                <!-- SEARCH -->
+
+                <div class="search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="settingsSearch"
+                        placeholder="Search settings..."
+                    >
+
+                </div>
+
+
+                <!-- NOTIFICATIONS -->
+
+                <button
+                    id="notificationBtn"
+                    title="Notifications"
+                >
+
+                    <i class="fa-regular fa-bell"></i>
+
+                </button>
+
+
+                <!-- PROFILE -->
+
+                <div class="profile">
+
+                    <img
+                        src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+                        alt="Profile"
+                    >
+
+                    <div>
+
+                        <h4 id="profileName"></h4>
+
+                        <span>
+                            Home Owner
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </header>
+
+
+
+        <!-- =================================================
+                        SETTINGS LAYOUT
+        ================================================== -->
+
+        <section class="settings-layout">
+
+
+            <!-- =================================================
+                            SETTINGS NAVIGATION
+            ================================================== -->
+
+            <aside class="settings-nav">
+
+
+                <div class="settings-nav-header">
+
+                    <h3>Settings</h3>
+
+                    <p>
+                        Manage your preferences
+                    </p>
+
+                </div>
+
+
+        <button
+            type="button"
+            class="settings-nav-item active"
+            data-section="profile"
+        >
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </button>
+
+        <button
+            type="button"
+            class="settings-nav-item"
+            data-section="home"
+        >
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </button>
+
+        <button
+            type="button"
+            class="settings-nav-item"
+            data-section="notifications"
+        >
+            <i class="fa-solid fa-bell"></i>
+            <span>Notifications</span>
+        </button>
+
+        <button
+            type="button"
+            class="settings-nav-item"
+            data-section="smart-home"
+        >
+            <i class="fa-solid fa-house-signal"></i>
+            <span>Smart Home</span>
+        </button>
+
+        <button
+            type="button"
+            class="settings-nav-item"
+            data-section="security"
+        >
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Security</span>
+        </button>
+
+        <button
+            type="button"
+            class="settings-nav-item"
+            data-section="appearance"
+        >
+            <i class="fa-solid fa-palette"></i>
+            <span>Appearance</span>
+</button>
+
+
+            </aside>
+
+
+
+            <!-- =================================================
+                            SETTINGS CONTENT
+            ================================================== -->
+
+            <div class="settings-content">
+
+
+
+                <!-- =================================================
+                            PROFILE SETTINGS
+                ================================================== -->
+
+                <section
+                    class="settings-section active"
+                    id="profile"
+                >
+
+                    <div class="panel">
+
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <h2>Profile Information</h2>
+
+                                <p class="panel-subtitle">
+                                    Update your personal information.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PROFILE IMAGE -->
+
+                        <div class="profile-editor">
+
+
+                            <div class="large-profile">
+
+                                <img
+                                    src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+                                    alt="Profile"
+                                    id="profileImage"
+                                >
+
+                                <button
+                                    class="image-upload-btn"
+                                    id="changeProfileImage"
+                                >
+
+                                    <i class="fa-solid fa-camera"></i>
+
+                                </button>
+
+                            </div>
+
+
+                            <div>
+
+                                <h3>Your Profile</h3>
+
+                                <p>
+                                    This information will be visible
+                                    to members of your home.
+                                </p>
+
+                            </div>
+
+
+                        </div>
+
+
+                        <!-- FORM -->
+
+                        <div class="form-row">
+
+
+                            <div class="form-group">
+
+                                <label for="firstName">
+                                    First Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="firstName"
+                                    value=""
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="lastName">
+                                    Last Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="lastName"
+                                    placeholder="Your surname"
+                                >
+
+                            </div>
+
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="email">
+                                Email Address
+                            </label>
+
+                            <input
+                                type="email"
+                                id="email"
+                                placeholder="your@email.com"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="phone">
+                                Phone Number
+                            </label>
+
+                            <input
+                                type="tel"
+                                id="phone"
+                                placeholder="+27 XX XXX XXXX"
+                            >
+
+                        </div>
+
+
+                        <button
+                            class="save-btn"
+                            id="saveProfile"
+                        >
+
+                            <i class="fa-solid fa-check"></i>
+
+                            Save Changes
+
+                        </button>
+
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                                HOME SETTINGS
+                ================================================== -->
+
+                <section
+                    class="settings-section"
+                    id="home"
+                >
+
+                    <div class="panel">
+
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <h2>Home Information</h2>
+
+                                <p class="panel-subtitle">
+                                    Manage your home's basic information.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="homeName">
+                                Home Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="homeName"
+                                value=""
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="homeLocation">
+                                Home Location
+                            </label>
+
+                            <input
+                                type="text"
+                                id="homeLocation"
+                                placeholder="e.g. Pretoria, South Africa"
+                            >
+
+                        </div>
+
+
+                        <div class="form-row">
+
+
+                            <div class="form-group">
+
+                                <label for="timezone">
+                                    Timezone
+                                </label>
+
+                                <select id="timezone">
+                                <option value="Africa/Johannesburg">South Africa — Johannesburg</option>
+                                <option value="Africa/Lagos">Nigeria — Lagos</option>
+                                <option value="Africa/Nairobi">Kenya — Nairobi</option>
+                                <option value="Africa/Cairo">Egypt — Cairo</option>
+                                <option value="Africa/Casablanca">Morocco — Casablanca</option>
+                                <option value="Europe/London">United Kingdom — London</option>
+                                <option value="Europe/Paris">France — Paris</option>
+                                <option value="Europe/Berlin">Germany — Berlin</option>
+                                <option value="Europe/Moscow">Russia — Moscow</option>
+                                <option value="Asia/Dubai">UAE — Dubai</option>
+                                <option value="Asia/Kolkata">India — Kolkata</option>
+                                <option value="Asia/Singapore">Singapore</option>
+                                <option value="Asia/Shanghai">China — Shanghai</option>
+                                <option value="Asia/Tokyo">Japan — Tokyo</option>
+                                <option value="Australia/Sydney">Australia — Sydney</option>
+                                <option value="Pacific/Auckland">New Zealand — Auckland</option>
+                                <option value="America/Sao_Paulo">Brazil — São Paulo</option>
+                                <option value="America/New_York">USA — New York</option>
+                                <option value="America/Chicago">USA — Chicago</option>
+                                <option value="America/Denver">USA — Denver</option>
+                                <option value="America/Los_Angeles">USA — Los Angeles</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="temperatureUnit">
+                                    Temperature Unit
+                                </label>
+
+                                <select id="temperatureUnit">
+
+                                    <option value="celsius">
+                                        Celsius (°C)
+                                    </option>
+
+                                    <option value="fahrenheit">
+                                        Fahrenheit (°F)
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                        </div>
+
+
+                        <button
+                            class="save-btn"
+                            id="saveHome"
+                        >
+
+                            <i class="fa-solid fa-check"></i>
+
+                            Save Home Settings
+
+                        </button>
+
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                            NOTIFICATION SETTINGS
+                ================================================== -->
+
+                <section
+                    class="settings-section"
+                    id="notifications"
+                >
+
+                    <div class="panel">
+
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <h2>Notifications</h2>
+
+                                <p class="panel-subtitle">
+                                    Choose what Elara should notify you about.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="settings-list">
+
+
+                            <div class="setting-item">
+
+                                <div class="setting-info">
+
+                                    <div class="setting-icon">
+
+                                        <i class="fa-solid fa-bell"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <h4>Push Notifications</h4>
+
+                                        <p>
+                                            Receive notifications from Elara.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <label class="switch">
+
+                                    <input
+                                        type="checkbox"
+                                        id="pushNotifications"
+                                        checked
+                                    >
+
+                                    <span class="slider"></span>
+
+                                </label>
+
+                            </div>
+
+
+
+                            <div class="setting-item">
+
+                                <div class="setting-info">
+
+                                    <div class="setting-icon">
+
+                                        <i class="fa-solid fa-shield-halved"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <h4>Security Alerts</h4>
+
+                                        <p>
+                                            Get notified about security events.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <label class="switch">
+
+                                    <input
+                                        type="checkbox"
+                                        id="securityNotifications"
+                                        checked
+                                    >
+
+                                    <span class="slider"></span>
+
+                                </label>
+
+                            </div>
+
+
+
+                            <div class="setting-item">
+
+                                <div class="setting-info">
+
+                                    <div class="setting-icon">
+
+                                        <i class="fa-solid fa-bolt"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <h4>Energy Alerts</h4>
+
+                                        <p>
+                                            Alert me when energy usage is high.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <label class="switch">
+
+                                    <input
+                                        type="checkbox"
+                                        id="energyNotifications"
+                                        checked
+                                    >
+
+                                    <span class="slider"></span>
+
+                                </label>
+
+                            </div>
+
+
+
+                            <div class="setting-item">
+
+                                <div class="setting-info">
+
+                                    <div class="setting-icon">
+
+                                        <i class="fa-solid fa-list-check"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <h4>Task Reminders</h4>
+
+                                        <p>
+                                            Remind me about upcoming tasks.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <label class="switch">
+
+                                    <input
+                                        type="checkbox"
+                                        id="taskNotifications"
+                                        checked
+                                    >
+
+                                    <span class="slider"></span>
+
+                                </label>
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                            SMART HOME SETTINGS
+                ================================================== -->
+
+                <section
+                    class="settings-section"
+                    id="smart-home"
+                >
+
+                    <div class="panel">
+
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <h2>Smart Home Preferences</h2>
+
+                                <p class="panel-subtitle">
+                                    Configure how Elara controls your home.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="settings-list">
+
+
+                            <div class="setting-item">
+
+                                <div class="setting-info">
+
+                                    <div class="setting-icon">
+
+                                        <i class="fa-solid fa-microphone"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <h4>Voice Commands</h4>
+
+                                        <p>
+                                            Allow Elara to respond to voice commands.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <label class="switch">
+
+                                    <input
+                                        type="checkbox"
+                                        id="voiceCommands"
+                                        checked
+                                    >
+
+                                    <span class="slider"></span>
+
+                                </label>
+
+                            </div>
+
+
+
+                            <div class="setting-item">
+
+                                <div class="setting-info">
+
+                                    <div class="setting-icon">
+
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <h4>Smart Automations</h4>
+
+                                        <p>
+                                            Allow Elara to run scheduled automations.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <label class="switch">
+
+                                    <input
+                                        type="checkbox"
+                                        id="smartAutomations"
+                                        checked
+                                    >
+
+                                    <span class="slider"></span>
+
+                                </label>
+
+                            </div>
+
+
+
+                            <div class="setting-item">
+
+                                <div class="setting-info">
+
+                                    <div class="setting-icon">
+
+                                        <i class="fa-solid fa-lightbulb"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <h4>Adaptive Lighting</h4>
+
+                                        <p>
+                                            Automatically adjust connected lighting.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <label class="switch">
+
+                                    <input
+                                        type="checkbox"
+                                        id="adaptiveLighting"
+                                    >
+
+                                    <span class="slider"></span>
+
+                                </label>
+
+                            </div>
+
+
+
+                        </div>
+
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                            SECURITY SETTINGS
+                ================================================== -->
+
+                <section
+                    class="settings-section"
+                    id="security"
+                >
+
+                    <div class="panel">
+
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <h2>Security</h2>
+
+                                <p class="panel-subtitle">
+                                    Protect your Elara account.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="security-setting">
+
+
+                            <div class="setting-info">
+
+                                <div class="setting-icon security">
+
+                                    <i class="fa-solid fa-key"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <h4>Change Password</h4>
+
+                                    <p>
+                                        Update your account password.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <button
+                                class="secondary-btn"
+                                id="changePasswordBtn"
+                            >
+
+                                Change Password
+
+                            </button>
+
+
+                        </div>
+
+
+
+                        <div class="security-setting">
+
+
+                            <div class="setting-info">
+
+                                <div class="setting-icon security">
+
+                                    <i class="fa-solid fa-mobile-screen-button"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <h4>Two-Factor Authentication</h4>
+
+                                    <p>
+                                        Add an additional layer of security.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <label class="switch">
+
+                                <input
+                                    type="checkbox"
+                                    id="twoFactor"
+                                >
+
+                                <span class="slider"></span>
+
+                            </label>
+
+
+                        </div>
+
+
+
+                        <div class="security-setting">
+
+
+                            <div class="setting-info">
+
+                                <div class="setting-icon security">
+
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <h4>Login Activity</h4>
+
+                                    <p>
+                                        Review recent account activity.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <button
+                                class="secondary-btn"
+                                id="loginActivityBtn"
+                            >
+
+                                View Activity
+
+                            </button>
+
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- DANGER ZONE -->
+
+                    <div class="panel danger-panel">
+
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <h2>Danger Zone</h2>
+
+                                <p class="panel-subtitle">
+                                    Actions here can permanently affect your account.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="danger-item">
+
+
+                            <div>
+
+                                <h4>Delete Home</h4>
+
+                                <p>
+                                    Permanently remove this home and its data.
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                class="danger-btn"
+                                id="deleteHomeBtn"
+                            >
+
+                                Delete Home
+
+                            </button>
+
+
+                        </div>
+
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                            APPEARANCE SETTINGS
+                ================================================== -->
+
+                <section
+                    class="settings-section"
+                    id="appearance"
+                >
+
+                    <div class="panel">
+
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <h2>Appearance</h2>
+
+                                <p class="panel-subtitle">
+                                    Customize how Elara looks.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="theme-options">
+
+
+                            <button
+                                class="theme-option active"
+                                data-theme="dark"
+                            >
+
+                                <div class="theme-preview dark-preview">
+
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+
+                                </div>
+
+                                <span>
+
+                                    <i class="fa-solid fa-moon"></i>
+
+                                    Dark
+
+                                </span>
+
+                            </button>
+
+
+
+                            <button
+                                class="theme-option"
+                                data-theme="light"
+                            >
+
+                                <div class="theme-preview light-preview">
+
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+
+                                </div>
+
+                                <span>
+
+                                    <i class="fa-solid fa-sun"></i>
+
+                                    Light
+
+                                </span>
+
+                            </button>
+
+
+
+                            <button
+                                class="theme-option"
+                                data-theme="system"
+                            >
+
+                                <div class="theme-preview system-preview">
+
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+
+                                </div>
+
+                                <span>
+
+                                    <i class="fa-solid fa-desktop"></i>
+
+                                    System
+
+                                </span>
+
+                            </button>
+
+
+                        </div>
+
+
+                    </div>
+
+                </section>
+
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+
+<!-- ==========================================================
+                            TOAST
+========================================================== -->
+
+<div id="toastContainer"></div>
+
+
+
+<!-- ==========================================================
+                            MODAL
+========================================================== -->
+
+<div
+    class="modal"
+    id="passwordModal"
+>
+
+
+    <div class="modal-content">
+
+
+        <div class="modal-header">
+
+            <div>
+
+                <h2>Change Password</h2>
+
+                <p>
+                    Update your Elara account password.
+                </p>
+
+            </div>
+
+
+            <button
+                class="close-modal"
+                id="closePasswordModal"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="currentPassword">
+                Current Password
+            </label>
+
+            <input
+                type="password"
+                id="currentPassword"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="newPassword">
+                New Password
+            </label>
+
+            <input
+                type="password"
+                id="newPassword"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="confirmPassword">
+                Confirm New Password
+            </label>
+
+            <input
+                type="password"
+                id="confirmPassword"
+            >
+
+        </div>
+
+
+        <div class="modal-buttons">
+
+            <button
+                class="cancel-btn"
+                id="cancelPassword"
+            >
+
+                Cancel
+
+            </button>
+
+
+            <button
+                class="save-btn"
+                id="savePassword"
+            >
+
+                Update Password
+
+            </button>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+
+<!-- Settings JavaScript will be added next -->
+<script src="elara-config.js"></script>
+    <script src="elara-data.js"></script>
+    <script src="elara-theme.js"></script>
+    <script src="elara-common.js"></script>
+<script src="dashboard-settings.js"></script>
+
+
+</body>
+
+</html>

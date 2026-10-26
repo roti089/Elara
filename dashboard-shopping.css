@@ -1,0 +1,1786 @@
+/* ============================
+   ELARA DASHBOARD
+   Part 1
+============================ */
+
+/* Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+/* ============================
+   VARIABLES
+============================ */
+
+:root{
+
+    --bg:#060714;
+    --sidebar:#0B0D1A;
+    --card:rgba(18,22,42,.65);
+    --card2:rgba(25,30,55,.65);
+
+    --primary:#6C63FF;
+    --secondary:#6EE7F9;
+
+    --text:#ffffff;
+    --text2:#9BA6C6;
+
+    --border:rgba(255,255,255,.08);
+
+    --shadow:
+    0 10px 40px rgba(0,0,0,.35);
+
+    --radius:24px;
+
+}
+
+/* ============================
+   SCROLLBAR
+============================ */
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar{
+    width:4px;
+}
+
+::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+::-webkit-scrollbar-thumb{
+    background:rgba(108,99,255,.6);
+    border-radius:20px;
+    border:2px solid transparent;
+    background-clip:content-box;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#7d74ff;
+    background-clip:content-box;
+}
+
+.shopping{
+    display:flex;
+    min-height:100vh;
+    background:#090913;
+}
+
+*{
+
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    scrollbar-width:thin;
+    scrollbar-color:#6C63FF transparent;
+}
+
+html{
+    scroll-behavior:smooth;
+
+}
+
+body{
+    margin:0;
+    background:#090913;
+    color:white;
+    font-family:Poppins,sans-serif;
+    overflow-x:hidden;
+    
+}
+
+/* ============================
+   MAIN CONTENT
+============================ */
+
+.main-content{
+
+    position:relative;
+    margin-left:250px;
+    padding:25px;
+    overflow-x:hidden;
+    overflow-y:auto;
+    min-height:100vh;
+    flex:1;
+
+}
+
+.main-content::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:-300px;
+    right:-250px;
+
+    width:600px;
+    height:600px;
+
+    background:#6C63FF;
+
+    opacity:.08;
+
+    border-radius:50%;
+
+    filter:blur(140px);
+
+    pointer-events:none;
+
+}
+
+/* ============================
+   SIDEBAR
+============================ */
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+
+    width: 250px;
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #0c0d1a;
+
+    border-right: 1px solid rgba(255,255,255,.08);
+
+    padding: 25px;
+
+    overflow-y: auto;
+
+    z-index: 1000;
+}
+
+/* ============================
+   TOP BAR
+============================ */
+
+.topbar{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:35px;
+
+}
+
+.welcome h1{
+
+    font-size:34px;
+
+    margin-bottom:8px;
+
+}
+
+.welcome p{
+
+    color:var(--text2);
+
+}
+
+/* ============================
+   TOP RIGHT
+============================ */
+
+.top-actions{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.search{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    background:var(--card);
+
+    backdrop-filter:blur(20px);
+
+    border:1px solid var(--border);
+
+    padding:14px 18px;
+
+    border-radius:18px;
+
+    width:280px;
+
+    max-width:100%;
+
+}
+
+.search i{
+
+    color:var(--text2);
+
+}
+
+.search input{
+
+    width:100%;
+
+    background:none;
+
+    border:none;
+
+    outline:none;
+
+    color:white;
+
+    font-size:15px;
+
+}
+
+.search input::placeholder{
+
+    color:var(--text2);
+
+}
+
+/* ============================
+   ICON BUTTONS
+============================ */
+
+.top-actions button{
+
+    width:50px;
+
+    height:50px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:var(--card);
+
+    backdrop-filter:blur(20px);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:.35s;
+
+}
+
+.top-actions button:hover{
+
+    transform:translateY(-4px);
+
+    background:var(--primary);
+
+}
+
+/* ============================
+   PROFILE
+============================ */
+
+.profile{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    background:var(--card);
+
+    backdrop-filter:blur(20px);
+
+    border:1px solid var(--border);
+
+    padding:10px 18px;
+
+    border-radius:18px;
+
+}
+
+.profile img{
+
+    width:50px;
+
+    height:50px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+}
+
+.profile h4{
+
+    font-size:16px;
+
+}
+
+.profile span{
+
+    color:var(--text2);
+
+    font-size:13px;
+
+}
+
+/* ============================
+   STATISTICS
+============================ */
+
+.stats{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:22px;
+
+    margin-bottom:30px;
+
+}
+
+.card{
+
+    background:var(--card);
+
+    backdrop-filter:blur(25px);
+
+    border:1px solid var(--border);
+
+    border-radius:var(--radius);
+
+    padding:28px;
+
+    position:relative;
+
+    overflow:hidden;
+
+    transition:.35s;
+
+    box-shadow:var(--shadow);
+
+}
+
+.card::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:-80px;
+    right:-80px;
+
+    width:180px;
+    height:180px;
+
+    background:linear-gradient(
+    135deg,
+    rgba(108,99,255,.25),
+    rgba(110,231,249,.15));
+
+    border-radius:50%;
+
+}
+
+.card:hover{
+
+    transform:translateY(-8px);
+
+    border-color:rgba(108,99,255,.4);
+
+}
+
+.card i{
+
+    font-size:28px;
+
+    color:var(--secondary);
+
+    margin-bottom:18px;
+
+}
+
+.card h3{
+
+    font-size:16px;
+
+    color:var(--text2);
+
+    font-weight:500;
+
+}
+
+.card h2{
+
+    font-size:38px;
+
+    margin:12px 0;
+
+}
+
+.card p{
+
+    color:var(--text2);
+
+}
+
+.shopping-controls{
+
+    display:flex;
+    align-items:center;
+    gap:20px;
+    margin-bottom:30px;
+    flex-wrap:wrap;
+
+}
+
+.add-item{
+
+    padding:15px 28px;
+    border:none;
+    border-radius:18px;
+    cursor:pointer;
+    color:white;
+    font-size:15px;
+    background:linear-gradient(135deg,#6C63FF,#4F46E5);
+    transition:.3s;
+
+}
+
+.add-item:hover{
+
+    transform:translateY(-3px);
+
+}
+
+.product-search{
+
+    flex:1;
+    min-width:250px;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    padding:15px;
+
+    border-radius:18px;
+
+}
+
+.product-search input{
+
+    flex:1;
+    border:none;
+    background:none;
+    color:white;
+    outline:none;
+
+}
+
+.shopping-controls select{
+
+    padding:15px;
+    border-radius:18px;
+    border:1px solid var(--border);
+    background:var(--card);
+    color:white;
+
+}
+
+.receipt-actions button{
+    padding:15px 28px;
+    border:none;
+    border-radius:18px;
+    cursor:pointer;
+    color:white;
+    font-size:15px;
+    background:linear-gradient(135deg,#6C63FF,#4F46E5);
+    transition:.3s;
+}
+
+.receipt-actions button:hover{
+
+    transform:translateY(-3px);
+
+}
+
+/* ===========================================
+   SHOPPING LAYOUT
+=========================================== */
+
+.shopping-layout{
+
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:25px;
+    margin-top:30px;
+
+}
+
+.shopping-left,
+.shopping-right{
+
+    display:flex;
+    flex-direction:column;
+    gap:25px;
+
+}
+
+/* ===========================================
+   PANELS
+=========================================== */
+
+.panel{
+
+    background:var(--card);
+    backdrop-filter:blur(20px);
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:25px;
+    box-shadow:var(--shadow);
+
+}
+
+.panel-header{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+
+}
+
+.panel-header h2{
+
+    font-size:22px;
+    font-weight:600;
+
+}
+
+.panel-header span{
+
+    color:var(--text2);
+
+}
+
+/* ===========================================
+   SHOPPING ITEMS
+=========================================== */
+
+.shopping-item{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:18px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.shopping-item:last-child{
+
+    border:none;
+
+}
+
+.item-info{
+
+    display:flex;
+    align-items:center;
+    gap:18px;
+
+}
+
+.item-info i{
+
+    width:55px;
+    height:55px;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    border-radius:16px;
+
+    background:rgba(108,99,255,.15);
+
+    color:var(--secondary);
+
+    font-size:22px;
+
+}
+
+.item-info h3{
+
+    margin-bottom:5px;
+
+}
+
+.item-info p{
+
+    color:var(--text2);
+    font-size:14px;
+
+}
+
+.item-right{
+
+    display:flex;
+    align-items:center;
+    gap:20px;
+
+}
+
+.price{
+
+    font-size:18px;
+    font-weight:600;
+
+}
+
+.item-right button{
+
+    border:none;
+    cursor:pointer;
+
+    padding:12px 18px;
+
+    border-radius:14px;
+
+    background:linear-gradient(135deg,#6C63FF,#4F46E5);
+
+    color:white;
+
+    transition:.3s;
+
+}
+
+.item-right button:hover{
+
+    transform:translateY(-3px);
+
+}
+
+/* ===========================================
+   INVENTORY PREDICTIONS
+=========================================== */
+
+.prediction{
+
+    display:flex;
+    align-items:center;
+    gap:18px;
+
+    padding:18px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.prediction:last-child{
+
+    border:none;
+
+}
+
+.prediction i{
+
+    font-size:24px;
+    color:#FBBF24;
+
+}
+
+.prediction h3{
+
+    margin-bottom:6px;
+
+}
+
+.prediction p{
+
+    color:var(--text2);
+
+}
+
+/* ===========================================
+   RECEIPTS
+=========================================== */
+
+.receipt-card{
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:18px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.receipt-card:last-child{
+
+    border:none;
+
+}
+
+.receipt-card i{
+
+    font-size:24px;
+    color:#6EE7F9;
+
+}
+
+.receipt-card button{
+
+    border:none;
+    cursor:pointer;
+
+    padding:10px 20px;
+
+    border-radius:12px;
+
+    background:#2B3048;
+
+    color:white;
+
+    transition:.3s;
+
+}
+
+.receipt-card button:hover{
+
+    background:#6C63FF;
+
+}
+
+/* ===========================================
+   WARRANTY
+=========================================== */
+
+.warranty-item{
+
+    padding:18px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.warranty-item:last-child{
+
+    border:none;
+
+}
+
+.warranty-item h3{
+
+    margin-bottom:8px;
+
+}
+
+.warranty-item p{
+
+    color:var(--text2);
+
+}
+
+/* ===========================================
+   PRICE WATCH
+=========================================== */
+
+.price-watch{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:18px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.price-watch:last-child{
+
+    border:none;
+
+}
+
+.green{
+
+    color:#4ADE80;
+    font-weight:600;
+
+}
+
+.red{
+
+    color:#FB7185;
+    font-weight:600;
+
+}
+
+/* ===========================================
+   CHART PLACEHOLDER
+=========================================== */
+
+/* ============================
+   MONTHLY SPENDING CHART
+============================ */
+
+.shopping-right .panel:has(#spendingChart) {
+    height: 360px;
+    overflow: hidden;
+}
+
+#spendingChart {
+    display: block !important;
+    width: 100% !important;
+    height: 260px !important;
+    max-height: 260px !important;
+}
+
+/* ===========================================
+   RECENT ACTIVITY
+=========================================== */
+
+.recent-panel{
+
+    margin-top:30px;
+
+}
+
+.activity-item{
+
+    display:flex;
+    align-items:center;
+    gap:18px;
+
+    padding:18px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.activity-item:last-child{
+
+    border:none;
+
+}
+
+.activity-item i{
+
+    color:var(--secondary);
+    font-size:18px;
+
+}
+
+.activity-item span{
+
+    margin-left:auto;
+
+    color:var(--text2);
+
+    font-size:13px;
+
+}
+
+/* ===========================================
+   RESPONSIVE
+=========================================== */
+
+@media(max-width:1400px){
+
+    .stats{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+}
+
+@media(max-width:1100px){
+
+    .shopping-layout{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+@media(max-width:900px){
+
+    .topbar{
+
+        flex-direction:column;
+        align-items:flex-start;
+        gap:20px;
+
+    }
+
+    .top-actions{
+
+        flex-wrap:wrap;
+        width:100%;
+
+    }
+
+    .search{
+
+        width:100%;
+
+    }
+
+    .shopping-controls{
+
+        flex-direction:column;
+        align-items:stretch;
+
+    }
+
+    .receipt-actions{
+
+        display:flex;
+        gap:15px;
+
+    }
+
+}
+
+@media(max-width:700px){
+
+    .stats{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .item-right{
+
+        flex-direction:column;
+        align-items:flex-end;
+        gap:10px;
+
+    }
+
+}
+
+/* ==========================================================
+                    ELARA LIGHT THEME
+========================================================== */
+
+body.light-theme {
+
+    --bg: #f4f6fb;
+    --sidebar: #ffffff;
+
+    --card: rgba(255,255,255,.92);
+    --card2: #ffffff;
+
+    --primary: #6C63FF;
+    --secondary: #5B5FF7;
+
+    --text: #17182b;
+    --text2: #68708a;
+
+    --border: rgba(0,0,0,.08);
+
+    --shadow:
+        0 10px 35px rgba(0,0,0,.08);
+
+    background: #f4f6fb !important;
+    color: #17182b;
+}
+
+/* ==========================================================
+                    MAIN BACKGROUND
+========================================================== */
+
+body.light-theme .shopping {
+
+    background: #f4f6fb !important;
+
+}
+
+body.light-theme body {
+
+    background: #f4f6fb !important;
+}
+
+/* ==========================================================
+                    MAIN CONTENT
+========================================================== */
+
+body.light-theme .main-content {
+
+    color: #17182b;
+
+}
+
+/* Remove the dark purple glow */
+
+body.light-theme .main-content::before {
+
+    opacity: .04;
+
+}
+
+/* ==========================================================
+                    TOP BAR
+========================================================== */
+
+body.light-theme .welcome h1 {
+
+    color: #17182b;
+
+}
+
+body.light-theme .welcome p {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    SEARCH
+========================================================== */
+
+body.light-theme .search {
+
+    background: #ffffff !important;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .search input {
+
+    color: #17182b;
+
+}
+
+body.light-theme .search input::placeholder {
+
+    color: #8b93a8;
+
+}
+
+body.light-theme .search i {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    TOP BUTTONS
+========================================================== */
+
+body.light-theme .top-actions button {
+
+    background: #ffffff;
+
+    color: #17182b;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+/* ==========================================================
+                    PROFILE
+========================================================== */
+
+body.light-theme .profile {
+
+    background: #ffffff !important;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .profile h4 {
+
+    color: #17182b;
+
+}
+
+body.light-theme .profile span {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    STAT CARDS
+========================================================== */
+
+body.light-theme .card {
+
+    background: #ffffff !important;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,.07);
+
+}
+
+body.light-theme .card h3 {
+
+    color: #68708a;
+
+}
+
+body.light-theme .card h2 {
+
+    color: #17182b;
+
+}
+
+body.light-theme .card p {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    SHOPPING CONTROLS
+========================================================== */
+
+body.light-theme .shopping-controls {
+
+    color: #17182b;
+
+}
+
+body.light-theme .product-search {
+
+    background: #ffffff !important;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .product-search input {
+
+    color: #17182b;
+
+}
+
+body.light-theme .product-search input::placeholder {
+
+    color: #8b93a8;
+
+}
+
+body.light-theme .shopping-controls select {
+
+    background: #ffffff !important;
+
+    color: #17182b;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+/* ==========================================================
+                    PANELS
+========================================================== */
+
+body.light-theme .panel {
+
+    background: #ffffff !important;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,.07);
+
+}
+
+body.light-theme .panel-header h2 {
+
+    color: #17182b;
+
+}
+
+body.light-theme .panel-header span {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    SHOPPING ITEMS
+========================================================== */
+
+body.light-theme .shopping-item {
+
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .item-info h3 {
+
+    color: #17182b;
+
+}
+
+body.light-theme .item-info p {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    PREDICTIONS
+========================================================== */
+
+body.light-theme .prediction {
+
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .prediction h3 {
+
+    color: #17182b;
+
+}
+
+body.light-theme .prediction p {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    RECEIPTS
+========================================================== */
+
+body.light-theme .receipt-card {
+
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .receipt-card button {
+
+    background: #eef0f7;
+
+    color: #17182b;
+
+}
+
+body.light-theme .receipt-card button:hover {
+
+    background: #6C63FF;
+
+    color: #ffffff;
+
+}
+
+/* ==========================================================
+                    WARRANTY
+========================================================== */
+
+body.light-theme .warranty-item {
+
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .warranty-item h3 {
+
+    color: #17182b;
+
+}
+
+body.light-theme .warranty-item p {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    PRICE WATCH
+========================================================== */
+
+body.light-theme .price-watch {
+
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .price-watch .price {
+
+    color: #17182b;
+
+}
+
+/* ==========================================================
+                    RECENT ACTIVITY
+========================================================== */
+
+body.light-theme .activity-item {
+
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+
+}
+
+body.light-theme .activity-item span {
+
+    color: #68708a;
+
+}
+
+/* ==========================================================
+                    INPUTS
+========================================================== */
+
+body.light-theme input,
+body.light-theme select,
+body.light-theme textarea {
+
+    background: #ffffff !important;
+
+    color: #17182b !important;
+
+    border-color:
+        rgba(0,0,0,.10);
+
+}
+
+body.light-theme input::placeholder,
+body.light-theme textarea::placeholder {
+
+    color: #8b93a8;
+
+}
+
+/* ==========================================================
+                    KEEP PRIMARY BUTTONS PURPLE
+========================================================== */
+
+body.light-theme .add-item,
+body.light-theme .receipt-actions button,
+body.light-theme .item-right button {
+
+    background:
+        linear-gradient(
+            135deg,
+            #6C63FF,
+            #4F46E5
+        );
+
+    color: #ffffff;
+
+}
+
+/* ==========================================================
+                    TEXT
+========================================================== */
+
+body.light-theme h1,
+body.light-theme h2,
+body.light-theme h3,
+body.light-theme h4,
+body.light-theme h5,
+body.light-theme h6 {
+
+    color: #17182b;
+
+}
+
+body.light-theme {
+    background: #f4f6fb !important;
+}
+
+/* ==========================================================
+                ELARA LIGHT THEME - TASKS FIX
+========================================================== */
+
+body.light-theme {
+
+    background: #f4f6fb;
+    color: #17182b;
+
+    --bg: #f4f6fb;
+    --bg-secondary: #ffffff;
+
+    --card: rgba(255,255,255,.92);
+    --card2: #ffffff;
+
+    --text: #17182b;
+    --text2: #68708a;
+
+    --border: rgba(0,0,0,.08);
+
+    --shadow:
+        0 10px 30px rgba(0,0,0,.08);
+}
+
+/* MAIN PAGE */
+
+body.light-theme .tasks {
+
+    background: #f4f6fb;
+}
+
+/* MAIN CONTENT */
+
+body.light-theme .main-content {
+
+    background: #f4f6fb;
+}
+
+/* TOP BAR */
+
+body.light-theme .welcome h1 {
+
+    color: #17182b;
+}
+
+body.light-theme .welcome p {
+
+    color: #68708a;
+}
+
+/* SEARCH */
+
+body.light-theme .search {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+body.light-theme .search input {
+
+    color: #17182b;
+}
+
+body.light-theme .search input::placeholder {
+
+    color: #8b93a8;
+}
+
+/* TOP BUTTONS */
+
+body.light-theme .top-actions button {
+
+    background: #ffffff;
+
+    color: #17182b;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+}
+
+/* PROFILE */
+
+body.light-theme .profile {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+
+    color: #17182b;
+}
+
+body.light-theme .profile h4 {
+
+    color: #17182b;
+}
+
+body.light-theme .profile span {
+
+    color: #68708a;
+}
+
+/* STATISTIC CARDS */
+
+body.light-theme .card {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.07);
+}
+
+body.light-theme .card h2 {
+
+    color: #17182b;
+}
+
+body.light-theme .card h3 {
+
+    color: #68708a;
+}
+
+body.light-theme .card p {
+
+    color: #68708a;
+}
+
+/* TASK SEARCH */
+
+body.light-theme .task-search {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+body.light-theme .task-search input {
+
+    color: #17182b;
+}
+
+body.light-theme .task-search input::placeholder {
+
+    color: #8b93a8;
+}
+
+/* SELECT */
+
+body.light-theme .task-controls select {
+
+    background: #ffffff;
+
+    color: #17182b;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* TASK TABS */
+
+body.light-theme .task-tabs button {
+
+    background: rgba(0,0,0,.05);
+
+    color: #17182b;
+}
+
+body.light-theme .task-tabs button:hover {
+
+    background: #4F46E5;
+
+    color: #ffffff;
+}
+
+/* PANELS */
+
+body.light-theme .panel {
+
+    background: #ffffff;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.07);
+}
+
+/* TASK CARDS */
+
+body.light-theme .task-card {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.06);
+
+    color: #17182b;
+}
+
+body.light-theme .task-card p {
+
+    color: #68708a;
+}
+
+body.light-theme .task-details {
+
+    color: #68708a;
+}
+
+/* PROGRESS BAR */
+
+body.light-theme .progress-bar {
+
+    background: rgba(0,0,0,.08);
+}
+
+/* PROGRESS CIRCLE */
+
+body.light-theme .circle {
+
+    background:
+        conic-gradient(
+            #6C63FF 72%,
+            rgba(0,0,0,.08) 0
+        );
+}
+
+body.light-theme .circle::before {
+
+    background: #ffffff;
+}
+
+body.light-theme .circle span {
+
+    background: #ffffff;
+
+    color: #17182b;
+}
+
+/* CALENDAR */
+
+body.light-theme .calendar-grid span {
+
+    background: rgba(0,0,0,.04);
+
+    color: #17182b;
+}
+
+/* DEADLINES */
+
+body.light-theme .deadline {
+
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+}
+
+body.light-theme .deadline small {
+
+    color: #68708a;
+}
+
+/* ACTIVITY */
+
+body.light-theme .activity-item {
+
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+}
+
+body.light-theme .activity-item span {
+
+    color: #68708a;
+}
+
+/* TASK BUTTONS */
+
+body.light-theme .btn-edit {
+
+    background: #e9ebf3;
+
+    color: #17182b;
+}
+
+
+/* ==========================================================
+   FIXES v2: warranty manager
+========================================================== */
+.warranty-add{
+    margin-left:auto; padding:8px 14px; border:none; border-radius:12px; cursor:pointer; font:inherit; font-size:13px;
+    background:linear-gradient(135deg,#6c63ff,#4f46e5); color:#fff;
+}
+.panel-header:has(.warranty-add){ display:flex; align-items:center; }
+.warranty-item{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.warranty-item .warranty-main{ min-width:0; }
+.warranty-item.soon p{ color:#fbbf24; }
+.warranty-item.expired p{ color:#ff6b86; }
+.warranty-del{ width:34px; height:34px; border:none; border-radius:10px; background:transparent; color:inherit; opacity:.5; cursor:pointer; flex-shrink:0; }
+.warranty-del:hover{ opacity:1; background:rgba(255,77,109,.16); color:#ff6b86; }
+.warranty-empty{ padding:14px 4px; opacity:.65; font-size:14px; }
+.warranty-form{ text-align:left; display:flex; flex-direction:column; gap:14px; max-width:440px; }
+.warranty-form h3, .warranty-form .eui-icon{ text-align:center; margin-left:auto; margin-right:auto; }
+.warranty-form label{ display:flex; flex-direction:column; gap:6px; font-size:13px; color:#9ba6c6; }
+.warranty-form input{ padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); color:inherit; font:inherit; outline:none; }
+.warranty-form input:focus{ border-color:#6c63ff; }
+.wf-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+body.light-theme .warranty-form input{ background:#f3f5fb; border-color:rgba(0,0,0,.1); color:#17182b; }
+
+
+/* ===========================================
+   ITEM ACTIONS (view / edit / delete)
+=========================================== */
+.item-actions{display:flex;gap:8px;align-items:center}
+body .item-right button.icon-act{
+    width:38px;height:38px;padding:0;border-radius:12px;display:grid;place-items:center;
+    background:var(--card2);color:var(--text2);border:1px solid var(--border);font-size:14px;
+}
+body .item-right button.icon-act:hover{color:var(--text);border-color:var(--primary);transform:translateY(-2px)}
+body .item-right button.icon-act.danger:hover{color:#fff;background:#e5484d;border-color:#e5484d}
+body.light-theme .item-right button.icon-act{background:#fff;color:#68708a;border:1px solid rgba(0,0,0,.1)}
+body.light-theme .item-right button.icon-act:hover{color:#17182b;border-color:#6C63FF}
+body.light-theme .item-right button.icon-act.danger:hover{color:#fff;background:#e5484d}
+.item-right{flex-wrap:wrap;justify-content:flex-end}
+.detail-list{display:grid;gap:4px;margin:6px 0 18px}
+.detail-row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--border)}
+.detail-row span{color:var(--text2)}
+.detail-actions{display:flex;gap:12px;justify-content:flex-end}
+.detail-actions button{display:inline-flex;gap:8px;align-items:center;padding:12px 18px;border:0;border-radius:14px;color:#fff;cursor:pointer;font-weight:600;background:linear-gradient(135deg,#6C63FF,#4F46E5)}
+.detail-actions .detail-del{background:#e5484d}
+
+
+/* ==========================================================
+   PRICE WATCH (estimated rows)
+========================================================== */
+.price-watch{ gap:14px; cursor:pointer; }
+.pw-left{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.pw-left strong{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.pw-left small, .pw-delta small{ font-size:12px; color:var(--text2); }
+.pw-right{ display:flex; align-items:center; gap:12px; flex-shrink:0; text-align:right; }
+.pw-delta{ display:flex; flex-direction:column; gap:3px; font-size:13px; }
+.pw-delta small.green, .pw-delta small.red{ font-weight:500; }
+.pw-spark{ width:64px; height:24px; color:#9ba6c6; }
+.pw-spark.green{ color:#4ADE80; } .pw-spark.red{ color:#FB7185; }
+.pw-badge{ font-style:normal; font-size:11px; font-weight:600; padding:2px 8px; border-radius:10px; background:rgba(74,222,128,.15); color:#4ADE80; }
+.pw-note{ margin:14px 0 0; font-size:12px; line-height:1.5; color:var(--text2); }
+.pw-empty{ padding:24px 8px; text-align:center; color:var(--text2); }
+.pw-empty i{ display:block; font-size:26px; margin-bottom:8px; }
+.pw-empty p{ margin:0; }
+body.light-theme .pw-left small, body.light-theme .pw-delta small, body.light-theme .pw-note, body.light-theme .pw-empty{ color:#68708a; }
+body.light-theme .pw-badge{ background:rgba(34,197,94,.14); color:#16a34a; }
+@media (max-width:600px){ .price-watch{ flex-direction:column; align-items:flex-start; } .pw-right{ text-align:left; } }

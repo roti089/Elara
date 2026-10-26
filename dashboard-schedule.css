@@ -1,0 +1,3262 @@
+/* ==========================================================
+                        ELARA SCHEDULE V2
+========================================================== */
+
+/* Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* ==========================================================
+                        VARIABLES
+========================================================== */
+
+:root{
+
+    --bg:#090913;
+    --bg-secondary:#0F1226;
+    --sidebar:#0C0F1D;
+
+    --card:rgba(20,24,44,.75);
+    --card-hover:rgba(30,35,60,.90);
+
+    --primary:#7C6CFF;
+    --primary-light:#9588FF;
+
+    --cyan:#64E4FF;
+
+    --green:#22C55E;
+    --orange:#FBBF24;
+    --red:#FB7185;
+
+    --text:#FFFFFF;
+    --text-secondary:#A7B2D1;
+
+    --border:rgba(255,255,255,.08);
+
+    --radius:24px;
+
+    --shadow:
+        0 15px 40px rgba(0,0,0,.35);
+
+    --transition:.35s ease;
+
+    --card-light:rgba(32,38,67,.65);
+
+}
+
+/* ==========================================================
+                        RESET
+========================================================== */
+
+*{
+
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+
+    scrollbar-width:thin;
+    scrollbar-color:var(--primary) transparent;
+
+}
+
+html{
+
+    scroll-behavior:smooth;
+
+}
+
+body{
+
+    font-family:"Outfit",sans-serif;
+
+    color:var(--text);
+
+    background:
+
+        radial-gradient(circle at top right,
+        rgba(124,108,255,.13),
+        transparent 32%),
+
+        radial-gradient(circle at bottom left,
+        rgba(100,228,255,.08),
+        transparent 28%),
+
+        var(--bg);
+
+    overflow-x:hidden;
+
+}
+
+/* ==========================================================
+                        SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar{
+
+    width:8px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:transparent;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:var(--primary);
+
+    border-radius:20px;
+
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+    background:var(--primary-light);
+
+}
+
+/* ==========================================================
+                        PAGE LAYOUT
+========================================================== */
+
+.schedule{
+
+    display:flex;
+
+    min-height:100vh;
+
+}
+
+/* ==========================================================
+                        SIDEBAR
+========================================================== */
+
+.sidebar{
+
+    position:fixed;
+
+    top:0;
+    left:0;
+
+    width:260px;
+    height:100vh;
+
+    display:flex;
+    flex-direction:column;
+
+    padding:28px;
+
+    background:rgba(10,12,26,.94);
+
+    backdrop-filter:blur(28px);
+
+    border-right:1px solid rgba(255,255,255,.05);
+
+    z-index:999;
+
+}
+
+/* ==========================================================
+                        MAIN CONTENT
+========================================================== */
+
+.main-content{
+
+    flex:1;
+
+    margin-left:260px;
+
+    min-height:100vh;
+
+    padding:35px;
+
+    position:relative;
+
+    animation:fadeUp .5s ease;
+
+}
+
+/* Purple Glow */
+
+.main-content::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:-250px;
+
+    right:-250px;
+
+    width:550px;
+
+    height:550px;
+
+    background:var(--primary);
+
+    border-radius:50%;
+
+    opacity:.12;
+
+    filter:blur(150px);
+
+    pointer-events:none;
+
+}
+
+/* Cyan Glow */
+
+.main-content::after{
+
+    content:"";
+
+    position:absolute;
+
+    bottom:-250px;
+
+    left:-200px;
+
+    width:420px;
+
+    height:420px;
+
+    background:var(--cyan);
+
+    border-radius:50%;
+
+    opacity:.08;
+
+    filter:blur(140px);
+
+    pointer-events:none;
+
+}
+
+/* ==========================================================
+                        TOP BAR
+========================================================== */
+
+.topbar{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:30px;
+
+    margin-bottom:35px;
+
+    position:relative;
+
+    z-index:2;
+
+}
+
+/* ==========================================================
+                        WELCOME
+========================================================== */
+
+.welcome{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.welcome h1{
+
+    font-size:38px;
+
+    font-weight:700;
+
+    letter-spacing:.4px;
+
+    margin-bottom:8px;
+
+}
+
+.welcome p{
+
+    color:var(--text-secondary);
+
+    font-size:15px;
+
+}
+
+/* ==========================================================
+                    TOP ACTIONS
+========================================================== */
+
+.top-actions{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+/* ==========================================================
+                    SEARCH BAR
+========================================================== */
+
+.search{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    width:300px;
+
+    padding:15px 20px;
+
+    border-radius:18px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    backdrop-filter:blur(20px);
+
+    transition:var(--transition);
+
+}
+
+.search:hover{
+
+    border-color:rgba(124,108,255,.25);
+
+}
+
+.search:focus-within{
+
+    border-color:var(--primary);
+
+    box-shadow:
+        0 0 0 4px rgba(124,108,255,.15);
+
+}
+
+.search i{
+
+    color:var(--text-secondary);
+
+    font-size:15px;
+
+}
+
+.search input{
+
+    flex:1;
+
+    background:none;
+
+    border:none;
+
+    outline:none;
+
+    color:white;
+
+    font-size:15px;
+
+    font-family:inherit;
+
+}
+
+.search input::placeholder{
+
+    color:var(--text-secondary);
+
+}
+
+/* ==========================================================
+                ACTION BUTTONS
+========================================================== */
+
+.top-actions button{
+
+    width:54px;
+
+    height:54px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:var(--card);
+
+    backdrop-filter:blur(20px);
+
+    border:1px solid var(--border);
+
+    color:white;
+
+    font-size:18px;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.top-actions button:hover{
+
+    background:linear-gradient(
+        135deg,
+        var(--primary),
+        #5C4DFF
+    );
+
+    transform:translateY(-4px);
+
+    box-shadow:
+        0 15px 30px rgba(124,108,255,.35);
+
+}
+
+/* ==========================================================
+                    PROFILE
+========================================================== */
+
+.profile{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:10px 18px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:22px;
+
+    backdrop-filter:blur(20px);
+
+    transition:var(--transition);
+
+}
+
+.profile:hover{
+
+    transform:translateY(-4px);
+
+    border-color:rgba(124,108,255,.35);
+
+}
+
+.profile img{
+
+    width:52px;
+
+    height:52px;
+
+    object-fit:cover;
+
+    border-radius:50%;
+
+    border:2px solid rgba(124,108,255,.35);
+
+}
+
+.profile h4{
+
+    font-size:16px;
+
+    margin-bottom:3px;
+
+}
+
+.profile span{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+                    NOTIFICATION DOT
+========================================================== */
+
+.top-actions button:first-of-type{
+
+    position:relative;
+
+}
+
+.top-actions button:first-of-type::after{
+
+    content:"";
+
+    position:absolute;
+
+    top:12px;
+
+    right:12px;
+
+    width:10px;
+
+    height:10px;
+
+    border-radius:50%;
+
+    background:#FF5F7A;
+
+    box-shadow:
+        0 0 12px #FF5F7A;
+
+}
+
+/* ==========================================================
+                SEARCH ANIMATION
+========================================================== */
+
+.search,
+.profile,
+.top-actions button{
+
+    animation:fadeUp .6s ease;
+
+}
+
+/* ==========================================================
+                        STATISTICS
+========================================================== */
+
+.stats{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:24px;
+
+    margin-bottom:35px;
+
+    position:relative;
+
+    z-index:2;
+
+}
+
+/* ==========================================================
+                        CARD
+========================================================== */
+
+.card{
+
+    position:relative;
+
+    overflow:hidden;
+
+    background:var(--card);
+
+    backdrop-filter:blur(25px);
+
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:28px;
+
+    padding:28px;
+
+    box-shadow:var(--shadow);
+
+    transition:var(--transition);
+
+}
+
+.card:hover{
+
+    transform:translateY(-10px);
+
+    border-color:rgba(124,108,255,.35);
+
+    box-shadow:
+        0 25px 50px rgba(0,0,0,.40);
+
+}
+
+/* ==========================================================
+                    CARD GLOW
+========================================================== */
+
+.card::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:-90px;
+
+    right:-90px;
+
+    width:190px;
+
+    height:190px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(circle,
+        rgba(124,108,255,.28),
+        transparent 72%);
+
+    pointer-events:none;
+
+}
+
+.card::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        linear-gradient(
+            140deg,
+            rgba(255,255,255,.03),
+            transparent 45%
+        );
+
+    pointer-events:none;
+
+}
+
+/* ==========================================================
+                    STAT CARD ICONS
+========================================================== */
+
+.card > i{
+
+    width:62px;
+
+    height:62px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:20px;
+
+    font-size:24px;
+
+    color:white;
+
+    margin-bottom:22px;
+
+    transition:var(--transition);
+
+}
+
+/* Card 1 */
+
+.stats .card:nth-child(1) > i{
+
+    background:linear-gradient(
+        135deg,
+        #7C6CFF,
+        #5C4DFF
+    );
+
+}
+
+/* Card 2 */
+
+.stats .card:nth-child(2) > i{
+
+    background:linear-gradient(
+        135deg,
+        #64E4FF,
+        #2196F3
+    );
+
+}
+
+/* Card 3 */
+
+.stats .card:nth-child(3) > i{
+
+    background:linear-gradient(
+        135deg,
+        #22C55E,
+        #16A34A
+    );
+
+}
+
+/* Card 4 */
+
+.stats .card:nth-child(4) > i{
+
+    background:linear-gradient(
+        135deg,
+        #FB7185,
+        #E11D48
+    );
+
+}
+
+.card:hover > i{
+
+    transform:rotate(-8deg) scale(1.08);
+
+}
+
+/* ==========================================================
+                    CARD TEXT
+========================================================== */
+
+.card h3{
+
+    font-size:15px;
+
+    color:var(--text-secondary);
+
+    font-weight:500;
+
+    margin-bottom:12px;
+
+}
+
+.card h2{
+
+    font-size:38px;
+
+    font-weight:700;
+
+    margin-bottom:10px;
+
+}
+
+.card p{
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+    line-height:1.6;
+
+}
+
+/* ==========================================================
+                PROGRESS BAR
+========================================================== */
+
+.card-progress{
+
+    width:100%;
+
+    height:8px;
+
+    margin-top:20px;
+
+    border-radius:50px;
+
+    background:rgba(255,255,255,.05);
+
+    overflow:hidden;
+
+}
+
+.card-progress span{
+
+    display:block;
+
+    height:100%;
+
+    border-radius:50px;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--primary),
+            var(--cyan)
+        );
+
+}
+
+/* ==========================================================
+                CARD HOVER EFFECT
+========================================================== */
+
+.card:hover .card-icon{
+
+    transform:rotate(-8deg) scale(1.08);
+
+}
+
+.card-icon{
+
+    transition:.35s;
+
+}
+
+.card:hover h2{
+
+    color:var(--cyan);
+
+}
+
+.card h2{
+
+    transition:.35s;
+
+}
+
+/* ==========================================================
+                CARD ENTRANCE
+========================================================== */
+
+.card{
+
+    animation:fadeUp .6s ease;
+
+}
+
+.card:nth-child(2){
+
+    animation-delay:.1s;
+
+}
+
+.card:nth-child(3){
+
+    animation-delay:.2s;
+
+}
+
+.card:nth-child(4){
+
+    animation-delay:.3s;
+
+}
+
+/* ==========================================================
+                    SCHEDULE CONTROLS
+========================================================== */
+
+.schedule-controls{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+    margin-bottom:35px;
+
+    flex-wrap:wrap;
+
+    position:relative;
+
+    z-index:2;
+
+}
+
+/* ==========================================================
+                    NEW EVENT BUTTON
+========================================================== */
+
+.add-event{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:12px;
+
+    padding:16px 28px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            #5C4DFF
+        );
+
+    color:white;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+    box-shadow:
+        0 15px 30px rgba(124,108,255,.25);
+
+}
+
+.add-event:hover{
+
+    transform:
+        translateY(-5px)
+        scale(1.02);
+
+    box-shadow:
+        0 22px 40px rgba(124,108,255,.4);
+
+}
+
+.add-event i{
+
+    font-size:16px;
+
+}
+
+/* ==========================================================
+                    SEARCH EVENTS
+========================================================== */
+
+.schedule-search{
+
+    flex:1;
+
+    min-width:260px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    padding:15px 18px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    backdrop-filter:blur(20px);
+
+    transition:var(--transition);
+
+}
+
+.schedule-search:hover{
+
+    border-color:rgba(124,108,255,.25);
+
+}
+
+.schedule-search:focus-within{
+
+    border-color:var(--primary);
+
+    box-shadow:
+        0 0 0 4px rgba(124,108,255,.15);
+
+}
+
+.schedule-search i{
+
+    color:var(--text-secondary);
+
+}
+
+.schedule-search input{
+
+    flex:1;
+
+    background:none;
+
+    border:none;
+
+    outline:none;
+
+    color:white;
+
+    font-size:15px;
+
+    font-family:inherit;
+
+}
+
+.schedule-search input::placeholder{
+
+    color:var(--text-secondary);
+
+}
+
+/* ==========================================================
+                        SELECT BOXES
+========================================================== */
+
+.schedule-controls select{
+
+    min-width:140px;
+
+    padding:15px 18px;
+
+    border-radius:18px;
+
+    border:1px solid var(--border);
+
+    background:var(--card);
+
+    backdrop-filter:blur(20px);
+
+    color:white;
+
+    font-family:inherit;
+
+    font-size:14px;
+
+    outline:none;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.schedule-controls select:hover{
+
+    border-color:rgba(124,108,255,.35);
+
+}
+
+.schedule-controls select:focus{
+
+    border-color:var(--primary);
+
+    box-shadow:
+        0 0 0 4px rgba(124,108,255,.15);
+
+}
+
+/* ==========================================================
+                    ACTION BUTTONS
+========================================================== */
+
+.schedule-actions{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+}
+
+/* ==========================================================
+                        TODAY BUTTON
+========================================================== */
+
+.today-btn{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:15px 22px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #6C63FF,
+            #4F46E5
+        );
+
+    color:white;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.today-btn:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:
+        0 18px 35px rgba(108,99,255,.35);
+
+}
+
+/* ==========================================================
+                    SYNC BUTTON
+========================================================== */
+
+.sync-btn{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:15px 22px;
+
+    border-radius:18px;
+
+    border:1px solid var(--border);
+
+    background:var(--card);
+
+    backdrop-filter:blur(20px);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.sync-btn:hover{
+
+    background:rgba(124,108,255,.12);
+
+    border-color:var(--primary);
+
+    transform:translateY(-4px);
+
+}
+
+/* ==========================================================
+                BUTTON ICONS
+========================================================== */
+
+.schedule-actions i{
+
+    font-size:15px;
+
+}
+
+/* ==========================================================
+                    CONTROL ANIMATION
+========================================================== */
+
+.schedule-controls>*{
+
+    animation:fadeUp .55s ease;
+
+}
+
+/* ==========================================================
+                    SCHEDULE LAYOUT
+========================================================== */
+
+.schedule-layout{
+
+    display:grid;
+
+    grid-template-columns:2fr 1fr;
+
+    gap:30px;
+
+    position:relative;
+
+    z-index:2;
+
+}
+
+.schedule-left,
+.schedule-right{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:28px;
+
+}
+
+/* ==========================================================
+                        CALENDAR
+========================================================== */
+
+.calendar{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:22px;
+
+}
+
+/* ==========================================================
+                    MONTH HEADER
+========================================================== */
+
+.calendar-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.calendar-title{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.calendar-title h2{
+
+    font-size:24px;
+
+    font-weight:700;
+
+}
+
+.calendar-title span{
+
+    margin-top:6px;
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+}
+
+/* ==========================================================
+                MONTH BUTTONS
+========================================================== */
+
+.calendar-nav{
+
+    display:flex;
+
+    gap:12px;
+
+}
+
+.calendar-nav button{
+
+    width:46px;
+
+    height:46px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:var(--card-light);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.calendar-nav button:hover{
+
+    background:var(--primary);
+
+    transform:translateY(-3px);
+
+}
+
+/* ==========================================================
+                    WEEK DAYS
+========================================================== */
+
+.calendar-days{
+
+    display:grid;
+
+    grid-template-columns:repeat(7,1fr);
+
+    gap:12px;
+
+}
+
+.calendar-days span{
+
+    text-align:center;
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+    font-weight:600;
+
+}
+
+/* ==========================================================
+                    DATE GRID
+========================================================== */
+
+.calendar-dates{
+
+    display:grid;
+
+    grid-template-columns:repeat(7,1fr);
+
+    gap:14px;
+
+}
+
+.calendar-dates span{
+
+    position:relative;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    height:68px;
+
+    border-radius:18px;
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid rgba(255,255,255,.03);
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+    font-weight:500;
+
+}
+
+/* ==========================================================
+                    HOVER
+========================================================== */
+
+.calendar-dates span:hover{
+
+    transform:translateY(-5px);
+
+    background:rgba(124,108,255,.15);
+
+    border-color:rgba(124,108,255,.35);
+
+}
+
+/* ==========================================================
+                    TODAY
+========================================================== */
+
+.calendar-dates .today{
+
+    background:
+
+        linear-gradient(
+            135deg,
+            var(--primary),
+            #5C4DFF
+        );
+
+    color:white;
+
+    font-weight:700;
+
+    box-shadow:
+        0 15px 30px rgba(124,108,255,.35);
+
+}
+
+/* ==========================================================
+                    EVENT DAY
+========================================================== */
+
+.calendar-dates .event-day{
+
+    border:2px solid var(--cyan);
+
+}
+
+.calendar-dates .event-day::after{
+
+    content:"";
+
+    position:absolute;
+
+    bottom:10px;
+
+    width:8px;
+
+    height:8px;
+
+    border-radius:50%;
+
+    background:var(--cyan);
+
+}
+
+/* ==========================================================
+                    PREVIOUS MONTH
+========================================================== */
+
+.calendar-dates .inactive{
+
+    color:rgba(255,255,255,.28);
+
+    background:transparent;
+
+}
+
+/* ==========================================================
+                    DATE ANIMATION
+========================================================== */
+
+.calendar-dates span{
+
+    animation:fadeUp .45s ease;
+
+}
+
+/* ==========================================
+        CALENDAR CONTROLS
+========================================== */
+
+.calendar-controls{
+    display:flex;
+    gap:12px;
+}
+
+.calendar-controls button{
+    width:46px;
+    height:46px;
+    border:none;
+    border-radius:16px;
+    background:rgba(255,255,255,.06);
+    color:#fff;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.calendar-controls button:hover{
+    background:linear-gradient(135deg,#7C6CFF,#5C4DFF);
+    transform:translateY(-3px);
+}
+
+/* ==========================================================
+                    WEEKLY TIMELINE
+========================================================== */
+
+.week-timeline{
+
+    display:grid;
+
+    grid-template-columns:repeat(7,1fr);
+
+    gap:20px;
+
+    align-items:end;
+
+    margin-top:10px;
+
+}
+
+.day{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.day h4{
+
+    color:var(--text2);
+
+    font-size:14px;
+
+    font-weight:600;
+
+}
+
+.day span{
+
+    color:var(--text2);
+
+    font-size:12px;
+
+}
+
+/* ==========================================================
+                        BARS
+========================================================== */
+
+.bar{
+
+    width:60px;
+
+    border-radius:30px 30px 18px 18px;
+
+    position:relative;
+
+    overflow:hidden;
+
+    cursor:pointer;
+
+    transition:.35s;
+
+    box-shadow:
+        inset 0 -8px 20px rgba(255,255,255,.08),
+        0 12px 25px rgba(0,0,0,.25);
+
+}
+
+/* Shine Animation */
+
+.bar::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:-100%;
+
+    width:100%;
+
+    height:100%;
+
+    background:
+
+        linear-gradient(
+            120deg,
+            transparent,
+            rgba(255,255,255,.28),
+            transparent
+        );
+
+    transition:.6s;
+
+}
+
+.bar:hover::before{
+
+    left:120%;
+
+}
+
+/* Hover */
+
+.bar:hover{
+
+    transform:
+
+        translateY(-10px)
+        scale(1.04);
+
+}
+
+/* ==========================================================
+                    BAR HEIGHTS
+========================================================== */
+
+.bar.low{
+
+    height:55px;
+
+    background:
+
+        linear-gradient(
+            180deg,
+            #67E8F9,
+            #0891B2
+        );
+
+}
+
+.bar.medium{
+
+    height:90px;
+
+    background:
+
+        linear-gradient(
+            180deg,
+            #7C6CFF,
+            #4F46E5
+        );
+
+}
+
+.bar.busy{
+
+    height:125px;
+
+    background:
+
+        linear-gradient(
+            180deg,
+            #A855F7,
+            #7C3AED
+        );
+
+}
+
+.bar.full{
+
+    height:165px;
+
+    background:
+
+        linear-gradient(
+            180deg,
+            #FB7185,
+            #DB2777
+        );
+
+}
+
+/* ==========================================================
+                TODAY INDICATOR
+========================================================== */
+
+.day.today h4{
+
+    color:white;
+
+    font-weight:700;
+
+}
+
+.day.today .bar{
+
+    box-shadow:
+
+        0 0 30px rgba(124,108,255,.45);
+
+}
+
+/* ==========================================================
+                    PERCENTAGE LABEL
+========================================================== */
+
+.bar::after{
+
+    content:attr(data-value);
+
+    position:absolute;
+
+    top:-30px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    padding:4px 10px;
+
+    border-radius:10px;
+
+    background:rgba(20,25,45,.95);
+
+    color:white;
+
+    font-size:11px;
+
+    opacity:0;
+
+    transition:.25s;
+
+    pointer-events:none;
+
+    white-space:nowrap;
+
+}
+
+.bar:hover::after{
+
+    opacity:1;
+
+    top:-40px;
+
+}
+
+/* ==========================================================
+                    TODAY'S AGENDA
+========================================================== */
+
+.agenda-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.agenda-item{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:18px;
+
+    padding:20px;
+
+    border-radius:22px;
+
+    background:rgba(255,255,255,.04);
+
+    border:1px solid rgba(255,255,255,.05);
+
+    transition:var(--transition);
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.agenda-item:hover{
+
+    transform:translateX(8px);
+
+    border-color:rgba(124,108,255,.35);
+
+    background:rgba(124,108,255,.08);
+
+}
+
+/* Decorative Glow */
+
+.agenda-item::before{
+
+    content:"";
+
+    position:absolute;
+
+    right:-60px;
+
+    top:-60px;
+
+    width:140px;
+
+    height:140px;
+
+    border-radius:50%;
+
+    background:
+
+        radial-gradient(circle,
+        rgba(124,108,255,.18),
+        transparent 70%);
+
+}
+
+/* ==========================================================
+                    LEFT SIDE
+========================================================== */
+
+.agenda-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+}
+
+/* ==========================================================
+                    ICON
+========================================================== */
+
+.agenda-icon{
+
+    width:58px;
+
+    height:58px;
+
+    border-radius:18px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:22px;
+
+    color:white;
+
+    flex-shrink:0;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            var(--primary),
+            #5C4DFF
+        );
+
+    box-shadow:
+        0 12px 24px rgba(124,108,255,.30);
+
+}
+
+/* ==========================================================
+                    EVENT INFO
+========================================================== */
+
+.agenda-text h4{
+
+    font-size:17px;
+
+    margin-bottom:6px;
+
+}
+
+.agenda-text p{
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+    margin-bottom:8px;
+
+}
+
+/* ==========================================================
+                    CATEGORY BADGE
+========================================================== */
+
+.event-category{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    padding:6px 12px;
+
+    border-radius:30px;
+
+    background:rgba(100,228,255,.12);
+
+    color:var(--cyan);
+
+    font-size:12px;
+
+    font-weight:600;
+
+}
+
+/* ==========================================================
+                    RIGHT SIDE
+========================================================== */
+
+.agenda-right{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:flex-end;
+
+    gap:8px;
+
+}
+
+/* ==========================================================
+                    TIME
+========================================================== */
+
+.agenda-time{
+
+    font-size:18px;
+
+    font-weight:700;
+
+    color:var(--cyan);
+
+}
+
+/* ==========================================================
+                    PRIORITY BADGES
+========================================================== */
+
+.priority{
+
+    padding:7px 14px;
+
+    border-radius:30px;
+
+    font-size:12px;
+
+    font-weight:600;
+
+}
+
+.priority.high{
+
+    background:rgba(251,113,133,.15);
+
+    color:#FB7185;
+
+}
+
+.priority.medium{
+
+    background:rgba(251,191,36,.15);
+
+    color:#FBBF24;
+
+}
+
+.priority.low{
+
+    background:rgba(34,197,94,.15);
+
+    color:#22C55E;
+
+}
+
+/* ==========================================================
+                    UPCOMING REMINDERS
+========================================================== */
+
+.reminder-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.reminder{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:18px;
+
+    padding:18px 20px;
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.04);
+
+    border:1px solid rgba(255,255,255,.05);
+
+    transition:var(--transition);
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.reminder:hover{
+
+    transform:translateX(8px);
+
+    background:rgba(124,108,255,.08);
+
+    border-color:rgba(124,108,255,.35);
+
+}
+
+/* Soft Glow */
+
+.reminder::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:-50px;
+
+    right:-50px;
+
+    width:120px;
+
+    height:120px;
+
+    border-radius:50%;
+
+    background:
+
+        radial-gradient(circle,
+        rgba(100,228,255,.18),
+        transparent 70%);
+
+    pointer-events:none;
+
+}
+
+/* ==========================================================
+                    LEFT SIDE
+========================================================== */
+
+.reminder-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+/* ==========================================================
+                    ICON
+========================================================== */
+
+.reminder-icon{
+
+    width:52px;
+
+    height:52px;
+
+    border-radius:16px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:white;
+
+    font-size:20px;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            var(--cyan),
+            #3BA7FF
+        );
+
+    box-shadow:
+        0 12px 25px rgba(100,228,255,.28);
+
+}
+
+/* ==========================================================
+                    TEXT
+========================================================== */
+
+.reminder-text h4{
+
+    font-size:16px;
+
+    margin-bottom:6px;
+
+}
+
+.reminder-text p{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+                    DATE
+========================================================== */
+
+.reminder-date{
+
+    padding:8px 14px;
+
+    border-radius:30px;
+
+    background:rgba(124,108,255,.12);
+
+    color:var(--cyan);
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+/* ==========================================================
+                    REMINDER TYPES
+========================================================== */
+
+.reminder.plants .reminder-icon{
+
+    background:linear-gradient(
+        135deg,
+        #22C55E,
+        #16A34A
+    );
+
+}
+
+.reminder.bill .reminder-icon{
+
+    background:linear-gradient(
+        135deg,
+        #F59E0B,
+        #D97706
+    );
+
+}
+
+.reminder.car .reminder-icon{
+
+    background:linear-gradient(
+        135deg,
+        #6366F1,
+        #4338CA
+    );
+
+}
+
+.reminder.shopping .reminder-icon{
+
+    background:linear-gradient(
+        135deg,
+        #FB7185,
+        #E11D48
+    );
+
+}
+
+/* ==========================================================
+                HOUSEHOLD AVAILABILITY
+========================================================== */
+
+.family-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.member{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px 20px;
+
+    border-radius:22px;
+
+    background:rgba(255,255,255,.04);
+
+    border:1px solid rgba(255,255,255,.05);
+
+    transition:var(--transition);
+
+}
+
+.member:hover{
+
+    transform:translateX(8px);
+
+    border-color:rgba(124,108,255,.35);
+
+    background:rgba(124,108,255,.08);
+
+}
+
+.member-info{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+.member-info img{
+
+    width:55px;
+
+    height:55px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    border:2px solid rgba(124,108,255,.25);
+
+}
+
+.member-info h4{
+
+    font-size:16px;
+
+    margin-bottom:4px;
+
+}
+
+.member-info p{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+.status-badge{
+
+    padding:8px 18px;
+
+    border-radius:30px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+/* Available */
+
+.status-badge.available{
+
+    background:rgba(34,197,94,.18);
+
+    color:#4ADE80;
+
+}
+
+/* Busy */
+
+.status-badge.busy{
+
+    background:rgba(239,68,68,.18);
+
+    color:#FB7185;
+
+}
+
+/* Away */
+
+.status-badge.away{
+
+    background:rgba(251,191,36,.18);
+
+    color:#FBBF24;
+
+}
+
+/* ==========================================================
+                    MEMBER CARD
+========================================================== */
+
+.member:hover{
+
+    transform:translateX(8px);
+
+    background:rgba(124,108,255,.08);
+
+    border-color:rgba(124,108,255,.35);
+
+}
+
+/* ==========================================================
+                    LEFT SIDE
+========================================================== */
+
+.member-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+/* ==========================================================
+                    PROFILE IMAGE
+========================================================== */
+
+.member-avatar{
+
+    position:relative;
+
+    width:56px;
+
+    height:56px;
+
+}
+
+.member-avatar img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
+    border-radius:50%;
+
+    border:2px solid rgba(255,255,255,.08);
+
+}
+
+/* ==========================================================
+                    STATUS DOT
+========================================================== */
+
+.status-dot{
+
+    position:absolute;
+
+    bottom:2px;
+
+    right:2px;
+
+    width:14px;
+
+    height:14px;
+
+    border-radius:50%;
+
+    border:2px solid var(--bg);
+
+}
+
+/* ==========================================================
+                    STATUS COLORS
+========================================================== */
+
+.status-dot.online{
+
+    background:var(--green);
+
+    box-shadow:0 0 12px var(--green);
+
+}
+
+.status-dot.busy{
+
+    background:var(--red);
+
+    box-shadow:0 0 12px var(--red);
+
+}
+
+.status-dot.away{
+
+    background:var(--orange);
+
+    box-shadow:0 0 12px var(--orange);
+
+}
+
+/* ==========================================================
+                    MEMBER INFO
+========================================================== */
+
+.member-info{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:5px;
+
+}
+
+.member-info h4{
+
+    font-size:16px;
+
+}
+
+.member-info p{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+                    STATUS BADGE
+========================================================== */
+
+.member-status{
+
+    padding:8px 16px;
+
+    border-radius:30px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.member-status.online{
+
+    background:rgba(34,197,94,.15);
+
+    color:var(--green);
+
+}
+
+.member-status.busy{
+
+    background:rgba(251,113,133,.15);
+
+    color:var(--red);
+
+}
+
+.member-status.away{
+
+    background:rgba(251,191,36,.15);
+
+    color:var(--orange);
+
+}
+
+/* ==========================================================
+                    RECENT ACTIVITY
+========================================================== */
+
+.recent-panel{
+
+    margin-top:30px;
+
+}
+
+/* ==========================================================
+                    ACTIVITY LIST
+========================================================== */
+
+.activity-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+/* ==========================================================
+                    ACTIVITY ITEM
+========================================================== */
+
+.activity-item{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:20px;
+
+    padding:18px 20px;
+
+    background:rgba(255,255,255,.04);
+
+    border:1px solid rgba(255,255,255,.05);
+
+    border-radius:20px;
+
+    transition:var(--transition);
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.activity-item:hover{
+
+    transform:translateX(8px);
+
+    background:rgba(124,108,255,.08);
+
+    border-color:rgba(124,108,255,.35);
+
+}
+
+/* Decorative Glow */
+
+.activity-item::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:-60px;
+
+    right:-60px;
+
+    width:140px;
+
+    height:140px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(circle,
+        rgba(124,108,255,.18),
+        transparent 70%);
+
+    pointer-events:none;
+
+}
+
+/* ==========================================================
+                    LEFT SIDE
+========================================================== */
+
+.activity-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+}
+
+/* ==========================================================
+                    ICON
+========================================================== */
+
+.activity-icon{
+
+    width:54px;
+
+    height:54px;
+
+    border-radius:18px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:white;
+
+    font-size:20px;
+
+    flex-shrink:0;
+
+}
+
+/* ==========================================================
+                    ICON COLORS
+========================================================== */
+
+.activity-success .activity-icon{
+
+    background:linear-gradient(
+        135deg,
+        #22C55E,
+        #16A34A
+    );
+
+}
+
+.activity-warning .activity-icon{
+
+    background:linear-gradient(
+        135deg,
+        #FBBF24,
+        #D97706
+    );
+
+}
+
+.activity-primary .activity-icon{
+
+    background:linear-gradient(
+        135deg,
+        var(--primary),
+        #5C4DFF
+    );
+
+}
+
+.activity-info .activity-icon{
+
+    background:linear-gradient(
+        135deg,
+        var(--cyan),
+        #3BA7FF
+    );
+
+}
+
+/* ==========================================================
+                    TEXT
+========================================================== */
+
+.activity-text h4{
+
+    font-size:16px;
+
+    margin-bottom:6px;
+
+}
+
+.activity-text p{
+
+    color:var(--text-secondary);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+                    TIME
+========================================================== */
+
+.activity-time{
+
+    padding:8px 14px;
+
+    border-radius:30px;
+
+    background:rgba(124,108,255,.12);
+
+    color:var(--cyan);
+
+    font-size:13px;
+
+    font-weight:600;
+
+    white-space:nowrap;
+
+}
+
+/* ==========================================
+   FLOATING ACTION BUTTON
+========================================== */
+
+.fab{
+    position:fixed;
+    right:35px;
+    bottom:35px;
+
+    width:68px;
+    height:68px;
+
+    border:none;
+    border-radius:50%;
+
+    background:linear-gradient(135deg,var(--primary),#5C4DFF);
+
+    color:#fff;
+
+    font-size:22px;
+
+    cursor:pointer;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    box-shadow:0 20px 45px rgba(124,108,255,.35);
+
+    transition:var(--transition);
+
+    z-index:500;
+}
+
+.fab:hover{
+
+    transform:translateY(-8px) scale(1.08);
+
+    box-shadow:0 28px 60px rgba(124,108,255,.45);
+
+}
+
+/* ==========================================================
+                    PULSE ANIMATION
+========================================================== */
+
+@keyframes pulse{
+
+    0%{
+
+        transform:scale(1);
+
+        opacity:.8;
+
+    }
+
+    70%{
+
+        transform:scale(1.35);
+
+        opacity:0;
+
+    }
+
+    100%{
+
+        opacity:0;
+
+    }
+
+}
+
+/* ==========================================
+   MODAL
+========================================== */
+
+.modal{
+
+    position:fixed;
+
+    inset:0;
+
+    display:none;
+
+    justify-content:center;
+    align-items:center;
+
+    padding:40px;
+
+    background:rgba(0,0,0,.65);
+
+    backdrop-filter:blur(8px);
+
+    z-index:9999;
+
+}
+
+.modal.active{
+
+    display:flex;
+
+}
+
+.modal-content{
+
+    width:100%;
+    max-width:700px;
+
+    background:var(--card);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:28px;
+
+    padding:35px;
+
+    box-shadow:var(--shadow);
+
+    animation:fadeUp .35s ease;
+
+}
+
+/* ==========================================================
+                    HEADER
+========================================================== */
+
+.modal-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:30px;
+
+}
+
+.modal-header h2{
+
+    font-size:28px;
+
+}
+
+.close-modal{
+
+    width:48px;
+    height:48px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:rgba(255,255,255,.05);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.close-modal:hover{
+
+    background:var(--primary);
+
+}
+
+/* ==========================================
+   FORM
+========================================== */
+
+.form-group{
+
+    margin-bottom:22px;
+
+}
+
+.form-group label{
+
+    display:block;
+
+    margin-bottom:10px;
+
+    color:var(--text-secondary);
+
+    font-size:14px;
+
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select{
+
+    width:100%;
+
+    padding:15px 18px;
+
+    border-radius:18px;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    background:rgba(255,255,255,.04);
+
+    color:white;
+
+    outline:none;
+
+    font-family:inherit;
+
+    transition:var(--transition);
+
+}
+
+.form-group textarea{
+
+    resize:vertical;
+
+    min-height:120px;
+
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus{
+
+    border-color:var(--primary);
+
+    box-shadow:0 0 0 4px rgba(124,108,255,.15);
+
+}
+
+.form-row{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:20px;
+
+}
+
+.modal-buttons{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:15px;
+
+    margin-top:30px;
+
+}
+
+.cancel-btn{
+
+    padding:14px 24px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:rgba(255,255,255,.08);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.cancel-btn:hover{
+
+    background:rgba(255,255,255,.15);
+
+}
+
+.save-btn{
+
+    padding:14px 24px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:linear-gradient(135deg,var(--primary),#5C4DFF);
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.save-btn:hover{
+
+    transform:translateY(-3px);
+
+}
+
+.panel{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:28px;
+    backdrop-filter:blur(24px);
+    box-shadow:var(--shadow);
+}
+
+.panel-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+}
+
+.panel-header h2{
+    font-size:22px;
+    margin-bottom:6px;
+}
+
+.panel-subtitle{
+    color:var(--text-secondary);
+    font-size:14px;
+}
+
+@keyframes fadeUp{
+
+    from{
+        opacity:0;
+        transform:translateY(25px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+
+}
+
+@keyframes scaleIn{
+
+    from{
+        opacity:0;
+        transform:scale(.9);
+    }
+
+    to{
+        opacity:1;
+        transform:scale(1);
+    }
+
+}
+
+/* ==========================================================
+                    ELARA LIGHT THEME
+========================================================== */
+
+body.light-theme {
+
+    --bg: #f4f6fb;
+    --bg-secondary: #ffffff;
+    --sidebar: #ffffff;
+
+    --card: rgba(255,255,255,.92);
+    --card-hover: #ffffff;
+
+    --text: #17182b;
+    --text-secondary: #68708a;
+
+    --border: rgba(0,0,0,.08);
+
+    background: #f4f6fb;
+    color: #17182b;
+}
+
+/* PANELS */
+
+body.light-theme .panel {
+
+    background: rgba(255,255,255,.92);
+
+    border-color:
+        rgba(0,0,0,.08);
+
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.08);
+}
+
+/* CARDS */
+
+body.light-theme .card,
+body.light-theme .summary-card,
+body.light-theme .member-card {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* SEARCH */
+
+body.light-theme .search {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* TOP BUTTONS */
+
+body.light-theme .top-actions button {
+
+    background: #ffffff;
+
+    color: #17182b;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* PROFILE */
+
+body.light-theme .profile {
+
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* INPUTS */
+
+body.light-theme input,
+body.light-theme select,
+body.light-theme textarea {
+
+    color: #17182b;
+
+    background: #f8f9fd;
+
+    border-color:
+        rgba(0,0,0,.10);
+}
+
+body.light-theme input::placeholder,
+body.light-theme textarea::placeholder {
+
+    color: #8b93a8;
+}
+
+/* SECONDARY TEXT */
+
+body.light-theme p,
+body.light-theme .panel-subtitle {
+
+    color: #68708a;
+}
+
+/* ==========================================================
+   FIXES: styles for elements the schedule JS now drives
+========================================================== */
+.calendar-dates .selected{
+    outline:2px solid var(--primary-light, #9588FF);
+    outline-offset:2px;
+}
+
+/* agenda action buttons */
+.agenda-right{ display:flex; align-items:center; gap:8px; }
+.agenda-btn{
+    width:32px; height:32px; border:none; border-radius:10px;
+    background:rgba(255,255,255,.06); color:inherit; cursor:pointer;
+    opacity:0; transition:.2s;
+}
+.agenda-item:hover .agenda-btn{ opacity:1; }
+.agenda-btn:hover{ background:rgba(124,108,255,.25); }
+@media (hover:none){ .agenda-btn{ opacity:1; } }
+
+.agenda-empty{
+    padding:30px 10px; text-align:center; opacity:.7; line-height:1.6;
+}
+.agenda-empty i{ font-size:30px; margin-bottom:10px; display:block; }
+
+/* toast */
+#toastContainer{
+    position:fixed; top:25px; right:25px; z-index:11000;
+    display:flex; flex-direction:column; gap:12px;
+}
+.toast{
+    display:flex; align-items:center; gap:12px;
+    min-width:280px; padding:16px 20px; border-radius:17px;
+    background:rgba(20,24,44,.96); color:#fff;
+    border-left:5px solid #22C55E;
+    box-shadow:0 20px 40px rgba(0,0,0,.35);
+    transform:translateX(120%); opacity:0; transition:.35s;
+}
+.toast.show{ transform:translateX(0); opacity:1; }
+.toast.error{ border-left-color:#FB7185; }
+
+/* loading overlay (was completely unstyled, so it showed up at the bottom of the page) */
+#loadingOverlay{
+    position:fixed; inset:0; display:none;
+    flex-direction:column; justify-content:center; align-items:center; gap:20px;
+    background:rgba(9,9,19,.9); color:#fff; z-index:12000;
+}
+#loadingOverlay.active{ display:flex; }
+#loadingOverlay .loader{
+    width:70px; height:70px; border-radius:50%;
+    border:6px solid rgba(255,255,255,.15); border-top-color:#7C6CFF;
+    animation:elaraSpin 1s linear infinite;
+}
+@keyframes elaraSpin{ to{ transform:rotate(360deg); } }
+
+body.light-theme .toast{ background:#fff; color:#1a1f36; }
+body.light-theme .agenda-btn{ background:rgba(0,0,0,.06); }
+
+/* history dialog */
+.history-modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(5,6,15,.75); backdrop-filter:blur(8px); z-index:10500; padding:20px; }
+.history-box{ width:100%; max-width:480px; max-height:80vh; display:flex; flex-direction:column; background:#12162b; color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:22px; padding:24px; box-shadow:0 30px 80px rgba(0,0,0,.5); }
+.history-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.history-close{ width:36px; height:36px; border:none; border-radius:10px; background:rgba(255,255,255,.07); color:inherit; cursor:pointer; }
+.history-list{ overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+.history-row{ display:flex; justify-content:space-between; gap:14px; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.05); }
+.history-row small{ display:block; opacity:.6; margin-top:2px; }
+.history-row span{ opacity:.75; font-size:13px; white-space:nowrap; }
+.history-empty{ opacity:.65; padding:20px 0; text-align:center; }
+.history-clear{ margin-top:16px; padding:12px; border:none; border-radius:12px; background:rgba(255,77,109,.18); color:#ff6b86; cursor:pointer; font:inherit; }
+body.light-theme .history-box{ background:#fff; color:#17182b; border-color:rgba(0,0,0,.08); }
+body.light-theme .history-row{ background:#f3f5fb; }
+body.light-theme .history-close{ background:rgba(0,0,0,.06); }
+
+
+/* ==========================================================
+   FIXES v2: weekly activity + availability
+========================================================== */
+.timeline-day, .week-timeline .day{ display:flex; flex-direction:column; align-items:center; gap:10px; flex:1; }
+.timeline-day.today h4{ color:#9b8cff; }
+.timeline-fill.light{ background:linear-gradient(180deg,#22c55e,#16a34a); }
+.avail-avatar{ width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; flex-shrink:0;
+    background:linear-gradient(135deg,#6c63ff,#4f46e5); color:#fff; }
+.family-list .status-badge{ border:none; font:inherit; cursor:pointer; }
+
+
+/* ==========================================================
+   FIXES v3: reminders, weekly bars, recent activity
+========================================================== */
+.reminder-list{ gap:14px; }
+.reminder{ padding:16px 18px; }
+.reminder:hover{ transform:translateX(4px); }
+.reminder-text{ min-width:0; }
+.reminder-text h4, .reminder-text p{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px; }
+.reminder-date{ white-space:nowrap; flex-shrink:0; }
+.reminder-date.overdue{ background:rgba(255,77,109,.14); color:#ff6b86; }
+.reminder-empty, .activity-empty{ padding:26px 16px; text-align:center; opacity:.65; }
+.reminder-empty i, .activity-empty i{ display:block; font-size:28px; margin-bottom:10px; }
+.reminder-empty p, .activity-empty p{ font-size:14px; line-height:1.5; }
+
+.week-timeline .day{ cursor:pointer; border-radius:18px; padding:8px 0 10px; transition:background .2s; }
+.week-timeline .day:hover{ background:rgba(124,108,255,.08); }
+.week-timeline .day.today h4{ color:#9b8cff; }
+.week-timeline .day.picked{ background:rgba(124,108,255,.14); }
+
+.history-sub{ font-size:13px; letter-spacing:.06em; text-transform:uppercase; opacity:.6; margin:14px 0 4px; font-weight:600; }
+.history-sub:first-child{ margin-top:0; }
+body.light-theme .reminder{ background:#f6f7fc; border-color:rgba(0,0,0,.06); }
+body.light-theme .week-timeline .day:hover{ background:rgba(124,108,255,.08); }

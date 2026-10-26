@@ -1,0 +1,1460 @@
+/* ==========================================================
+   ELARA TASKS DASHBOARD
+========================================================== */
+
+/* Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+/* ==========================================================
+   VARIABLES
+========================================================== */
+
+:root {
+
+    --bg: #060714;
+    --sidebar: #0B0D1A;
+
+    --card: rgba(18,22,42,.65);
+    --card2: rgba(25,30,55,.65);
+
+    --primary: #6C63FF;
+    --secondary: #6EE7F9;
+
+    --text: #ffffff;
+    --text2: #9BA6C6;
+
+    --border: rgba(255,255,255,.08);
+
+    --shadow:
+        0 10px 40px rgba(0,0,0,.35);
+
+    --radius: 24px;
+}
+
+/* ==========================================================
+   RESET
+========================================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+
+    scrollbar-width: thin;
+    scrollbar-color: #6C63FF transparent;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: #090913;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    overflow-x: hidden;
+}
+
+/* ==========================================================
+   SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(108,99,255,.6);
+    border-radius: 20px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #7d74ff;
+    background-clip: content-box;
+}
+
+/* ==========================================================
+   TASKS PAGE
+========================================================== */
+
+.tasks {
+    display: flex;
+    min-height: 100vh;
+    background: #090913;
+}
+
+/* ==========================================================
+   MAIN CONTENT
+========================================================== */
+
+.main-content {
+    position: relative;
+
+    margin-left: 250px;
+    padding: 25px;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    min-height: 100vh;
+
+    flex: 1;
+}
+
+.main-content::before {
+    content: "";
+
+    position: absolute;
+
+    top: -300px;
+    right: -250px;
+
+    width: 600px;
+    height: 600px;
+
+    background: #6C63FF;
+
+    opacity: .08;
+
+    border-radius: 50%;
+
+    filter: blur(140px);
+
+    pointer-events: none;
+}
+
+/* ==========================================================
+   SIDEBAR — COLLAPSED + HOVER EXPAND
+========================================================== */
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+
+    width: 78px;
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #0c0d1a;
+
+    border-right: 1px solid rgba(255,255,255,.08);
+
+    padding: 20px 12px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    z-index: 1000;
+
+    transition:
+        width .35s ease,
+        padding .35s ease,
+        box-shadow .35s ease;
+}
+
+/* ==========================================================
+   TOP BAR
+========================================================== */
+
+.topbar {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 35px;
+}
+
+.welcome h1 {
+    font-size: 34px;
+
+    margin-bottom: 8px;
+}
+
+.welcome p {
+    color: var(--text2);
+}
+
+/* ==========================================================
+   TOP RIGHT
+========================================================== */
+
+.top-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+}
+
+.search {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    background: var(--card);
+
+    backdrop-filter: blur(20px);
+
+    border: 1px solid var(--border);
+
+    padding: 14px 18px;
+
+    border-radius: 18px;
+
+    width: 280px;
+
+    max-width: 100%;
+}
+
+.search i {
+    color: var(--text2);
+}
+
+.search input {
+    width: 100%;
+
+    background: none;
+
+    border: none;
+
+    outline: none;
+
+    color: #ffffff;
+
+    font-size: 15px;
+}
+
+.search input::placeholder {
+    color: var(--text2);
+}
+
+/* ==========================================================
+   TOP BUTTONS
+========================================================== */
+
+.top-actions button {
+    width: 50px;
+    height: 50px;
+
+    border: none;
+
+    border-radius: 18px;
+
+    background: var(--card);
+
+    backdrop-filter: blur(20px);
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    transition: .35s;
+}
+
+.top-actions button:hover {
+    transform: translateY(-4px);
+
+    background: var(--primary);
+}
+
+/* ==========================================================
+   PROFILE
+========================================================== */
+
+.profile {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    background: var(--card);
+
+    backdrop-filter: blur(20px);
+
+    border: 1px solid var(--border);
+
+    padding: 10px 18px;
+
+    border-radius: 18px;
+}
+
+.profile img {
+    width: 50px;
+    height: 50px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+}
+
+.profile h4 {
+    font-size: 16px;
+}
+
+.profile span {
+    color: var(--text2);
+
+    font-size: 13px;
+}
+
+/* ==========================================================
+   STATISTICS
+========================================================== */
+
+.stats {
+    display: grid;
+
+    grid-template-columns: repeat(4,1fr);
+
+    gap: 22px;
+
+    margin-bottom: 30px;
+}
+
+.card {
+    background: var(--card);
+
+    backdrop-filter: blur(25px);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius);
+
+    padding: 28px;
+
+    position: relative;
+
+    overflow: hidden;
+
+    transition: .35s;
+
+    box-shadow: var(--shadow);
+}
+
+.card::before {
+    content: "";
+
+    position: absolute;
+
+    top: -80px;
+    right: -80px;
+
+    width: 180px;
+    height: 180px;
+
+    background: linear-gradient(
+        135deg,
+        rgba(108,99,255,.25),
+        rgba(110,231,249,.15)
+    );
+
+    border-radius: 50%;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+
+    border-color: rgba(108,99,255,.4);
+}
+
+.card i {
+    font-size: 28px;
+
+    color: var(--secondary);
+
+    margin-bottom: 18px;
+}
+
+.card h3 {
+    font-size: 16px;
+
+    color: var(--text2);
+
+    font-weight: 500;
+}
+
+.card h2 {
+    font-size: 38px;
+
+    margin: 12px 0;
+}
+
+.card p {
+    color: var(--text2);
+}
+
+/* STAT ICON COLORS */
+
+.card:nth-child(1) i {
+    color: #6C63FF;
+}
+
+.card:nth-child(2) i {
+    color: #22C55E;
+}
+
+.card:nth-child(3) i {
+    color: #F59E0B;
+}
+
+.card:nth-child(4) i {
+    color: #EF4444;
+}
+
+/* ==========================================================
+   TASK CONTROLS
+========================================================== */
+
+.task-controls {
+    display: flex;
+
+    align-items: center;
+
+    gap: 20px;
+
+    margin-bottom: 30px;
+
+    flex-wrap: wrap;
+}
+
+.add-task {
+    padding: 15px 28px;
+
+    border: none;
+
+    border-radius: 18px;
+
+    cursor: pointer;
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    background: linear-gradient(
+        135deg,
+        #6C63FF,
+        #4F46E5
+    );
+
+    transition: .3s;
+}
+
+.add-task:hover {
+    transform: translateY(-3px);
+}
+
+.task-search {
+    flex: 1;
+
+    min-width: 250px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    background: var(--card);
+
+    border: 1px solid var(--border);
+
+    padding: 15px;
+
+    border-radius: 18px;
+}
+
+.task-search input {
+    flex: 1;
+
+    border: none;
+
+    background: none;
+
+    color: #ffffff;
+
+    outline: none;
+}
+
+.task-search input::placeholder {
+    color: var(--text2);
+}
+
+.task-controls select {
+    padding: 15px;
+
+    border-radius: 18px;
+
+    border: 1px solid var(--border);
+
+    background: var(--card);
+
+    color: #ffffff;
+}
+
+/* ==========================================================
+   TASK TABS
+========================================================== */
+
+.task-tabs {
+    display: flex;
+
+    gap: 15px;
+
+    margin-bottom: 30px;
+}
+
+.task-tabs button {
+    padding: 12px 25px;
+
+    border: none;
+
+    border-radius: 40px;
+
+    background: rgba(255,255,255,.05);
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    transition: .3s;
+}
+
+.task-tabs button.active {
+    background: #6C63FF;
+
+    color: #ffffff;
+}
+
+.task-tabs button:hover {
+    background: #4F46E5;
+
+    color: #ffffff;
+}
+
+/* ==========================================================
+   TWO COLUMN LAYOUT
+========================================================== */
+
+.tasks-layout {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0,2fr)
+        minmax(300px,1fr);
+
+    gap: 20px;
+}
+
+.tasks-left {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.tasks-right {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+/* ==========================================================
+   PANELS
+========================================================== */
+
+.panel {
+    width: 100%;
+
+    background: var(--card);
+
+    backdrop-filter: blur(20px);
+
+    border: 1px solid var(--border);
+
+    border-radius: 24px;
+
+    padding: 25px;
+
+    box-shadow: var(--shadow);
+}
+
+/* ==========================================================
+   TASK CARDS
+========================================================== */
+
+.task-card {
+    width: 100%;
+
+    background: var(--card);
+
+    border: 1px solid var(--border);
+
+    border-left: 5px solid #6C63FF;
+
+    border-radius: 22px;
+
+    padding: 25px;
+
+    transition: .35s;
+}
+
+.task-card.high {
+    border-left-color: #ff4d6d;
+}
+
+.task-card.medium {
+    border-left-color: #ffb703;
+}
+
+.task-card.low {
+    border-left-color: #2ecc71;
+}
+
+.task-card:hover {
+    transform: translateY(-5px);
+
+    border-color: #6C63FF;
+}
+
+.task-top {
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-bottom: 18px;
+}
+
+.task-card h3 {
+    margin-bottom: 10px;
+}
+
+.task-card p {
+    color: var(--text2);
+
+    line-height: 1.6;
+
+    margin-bottom: 20px;
+}
+
+.task-details {
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+
+    color: var(--text2);
+
+    font-size: 14px;
+}
+
+/* ==========================================================
+   PRIORITY / STATUS
+========================================================== */
+
+.priority,
+.status {
+    padding: 8px 15px;
+
+    border-radius: 30px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+.high-priority {
+    color: #ffffff;
+    background: #ff4d6d;
+}
+
+.medium-priority {
+    color: #ffffff;
+    background: #ffb703;
+}
+
+.low-priority {
+    color: #ffffff;
+    background: #2ecc71;
+}
+
+.in-progress {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+.pending {
+    background: #6b7280;
+    color: #ffffff;
+}
+
+.completed {
+    background: #2ecc71;
+    color: #ffffff;
+}
+
+/* ==========================================================
+   PROGRESS BAR
+========================================================== */
+
+.progress-bar {
+    width: 100%;
+
+    height: 10px;
+
+    border-radius: 20px;
+
+    background: rgba(255,255,255,.08);
+
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #6C63FF,
+            #6EE7F9
+        );
+
+    border-radius: 20px;
+}
+
+.task-progress {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+}
+
+.task-progress span {
+    font-weight: 600;
+}
+
+/* ==========================================================
+   TASK BUTTONS
+========================================================== */
+
+.task-buttons {
+    display: flex;
+
+    gap: 15px;
+}
+
+.task-buttons button {
+    flex: 1;
+
+    border: none;
+
+    padding: 14px;
+
+    border-radius: 14px;
+
+    cursor: pointer;
+
+    color: #ffffff;
+
+    transition: .3s;
+}
+
+.btn-complete {
+    background: #6C63FF;
+}
+
+.btn-edit {
+    background: #2b3048;
+}
+
+.task-buttons button:hover {
+    transform: translateY(-3px);
+}
+
+/* ==========================================================
+   PROGRESS CIRCLE
+========================================================== */
+
+.progress-circle {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    padding: 20px;
+}
+
+.circle {
+    width: 180px;
+    height: 180px;
+
+    border-radius: 50%;
+
+    background:
+        conic-gradient(
+            #6C63FF 72%,
+            rgba(255,255,255,.08) 0
+        );
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    margin-bottom: 20px;
+
+    position: relative;
+
+    box-shadow:
+        0 0 30px rgba(108,99,255,.25);
+}
+
+.circle::before {
+    content: "";
+
+    position: absolute;
+
+    width: 145px;
+    height: 145px;
+
+    background: #111422;
+
+    border-radius: 50%;
+}
+
+.circle span {
+    width: 135px;
+    height: 135px;
+
+    background: #111422;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-size: 36px;
+
+    font-weight: 700;
+
+    position: relative;
+
+    z-index: 5;
+}
+
+/* ==========================================================
+   CALENDAR
+========================================================== */
+
+.calendar-box {
+    text-align: center;
+}
+
+.calendar-box h3 {
+    margin-bottom: 20px;
+}
+
+.calendar-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7,minmax(0,1fr));
+
+    gap: 8px;
+}
+
+.calendar-grid span {
+    padding: 12px;
+
+    border-radius: 12px;
+
+    background: rgba(255,255,255,.05);
+}
+
+.active-day {
+    background: #6C63FF !important;
+
+    color: #ffffff !important;
+}
+
+/* ==========================================================
+   DEADLINES
+========================================================== */
+
+.deadline {
+    padding: 18px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.08);
+}
+
+.deadline:last-child {
+    border: none;
+}
+
+.deadline strong {
+    display: block;
+
+    margin-bottom: 6px;
+}
+
+.deadline small {
+    color: var(--text2);
+}
+
+/* ==========================================================
+   RECENT ACTIVITY
+========================================================== */
+
+.recent-panel {
+    margin-top: 30px;
+}
+
+.activity-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 18px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.08);
+}
+
+.activity-item:last-child {
+    border: none;
+}
+
+.activity-item i {
+    color: #6EE7F9;
+}
+
+.activity-item span {
+    margin-left: auto;
+
+    color: var(--text2);
+
+    font-size: 13px;
+}
+
+/* ==========================================================
+   ELARA LIGHT THEME
+========================================================== */
+
+body.light-theme {
+
+    --bg: #f4f6fb;
+
+    --sidebar: #ffffff;
+
+    --card: rgba(255,255,255,.92);
+
+    --card2: #ffffff;
+
+    --primary: #6C63FF;
+
+    --secondary: #5B5CE2;
+
+    --text: #17182b;
+
+    --text2: #68708a;
+
+    --border: rgba(0,0,0,.08);
+
+    --shadow:
+        0 10px 30px rgba(0,0,0,.08);
+
+    background: #f4f6fb;
+
+    color: #17182b;
+}
+
+/* ==========================================================
+   LIGHT - PAGE BACKGROUND
+========================================================== */
+
+body.light-theme .tasks {
+    background: #f4f6fb;
+}
+
+body.light-theme .main-content {
+    background: #f4f6fb;
+}
+
+/* Remove the dark/purple glow in light mode */
+body.light-theme .main-content::before {
+    display: none;
+}
+
+/* ==========================================================
+   LIGHT - TOP BAR
+========================================================== */
+
+body.light-theme .welcome h1 {
+    color: #17182b;
+}
+
+body.light-theme .welcome p {
+    color: #68708a;
+}
+
+/* ==========================================================
+   LIGHT - SEARCH
+========================================================== */
+
+body.light-theme .search {
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+body.light-theme .search i {
+    color: #68708a;
+}
+
+body.light-theme .search input {
+    color: #17182b;
+}
+
+body.light-theme .search input::placeholder {
+    color: #8b93a8;
+}
+
+/* ==========================================================
+   LIGHT - TOP BUTTONS
+========================================================== */
+
+body.light-theme .top-actions button {
+    background: #ffffff;
+
+    color: #17182b;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+}
+
+body.light-theme .top-actions button:hover {
+    background: #6C63FF;
+
+    color: #ffffff;
+}
+
+/* ==========================================================
+   LIGHT - PROFILE
+========================================================== */
+
+body.light-theme .profile {
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+
+    color: #17182b;
+}
+
+body.light-theme .profile h4 {
+    color: #17182b;
+}
+
+body.light-theme .profile span {
+    color: #68708a;
+}
+
+/* ==========================================================
+   LIGHT - STATISTICS
+========================================================== */
+
+body.light-theme .card {
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.07);
+}
+
+body.light-theme .card h2 {
+    color: #17182b;
+}
+
+body.light-theme .card h3 {
+    color: #68708a;
+}
+
+body.light-theme .card p {
+    color: #68708a;
+}
+
+/* Light card decoration */
+body.light-theme .card::before {
+    opacity: .35;
+}
+
+/* ==========================================================
+   LIGHT - TASK CONTROLS
+========================================================== */
+
+body.light-theme .task-search {
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+body.light-theme .task-search input {
+    color: #17182b;
+}
+
+body.light-theme .task-search input::placeholder {
+    color: #8b93a8;
+}
+
+body.light-theme .task-controls select {
+    background: #ffffff;
+
+    color: #17182b;
+
+    border-color:
+        rgba(0,0,0,.08);
+}
+
+/* ==========================================================
+   LIGHT - TASK TABS
+========================================================== */
+
+body.light-theme .task-tabs button {
+    background: #ffffff;
+
+    color: #17182b;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+}
+
+body.light-theme .task-tabs button:hover {
+    background: #4F46E5;
+
+    color: #ffffff;
+}
+
+body.light-theme .task-tabs button.active {
+    background: #6C63FF;
+
+    color: #ffffff;
+}
+
+/* ==========================================================
+   LIGHT - PANELS
+========================================================== */
+
+body.light-theme .panel {
+    background: #ffffff;
+
+    border:
+        1px solid rgba(0,0,0,.08);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.07);
+
+    color: #17182b;
+}
+
+/* ==========================================================
+   LIGHT - TASK CARDS
+========================================================== */
+
+body.light-theme .task-card {
+    background: #ffffff;
+
+    border-color:
+        rgba(0,0,0,.08);
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.06);
+
+    color: #17182b;
+}
+
+body.light-theme .task-card:hover {
+    border-color: #6C63FF;
+}
+
+body.light-theme .task-card h3 {
+    color: #17182b;
+}
+
+body.light-theme .task-card p {
+    color: #68708a;
+}
+
+body.light-theme .task-details {
+    color: #68708a;
+}
+
+/* ==========================================================
+   LIGHT - PRIORITY LABELS
+========================================================== */
+
+body.light-theme .high-priority {
+    color: #ff5b7d;
+
+    background:
+        rgba(255,91,125,.15);
+}
+
+body.light-theme .medium-priority {
+    color: #d99000;
+
+    background:
+        rgba(255,191,71,.18);
+}
+
+body.light-theme .low-priority {
+    color: #199447;
+
+    background:
+        rgba(74,222,128,.15);
+}
+
+/* ==========================================================
+   LIGHT - PROGRESS BAR
+========================================================== */
+
+body.light-theme .progress-bar {
+    background:
+        rgba(0,0,0,.08);
+}
+
+/* ==========================================================
+   LIGHT - PROGRESS CIRCLE
+========================================================== */
+
+body.light-theme .circle {
+    background:
+        conic-gradient(
+            #6C63FF 72%,
+            rgba(0,0,0,.08) 0
+        );
+}
+
+body.light-theme .circle::before {
+    background: #ffffff;
+}
+
+body.light-theme .circle span {
+    background: #ffffff;
+
+    color: #17182b;
+}
+
+/* ==========================================================
+   LIGHT - CALENDAR
+========================================================== */
+
+body.light-theme .calendar-grid span {
+    background: #f8f9fd;
+
+    color: #17182b;
+
+    border:
+        1px solid rgba(0,0,0,.06);
+}
+
+body.light-theme .active-day {
+    background: #6C63FF !important;
+
+    color: #ffffff !important;
+
+    border-color: #6C63FF !important;
+}
+
+/* ==========================================================
+   LIGHT - DEADLINES
+========================================================== */
+
+body.light-theme .deadline {
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+}
+
+body.light-theme .deadline strong {
+    color: #17182b;
+}
+
+body.light-theme .deadline small {
+    color: #68708a;
+}
+
+/* ==========================================================
+   LIGHT - ACTIVITY
+========================================================== */
+
+body.light-theme .activity-item {
+    border-bottom:
+        1px solid rgba(0,0,0,.08);
+}
+
+body.light-theme .activity-item span {
+    color: #68708a;
+}
+
+/* ==========================================================
+   LIGHT - TASK BUTTONS
+========================================================== */
+
+body.light-theme .btn-edit {
+    background: #e9ebf3;
+
+    color: #17182b;
+}
+
+body.light-theme .btn-complete {
+    background: #6C63FF;
+
+    color: #ffffff;
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width: 1400px) {
+
+    .stats {
+        grid-template-columns: repeat(2,1fr);
+    }
+
+}
+
+@media (max-width: 1100px) {
+
+    .tasks-layout {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+@media (max-width: 900px) {
+
+    .topbar {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 20px;
+    }
+
+    .top-actions {
+        flex-wrap: wrap;
+
+        width: 100%;
+    }
+
+    .search {
+        width: 100%;
+    }
+
+    .task-controls {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+}
+
+@media (max-width: 700px) {
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .item-right {
+        flex-direction: column;
+
+        align-items: flex-end;
+
+        gap: 10px;
+    }
+
+    .task-buttons {
+        flex-direction: column;
+    }
+
+}
+
+/* ==========================================================
+   FIXES: modal, toast, empty state used by dashboard-tasks.js
+========================================================== */
+.task-empty{ padding:50px 20px; text-align:center; color:var(--text2); }
+.task-empty i{ font-size:40px; margin-bottom:14px; display:block; }
+
+.task-modal{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(5,6,15,.75); backdrop-filter:blur(8px); z-index:10000; padding:20px;
+}
+.task-modal.active{ display:flex; }
+.task-modal-box{
+    width:100%; max-width:520px; max-height:92vh; overflow:auto;
+    background:#12162b; color:var(--text); border:1px solid var(--border);
+    border-radius:24px; padding:28px; box-shadow:0 30px 80px rgba(0,0,0,.5);
+}
+.task-modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.task-modal-head button{ width:38px; height:38px; border:none; border-radius:12px; background:rgba(255,255,255,.06); color:inherit; cursor:pointer; }
+.task-modal form{ display:flex; flex-direction:column; gap:14px; }
+.task-modal label{ display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--text2); }
+.task-modal input, .task-modal select, .task-modal textarea{
+    padding:12px 14px; border-radius:12px; border:1px solid var(--border);
+    background:rgba(255,255,255,.05); color:var(--text); font:inherit; outline:none;
+}
+.task-modal select option{ color:#111; }
+.task-modal input:focus, .task-modal select:focus, .task-modal textarea:focus{ border-color:var(--primary); }
+.task-modal .row2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.task-modal-actions{ display:flex; justify-content:flex-end; gap:12px; margin-top:6px; }
+.task-modal-actions button{ padding:12px 22px; border:none; border-radius:12px; color:#fff; cursor:pointer; font:inherit; }
+@media (max-width:520px){ .task-modal .row2{ grid-template-columns:1fr; } }
+
+#toastContainer{ position:fixed; top:25px; right:25px; z-index:11000; display:flex; flex-direction:column; gap:12px; }
+.toast{
+    display:flex; align-items:center; gap:12px; min-width:260px; padding:15px 20px; border-radius:16px;
+    background:rgba(20,24,44,.96); color:#fff; border-left:5px solid #2ecc71;
+    box-shadow:0 20px 40px rgba(0,0,0,.35); transform:translateX(120%); opacity:0; transition:.35s;
+}
+.toast.show{ transform:translateX(0); opacity:1; }
+.toast.error{ border-left-color:#ff4d6d; }
+
+.task-buttons .btn-edit i{ pointer-events:none; }
+
+body.light-theme .task-modal-box{ background:#fff; color:#1a1f36; }
+body.light-theme .task-modal input, body.light-theme .task-modal select, body.light-theme .task-modal textarea{ color:#1a1f36; background:#f3f5fb; }
+body.light-theme .task-modal-head button{ background:rgba(0,0,0,.06); }
+body.light-theme .toast{ background:#fff; color:#1a1f36; }

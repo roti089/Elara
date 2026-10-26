@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping</title>
+    <link rel="stylesheet" href="dashboard-shopping.css">
+    <link rel="stylesheet" href="elara-sidebar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+
+     <div class="shopping">
+
+         <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <img src="Elara logo.png" alt="Elara">
+
+            <div>
+                <h2>Elara</h2>
+                <span>Smart Home</span>
+            </div>
+
+        </div>
+
+ <ul class="menu">
+
+    <li>
+        <a href="dashboard-content.html">
+            <i class="fa-solid fa-house"></i>
+            <span>Dashboard</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-tasks.html">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Tasks</span>
+        </a>
+    </li>
+
+    <li class="active" >
+        <a href="dashboard-shopping.html">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span>Shopping</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-schedule.html">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Schedule</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-smart-home.html">
+            <i class="fa-solid fa-lightbulb"></i>
+            <span>Smart Home</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-analytics.html">
+            <i class="fa-solid fa-chart-simple"></i>
+            <span>Analytics</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-members.html">
+            <i class="fa-solid fa-users"></i>
+            <span>Members</span>
+        </a>
+    </li>
+
+    <li>
+        <a href="dashboard-settings.html">
+            <i class="fa-solid fa-gear"></i>
+            <span>Settings</span>
+        </a>
+    </li>
+
+</ul>
+
+        <div class="sidebar-bottom">
+
+            <button class="logout">
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+       <!-- MAIN -->
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <div class="welcome">
+
+                <h1 id="heading">
+
+                      Shopping
+
+                </h1>
+
+                <p>
+
+                     Smart shopping, inventory & receipt management
+                </p>
+
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        placeholder="Search anything...">
+
+                </div>
+
+                <button>
+
+                    <i class="fa-solid fa-bell"></i>
+
+                </button>
+
+               <button id="themeBtn" aria-label="Toggle theme">
+                    <i class="fa-solid fa-moon"></i>
+               </button>
+
+                <div class="profile">
+
+                    <img src="DSC_0156.JPG">
+
+                    <div>
+
+                        <h4 id="userName">
+
+                            Justin
+
+                        </h4>
+
+                        <span>
+
+                            Home Owner
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+<!-- SHOPPING STATISTICS -->
+
+<section class="stats">
+
+    <div class="card">
+
+        <i class="fa-solid fa-basket-shopping"></i>
+
+        <h3>Shopping Items</h3>
+
+        <h2 id="itemCount">84</h2>
+
+        <p>Across all shopping lists</p>
+
+    </div>
+
+    <div class="card">
+
+        <i class="fa-solid fa-wallet"></i>
+
+        <h3>Monthly Spending</h3>
+
+        <h2 id="monthlySpending">R4,280</h2>
+
+        <p>Current month's purchases</p>
+
+    </div>
+
+    <div class="card">
+
+        <i class="fa-solid fa-box-open"></i>
+
+        <h3>Low Stock Predictions</h3>
+
+        <h2 id="lowStock">7</h2>
+
+        <p>Items expected to run out soon</p>
+
+    </div>
+
+    <div class="card">
+
+        <i class="fa-solid fa-piggy-bank"></i>
+
+        <h3>Saved This Month</h3>
+
+        <h2 id="savedMoney">R935</h2>
+
+        <p>Using deals & price tracking</p>
+
+    </div>
+
+    <!-- TASK CONTROLS -->
+
+</section>
+
+<section class="shopping-controls">
+    <button class="add-item">
+
+        <i class="fa-solid fa-plus"></i>
+
+        Add Item
+
+    </button>
+
+    <div class="product-search">
+
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input type="text" placeholder="Search Products...">
+
+    </div>
+
+    <select>
+        <option>Category</option>
+        <option>Groceries</option>
+        <option>Cleaning</option>
+        <option>Household</option>
+        <option>Electronics</option>
+        <option>Personal Care</option>
+
+    </select>
+
+    <select>
+
+        <option>Sort By</option>
+        <option>Newest</option>
+        <option>Price: Low to High</option>
+        <option>Price: High to Low</option>
+
+    </select>
+
+    <div class="receipt-actions">
+
+    <button class="scan-btn">
+        <i class="fa-solid fa-camera"></i>
+        Scan Receipt
+    </button>
+
+    <button class="upload-btn">
+        <i class="fa-solid fa-file-arrow-up"></i>
+        Upload Receipt
+    </button>
+
+</div>
+
+</section>
+
+<!-- SHOPPING LAYOUT -->
+
+<section class="shopping-layout">
+
+    <!-- LEFT COLUMN -->
+
+    <div class="shopping-left">
+
+        <!-- Shopping List -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>Shopping List</h2>
+
+                <span>12 Items</span>
+
+            </div>
+
+            <div class="shopping-item">
+
+                <div class="item-info">
+
+                    <i class="fa-solid fa-cart-shopping"></i>
+
+                    <div>
+
+                        <h3>Milk</h3>
+
+                        <p>2 Litres • Woolworths</p>
+
+                    </div>
+
+                </div>
+
+                <div class="item-right">
+
+                    <span class="price">R38.99</span>
+
+                    <button>Add to Cart</button>
+
+                </div>
+
+            </div>
+
+            <div class="shopping-item">
+
+                <div class="item-info">
+
+                    <i class="fa-solid fa-egg"></i>
+
+                    <div>
+
+                        <h3>Eggs</h3>
+
+                        <p>30 Pack</p>
+
+                    </div>
+
+                </div>
+
+                <div class="item-right">
+
+                    <span class="price">R79.99</span>
+
+                    <button>Add to Cart</button>
+
+                </div>
+
+            </div>
+
+            <div class="shopping-item">
+
+                <div class="item-info">
+
+                    <i class="fa-solid fa-bottle-water"></i>
+
+                    <div>
+
+                        <h3>Dishwashing Liquid</h3>
+
+                        <p>750ml</p>
+
+                    </div>
+
+                </div>
+
+                <div class="item-right">
+
+                    <span class="price">R42.50</span>
+
+                    <button>Add</button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Inventory Predictions -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>Inventory Predictions</h2>
+
+            </div>
+
+            <div class="prediction">
+
+                <i class="fa-solid fa-triangle-exclamation"></i>
+
+                <div>
+
+                    <h3>Milk</h3>
+
+                    <p>Estimated to run out in 3 days</p>
+
+                </div>
+
+            </div>
+
+            <div class="prediction">
+
+                <i class="fa-solid fa-chart-line"></i>
+
+                <div>
+
+                    <h3>Toilet Paper</h3>
+
+                    <p>Based on previous usage, reorder next week.</p>
+
+                </div>
+
+            </div>
+
+            <div class="prediction">
+
+                <i class="fa-solid fa-box-open"></i>
+
+                <div>
+
+                    <h3>Rice</h3>
+
+                    <p>Stock level healthy for another 18 days.</p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Receipt Archive -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>Receipt Archive</h2>
+
+            </div>
+
+            <div class="receipt-card">
+
+                <i class="fa-solid fa-file-invoice"></i>
+
+                <div>
+
+                    <h3>Checkers</h3>
+
+                    <p>Original email receipt</p>
+
+                </div>
+
+                <button>View</button>
+
+            </div>
+
+            <div class="receipt-card">
+
+                <i class="fa-solid fa-receipt"></i>
+
+                <div>
+
+                    <h3>Makro</h3>
+
+                    <p>Scanned receipt</p>
+
+                </div>
+
+                <button>View</button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+
+    <div class="shopping-right">
+
+        <!-- Spending -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>Monthly Spending</h2>
+
+            </div>
+
+            <canvas id="spendingChart"></canvas>
+
+        </section>
+
+        <!-- Warranty Reminders -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>Warranty Reminders</h2>
+
+            </div>
+
+            <div class="warranty-item">
+
+                <h3>Samsung Microwave</h3>
+
+                <p>Expires in 8 months</p>
+
+            </div>
+
+            <div class="warranty-item">
+
+                <h3>Hisense TV</h3>
+
+                <p>Expires in 21 days</p>
+
+            </div>
+
+            <div class="warranty-item">
+
+                <h3>Washing Machine</h3>
+
+                <p>Expires in 1 year</p>
+
+            </div>
+
+        </section>
+
+        <!-- Price Watch -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>Price Watch</h2>
+
+            <span>Estimated</span>
+
+            </div>
+
+            <div id="priceWatchList"></div>
+
+        </section>
+
+    </div>
+
+</section>
+
+<!-- RECENT SHOPPING ACTIVITY -->
+
+<section class="panel recent-panel">
+
+    <div class="panel-header">
+
+        <h2>Recent Shopping Activity</h2>
+
+    </div>
+
+    <div class="activity-item">
+
+        <i class="fa-solid fa-cart-plus"></i>
+
+        Added Milk to shopping list
+
+        <span>5 min ago</span>
+
+    </div>
+
+    <div class="activity-item">
+
+        <i class="fa-solid fa-file-arrow-up"></i>
+
+        Uploaded Checkers receipt
+
+        <span>Today</span>
+
+    </div>
+
+    <div class="activity-item">
+
+        <i class="fa-solid fa-shield"></i>
+
+        Warranty saved for Samsung Microwave
+
+        <span>Yesterday</span>
+
+    </div>
+
+</section>
+
+</main>
+
+     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="elara-config.js"></script>
+    <script src="elara-data.js"></script>
+    <script src="elara-theme.js"></script>
+    <script src="elara-common.js"></script>
+    <script src="dashboard-shopping.js"></script>
+    
+</body>
+</html>
