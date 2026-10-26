@@ -46,12 +46,27 @@
                    (session.user.email ? session.user.email.split("@")[0] : "User");
         user = { id: session.user.id, email: session.user.email || "", name: full, first: String(full).split(" ")[0] };
     }
-    var prefix = user ? "elara:" + user.id + ":" : "";
+
+    /* HOUSEHOLD SHARING
+       A person who accepted an invitation uses the OWNER'S data (tasks, devices, members ...).
+       Only these personal keys stay in their own account. Keep this list in step with the
+       SQL policies in elara-household-setup.sql. */
+    var PERSONAL = /^elara(FirstName|LastName|Email|ProfileImage|LoginActivity)$/;
+    var HOME_KEY = user ? "elaraHome:" + user.id : "";
+    var dataId = user ? user.id : "";
+    if (user) {
+        var savedHome = realGet.call(localStorage, HOME_KEY);
+        if (savedHome && /^[0-9a-f-]{36}$/i.test(savedHome)) dataId = savedHome;
+    }
+    var shared = !!user && dataId !== user.id;           // true = joined someone else's household
+    var prefix = user ? "elara:" + dataId + ":" : "";    // household data
+    var ownPrefix = user ? "elara:" + user.id + ":" : "";
+    function scopeUid(k) { return shared && PERSONAL.test(k) ? user.id : dataId; }
 
     /* ---------------------------------------------------------
        2. Per-user localStorage (transparent to the page scripts)
     --------------------------------------------------------- */
-    function mapKey(k) { return prefix && typeof k === "string" && k.indexOf("elara") === 0 ? prefix + k : k; }
+    function mapKey(k) { return user && typeof k === "string" && k.indexOf("elara") === 0 ? "elara:" + scopeUid(k) + ":" + k : k; }
     var queue = {}, timer = null;
 
     Storage.prototype.getItem = function (k) { return realGet.call(this, this === localStorage ? mapKey(k) : k); };
@@ -83,56 +98,92 @@
         return clientPromise;
     }
 
+    var homeReady = Promise.resolve();
+
     function enqueue(key, value) {
-        if (!cfg.supabaseUrl) return;
-        queue[key] = value;
+        if (!cfg.supabaseUrl || !user) return;
+        queue[scopeUid(key) + "|" + key] = value;      // queue key = "<whose data>|<key>"
         clearTimeout(timer);
         timer = setTimeout(flush, 1500);
     }
 
-    function flush() {
+    function doFlush() {
         var keys = Object.keys(queue);
         if (!keys.length || !user) return Promise.resolve();
         var batch = queue; queue = {};
         return getClient().then(function (client) {
-            var upserts = [], removes = [];
-            Object.keys(batch).forEach(function (k) {
-                if (batch[k] === null) removes.push(k);
-                else upserts.push({ user_id: user.id, key: k, value: { v: batch[k] }, updated_at: new Date().toISOString() });
+            var upserts = [], removes = {};
+            keys.forEach(function (qk) {
+                var i = qk.indexOf("|"), uid = qk.slice(0, i), k = qk.slice(i + 1);
+                if (batch[qk] === null) (removes[uid] = removes[uid] || []).push(k);
+                else upserts.push({ user_id: uid, key: k, value: { v: batch[qk] }, updated_at: new Date().toISOString() });
             });
             var jobs = [];
             if (upserts.length) jobs.push(client.from("elara_user_data").upsert(upserts, { onConflict: "user_id,key" }));
-            if (removes.length) jobs.push(client.from("elara_user_data").delete().eq("user_id", user.id).in("key", removes));
+            Object.keys(removes).forEach(function (uid) {
+                jobs.push(client.from("elara_user_data").delete().eq("user_id", uid).in("key", removes[uid]));
+            });
             return Promise.all(jobs);
         }).catch(function (e) { console.warn("[Elara] sync failed:", e.message); Object.keys(batch).forEach(function (k) { if (!(k in queue)) queue[k] = batch[k]; }); });
     }
+    // nothing is uploaded until we know whose household this person belongs to
+    function flush() { return homeReady.then(doFlush); }
     window.addEventListener("beforeunload", function () { if (Object.keys(queue).length) flush(); });
 
-    /* pull this user's saved data once per browser session */
-    function hydrate() {
+    /* Which household am I in?  Accepts any pending invitation sent to my email,
+       then switches this browser to the owner's data if I joined one. Once per browser session. */
+    function resolveHome() {
         if (!user || !cfg.supabaseUrl) return;
-        var flag = "elaraHydrated:" + user.id;
+        var flag = "elaraHomeChecked:" + user.id;
         if (sessionStorage.getItem(flag)) return;
-        getClient().then(function (client) {
+        homeReady = getClient().then(function (client) {
             return client.auth.getSession().then(function (r) {
                 if (!r.data || !r.data.session) throw new Error("no session");
-                return client.from("elara_user_data").select("key,value").eq("user_id", user.id);
+                return client.rpc("elara_accept_invites");
             });
         }).then(function (res) {
             if (res.error) throw res.error;
             sessionStorage.setItem(flag, "1");
+            var rows = res.data || [];
+            var target = rows.length ? rows[0].home_owner : user.id;
+            if (target === dataId) return;
+            if (target === user.id) realRemove.call(localStorage, HOME_KEY); else realSet.call(localStorage, HOME_KEY, target);
+            // anything this browser queued for the old data set must not be uploaded; keep only personal keys
+            Object.keys(queue).forEach(function (qk) { if (!PERSONAL.test(qk.slice(qk.indexOf("|") + 1))) delete queue[qk]; });
+            return doFlush().then(function () { location.reload(); return new Promise(function () {}); });
+        }).catch(function (e) { console.warn("[Elara] household check failed:", e.message); });
+    }
+
+    /* pull the saved data (own personal keys + the household's data), at most every 2 minutes */
+    function hydrate() {
+        if (!user || !cfg.supabaseUrl) return;
+        var flag = "elaraHydrated:" + user.id + ":" + dataId;
+        if (Date.now() - Number(sessionStorage.getItem(flag) || 0) < 120000) return;
+        var ids = shared ? [user.id, dataId] : [user.id];
+        homeReady.then(function () { return getClient(); }).then(function (client) {
+            return client.auth.getSession().then(function (r) {
+                if (!r.data || !r.data.session) throw new Error("no session");
+                return client.from("elara_user_data").select("user_id,key,value").in("user_id", ids);
+            });
+        }).then(function (res) {
+            if (res.error) throw res.error;
+            sessionStorage.setItem(flag, String(Date.now()));
             var changed = false, remote = {};
             (res.data || []).forEach(function (row) {
-                remote[row.key] = true;
-                var v = row.value && row.value.v;
-                if (typeof v === "string" && realGet.call(localStorage, prefix + row.key) !== v) {
-                    realSet.call(localStorage, prefix + row.key, v); changed = true;
-                }
+                if (scopeUid(row.key) !== row.user_id) return;          // ignore rows that belong to the other data set
+                remote[row.user_id + "|" + row.key] = true;
+                var v = row.value && row.value.v, lk = "elara:" + row.user_id + ":" + row.key;
+                if (typeof v === "string" && realGet.call(localStorage, lk) !== v) { realSet.call(localStorage, lk, v); changed = true; }
             });
             // push anything this browser has that the cloud doesn't yet
             for (var i = 0; i < localStorage.length; i++) {
                 var k = localStorage.key(i);
-                if (k.indexOf(prefix + "elara") === 0) { var short = k.slice(prefix.length); if (!remote[short]) enqueue(short, realGet.call(localStorage, k)); }
+                ids.forEach(function (id) {
+                    var p = "elara:" + id + ":";
+                    if (k.indexOf(p) !== 0) return;
+                    var short = k.slice(p.length);
+                    if (short.indexOf("elara") === 0 && scopeUid(short) === id && !remote[id + "|" + short]) enqueue(short, realGet.call(localStorage, k));
+                });
             }
             if (changed) location.reload();
         }).catch(function (e) { console.warn("[Elara] could not load cloud data:", e.message); });
@@ -181,6 +232,7 @@
         [["elaraFirstName", names[0]], ["elaraLastName", names.slice(1).join(" ")], ["elaraEmail", user.email]].forEach(function (p) {
             if (p[1] && !localStorage.getItem(p[0])) localStorage.setItem(p[0], p[1]);
         });
+        resolveHome();
         hydrate();
         if (cfg.requireLogin) {
             getClient().then(function (c) {
@@ -279,6 +331,7 @@
     function members() {
         var m = load("elaraMembers", null);
         if (m && m.length) return m;
+        if (shared) return m || [];   // joined a household: never start a new one from here
         if (user) {
             m = [{ id: 1, name: user.first, email: user.email, role: "owner", status: "online", location: "Home", avatar: "", color: "", permissions: Object.assign({}, ROLE_PERMS.owner) }];
         } else {
@@ -568,21 +621,64 @@
     }
 
     // wipe everything this person has stored (their tasks, events, members, devices ...)
+    // A member of someone else's household only clears their own personal settings, never the owner's data.
     function resetData() {
-        var keys = [];
+        var base = shared ? ownPrefix : prefix, keys = [];
         for (var i = 0; i < localStorage.length; i++) {
             var k = localStorage.key(i);
-            if (prefix ? k.indexOf(prefix + "elara") === 0 : k.indexOf("elara") === 0) keys.push(k);
+            if (k.indexOf(base + "elara") === 0 && (!shared || PERSONAL.test(k.slice(base.length)))) keys.push(k);
         }
         keys.forEach(function (k) {
             realRemove.call(localStorage, k);
-            if (user) enqueue(k.slice(prefix.length), null);
+            if (user) enqueue(k.slice(base.length), null);
         });
         return flush();
     }
 
+    /* ----- household links (table elara_household_links) ----- */
+    function linkJob(fn) {
+        if (!user || shared || !cfg.supabaseUrl) return Promise.resolve(false);
+        return getClient().then(fn).then(function (r) {
+            if (r && r.error) { console.warn("[Elara] household link:", r.error.message); return false; }
+            return true;
+        }).catch(function (e) { console.warn("[Elara] household link:", e.message); return false; });
+    }
+    var household = {
+        isOwner: !shared, ownerId: dataId,
+        invite: function (email, role) {
+            var em = String(email).trim().toLowerCase(), rl = role || "member";
+            return linkJob(function (c) {
+                return c.from("elara_household_links").insert({ owner_id: user.id, email: em, role: rl }).then(function (r) {
+                    if (r.error && r.error.code === "23505")      // already invited: just refresh the role
+                        return c.from("elara_household_links").update({ role: rl }).eq("owner_id", user.id).eq("email", em);
+                    return r;
+                });
+            });
+        },
+        setRole: function (email, role) {
+            return linkJob(function (c) { return c.from("elara_household_links").update({ role: role }).eq("owner_id", user.id).eq("email", String(email).trim().toLowerCase()); });
+        },
+        revoke: function (email) {
+            return linkJob(function (c) { return c.from("elara_household_links").delete().eq("owner_id", user.id).eq("email", String(email).trim().toLowerCase()); });
+        }
+    };
+
+    // I joined someone's household: turn my "pending" entry in their member list into a real member
+    function activateSelf() {
+        if (!shared || !user.email) return;
+        var m = load("elaraMembers", null);
+        if (!m || !m.length) return;
+        var me = m.filter(function (x) { return String(x.email).toLowerCase() === user.email.toLowerCase(); })[0];
+        if (!me || me.status !== "pending") return;
+        me.status = "online"; me.location = "Home";
+        if (!me.name) me.name = user.first;
+        save("elaraMembers", m);
+        log("joined the household", "fa-user-check", me.name);
+    }
+    activateSelf();
+
     window.ElaraData = {
-        user: user, info: info, prefix: prefix, config: cfg, demo: DEMO, signOut: signOut, flush: flush, getClient: getClient, resetData: resetData,
+        user: user, info: info, prefix: prefix, shared: shared, household: household, config: cfg, demo: DEMO, signOut: signOut, flush: flush, getClient: getClient, resetData: resetData,
         log: log, activity: activity, ago: ago,
         tasks: { all: tasks, save: saveTasks },
         members: { all: members, save: saveMembers, ROLE_PERMS: ROLE_PERMS },

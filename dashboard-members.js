@@ -144,7 +144,8 @@
         ];
         if (m.status === "pending") items.push('<button type="button" data-action="resend"><i class="fa-solid fa-paper-plane"></i> Resend Invite</button>');
         else if (m.role !== "owner") items.push('<button type="button" data-action="presence"><i class="fa-solid fa-' + (m.status === "away" ? "house" : "person-walking-arrow-right") + '"></i> Mark as ' + (m.status === "away" ? "Home" : "Away") + '</button>');
-        if (m.role !== "owner") items.push('<button type="button" class="delete-option" data-action="remove"><i class="fa-solid fa-trash"></i> Remove Member</button>');
+        if (D && D.household && !D.household.isOwner) items = items.slice(0, 1);   // joined members can only view profiles
+        else if (m.role !== "owner") items.push('<button type="button" class="delete-option" data-action="remove"><i class="fa-solid fa-trash"></i> Remove Member</button>');
 
         menuEl = document.createElement("div");
         menuEl.className = "member-portal";
@@ -234,6 +235,11 @@
                 members.forEach(function (m) {
                     if (m.id !== editingId) return;
                     var roleChanged = m.role !== role && m.role !== "owner";
+                    var oldEmail = m.email;
+                    if (D && D.household && m.role !== "owner") {
+                        if (m.status === "pending" && oldEmail.toLowerCase() !== email.toLowerCase()) { D.household.revoke(oldEmail); D.household.invite(email, role); }
+                        else if (roleChanged) D.household.setRole(oldEmail, role);
+                    }
                     m.name = name; m.email = email;
                     if (m.role !== "owner") { m.role = role; if (roleChanged) m.permissions = Object.assign({}, ROLE_PERMS[role]); }
                 });
@@ -242,6 +248,7 @@
                 var fresh = { id: Date.now(), name: name, email: email, role: role, status: "pending", location: "Sending invitation...", avatar: "",
                                color: avatarColors[members.length % avatarColors.length], permissions: Object.assign({}, ROLE_PERMS[role]) };
                 members.push(fresh);
+                if (D && D.household) D.household.invite(email, role);   // record the invitation so it can be accepted
                 save(); render(); closeModal();
                 deliverInvite(fresh);
                 return;
@@ -276,6 +283,7 @@
                 ElaraUI.confirm({ title: "Remove " + mem.name + "?", message: "They will lose access to your household. You can invite them again later.", confirmText: "Remove member" })
                     .then(function (ok) {
                         if (!ok) return;
+                        if (D && D.household) D.household.revoke(mem.email);   // takes their access away
                         members = members.filter(function (x) { return x.id !== mem.id; });
                         if (String(permMemberId) === String(mem.id)) permMemberId = null;
                         save(); render(); log(mem.name + " was removed from the household", "fa-user-minus"); toast(mem.name + " was removed.");
@@ -328,6 +336,7 @@
     }
     function togglePermission(key) {
         var m = permTarget(); if (!m || m.role === "owner") return;
+        if (D && D.household && !D.household.isOwner) return toast("Only the home owner can change access.", "info");
         m.permissions[key] = !m.permissions[key];
         save(); renderPermissions();
         var label = PERMS.filter(function (p) { return p[0] === key; })[0][1];
@@ -347,6 +356,10 @@
         }).join("") : '<div class="empty-state small"><i class="fa-solid fa-clock-rotate-left"></i><p>No activity yet. Things you do around the home show up here.</p></div>';
     }
     setInterval(renderActivity, 30000);
+
+    if (D && D.household && !D.household.isOwner) {
+        ["addMemberBtn", "addMemberFab"].forEach(function (id) { var b = $(id); if (b) b.style.display = "none"; });
+    }
 
     render();
     renderActivity();
