@@ -1,150 +1,1143 @@
-.background-video{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -1;
+/* ==========================================
+            GOOGLE FONT
+========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* ==========================================
+                RESET
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-body::after {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: -1;
+html{
+    scroll-behavior:smooth;
 }
 
-#logo {
-    display: flex;
-    position: top left;
-    max-width: 150px;
-    max-height: 140px;
-    margin-left: 30px;
-    margin-top: 20px;
-    gap: 0px;
+body{
+
+    font-family:'Poppins',sans-serif;
+    background:#05060B;
+    color:white;
+    overflow-x:hidden;
+
+}
+
+/* ==========================================
+        ANIMATED BACKGROUND
+========================================== */
+
+.background-gradient{
+
+    position:fixed;
+
+    inset:0;
+
+    z-index:-3;
+
+    background:
+
+    radial-gradient(circle at top left,#8A3FFC33,transparent 45%),
+
+    radial-gradient(circle at bottom right,#2C6E7E55,transparent 50%),
+
+    linear-gradient(180deg,#05060B,#080B15,#05060B);
+
+}
+
+/* ==========================================
+            BIG ELARA
+========================================== */
+
+.background-title{
+
+    position:fixed;
+
+    top:50%;
+
+    left:50%;
+
+    transform:translate(-50%,-50%);
+
+    font-size:15vw;
+
+    font-weight:800;
+
+    color:white;
+
+    opacity:.035;
+
+    letter-spacing:25px;
+
+    user-select:none;
+
+    pointer-events:none;
+
+    z-index:-2;
+
+}
+
+/* ==========================================
+            HEADER
+========================================== */
+
+header{
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:25px 70px;
+
+    position:sticky;
+
+    top:0;
+
+    backdrop-filter:blur(18px);
+
+    background:rgba(10,10,20,.35);
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+    z-index:1000;
+
+}
+
+/* ==========================================
+            LOGO
+========================================== */
+
+#logo-container{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}
+
+#logo{
+
+    width:70px;
+
 }
 
 #logo-name{
-    display: flex;
-    font-family:Arial, Helvetica, sans-serif;
-    margin-top: 25px;
-    color: white;
-    gap: 0p;
 
+    font-size:34px;
 
-}
+    font-weight:700;
 
-#logo-container {
-    display: flex;
-    align-items: center;
-}
-
-#nav-container {
-    display: flex;
-    justify-content: space-between; 
-    align-items: center;
-    width: 65%;                      
-    margin: 40px auto;               
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 14px;
-    text-transform: uppercase;
-    color: white;
-}
-
-#nav-container a {
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-
-#nav-container a:hover {
-    transform: scale(1.1);
-    transform:rotate(-1deg);
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-    color: coral;
-}
-
-.About-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 80px;
-    padding: 20px;
-}
-
-#About-container-h1 {
-    margin-top: 90px;
     color:white;
-    margin-left: 100px;
-    font-family: Arial, Helvetica, sans-serif;
+
+}
+
+/* ==========================================
+            NAVIGATION
+========================================== */
+
+nav{
+
+    display:flex;
+
+    gap:45px;
+
+}
+
+nav a{
+
+    color:white;
+
+    text-decoration:none;
+
+    font-size:15px;
+
+    transition:.35s;
+
+    position:relative;
+
+}
+
+nav a:hover{
+
+    color:#8A3FFC;
+
+}
+
+nav a::after{
+
+    content:"";
+
+    position:absolute;
+
+    bottom:-8px;
+
+    left:0;
+
+    width:0;
+
+    height:2px;
+
+    background:#8A3FFC;
+
+    transition:.35s;
+
+}
+
+nav a:hover::after{
+
+    width:100%;
+
+}
+
+nav .active{
+
+    color:#8A3FFC;
+
+}
+
+/* ==========================================
+                HERO
+========================================== */
+
+.hero{
+
+    width:90%;
+
+    margin:120px auto;
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    align-items:center;
+
+    gap:80px;
+
+}
+
+/* ==========================================
+            HERO LEFT
+========================================== */
+
+.tag{
+
+    display:inline-block;
+
+    padding:8px 20px;
+
+    border-radius:30px;
+
+    background:rgba(138,63,252,.15);
+
+    color:#B694FF;
+
+    margin-bottom:25px;
+
+}
+
+.hero h1{
+
+    font-size:70px;
+
+    line-height:1.1;
+
+    margin-bottom:25px;
+
+}
+
+.hero p{
+
+    color:#B6B8D8;
+
+    font-size:18px;
+
+    line-height:1.9;
+
+    margin-bottom:40px;
+
+}
+
+/* ==========================================
+            BUTTON
+========================================== */
+
+.hero button{
+
+    border:none;
+
+    padding:18px 42px;
+
+    border-radius:60px;
+
+    background:linear-gradient(135deg,#8A3FFC,#5F72FF);
+
+    color:white;
+
+    font-size:16px;
+
+    cursor:pointer;
+
+    transition:.4s;
+
+    box-shadow:
+
+    0 15px 40px rgba(138,63,252,.35);
+
+}
+
+.hero button:hover{
+
+    transform:translateY(-8px);
+
+    box-shadow:
+
+    0 25px 60px rgba(138,63,252,.5);
+
+}
+
+/* ==========================================
+            HERO IMAGE
+========================================== */
+
+.hero-right{
+
+    display:flex;
+
+    justify-content:center;
+
+}
+
+.hero-right img{
+
+    width:95%;
+
+    border-radius:35px;
+
+    box-shadow:
+
+    0 40px 80px rgba(0,0,0,.45),
+
+    0 0 80px rgba(138,63,252,.18);
+
+    animation:floatImage 6s ease-in-out infinite;
+
+}
+
+/* ==========================================
+        FLOATING ANIMATION
+========================================== */
+
+@keyframes floatImage{
+
+    0%{
+
+        transform:translateY(0px);
+
+    }
+
+    50%{
+
+        transform:translateY(-20px);
+
+    }
+
+    100%{
+
+        transform:translateY(0px);
+
+    }
+
+}
+
+/*==========================================
+        WHAT IS ELARA
+==========================================*/
+
+.glass{
+
+    width:90%;
+    margin:120px auto;
+
+    padding:70px;
+
+    border-radius:35px;
+
+    background:rgba(255,255,255,.05);
+
+    backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+    0 20px 60px rgba(0,0,0,.35);
+
+}
+
+.glass h2{
+
+    font-size:42px;
+
+    margin-bottom:25px;
+
+}
+
+.glass p{
+
+    color:#B6B8D8;
+
+    font-size:18px;
+
+    line-height:2;
+
+}
+
+/*==========================================
+            FEATURES
+==========================================*/
+
+.features{
+
+    width:90%;
+
+    margin:120px auto;
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:35px;
+
+}
+
+/*==========================================
+            FEATURE CARD
+==========================================*/
+
+.card{
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(18px);
+
+    border-radius:30px;
+
+    padding:40px;
+
+    transition:.45s;
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+/* Glow background */
+
+.card::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:260px;
+
+    height:260px;
+
+    background:#8A3FFC;
+
+    border-radius:50%;
+
+    filter:blur(90px);
+
+    opacity:0;
+
+    top:-120px;
+
+    right:-120px;
+
+    transition:.45s;
+
+}
+
+.card:hover::before{
+
+    opacity:.18;
+
+}
+
+.card:hover{
+
+    transform:translateY(-12px);
+
+    border-color:#8A3FFC;
+
+    box-shadow:
+    0 25px 60px rgba(138,63,252,.30);
+
+}
+
+/*==========================================
+            ICON
+==========================================*/
+
+.card i{
+
+    width:75px;
+
+    height:75px;
+
+    border-radius:20px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:linear-gradient(135deg,#8A3FFC,#5F72FF);
+
+    font-size:30px;
+
+    margin-bottom:30px;
+
+    transition:.4s;
+
+}
+
+.card:hover i{
+
+    transform:rotate(-10deg) scale(1.08);
+
+}
+
+/*==========================================
+            CARD TEXT
+==========================================*/
+
+.card h3{
+
+    font-size:26px;
+
+    margin-bottom:18px;
+
+}
+
+.card p{
+
+    color:#B6B8D8;
+
+    line-height:1.9;
+
+}
+
+/*==========================================
+            WORKFLOW
+==========================================*/
+
+.workflow{
+
+    width:90%;
+
+    margin:150px auto;
+
+    text-align:center;
+
+}
+
+.workflow h2{
+
+    font-size:46px;
+
+    margin-bottom:70px;
+
+}
+
+/*==========================================
+            STEP CONTAINER
+==========================================*/
+
+.steps{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    flex-wrap:wrap;
+
+    gap:25px;
+
+}
+
+/*==========================================
+                STEP
+==========================================*/
+
+.step{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    width:150px;
+
+}
+
+.step span{
+
+    width:90px;
+
+    height:90px;
+
+    border-radius:50%;
+
+    background:linear-gradient(135deg,#8A3FFC,#5F72FF);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    margin-bottom:20px;
+
+    box-shadow:
+
+    0 15px 45px rgba(138,63,252,.35);
+
+    transition:.4s;
+
+}
+
+.step:hover span{
+
+    transform:scale(1.12);
+
+}
+
+.step h4{
+
+    font-size:18px;
+
+    color:white;
+
+}
+
+/*==========================================
+            CONNECTING LINE
+==========================================*/
+
+.line{
+
+    width:80px;
+
+    height:3px;
+
+    background:linear-gradient(
+
+        90deg,
+
+        #8A3FFC,
+
+        #5F72FF
+
+    );
+
+    border-radius:50px;
+
+    opacity:.7;
+
+}
+
+/*==========================================
+            TECHNOLOGIES
+==========================================*/
+
+.tech{
+
+    width:90%;
+    margin:150px auto;
+    text-align:center;
+
+}
+
+.tech h2{
+
+    font-size:48px;
+    margin-bottom:60px;
+
+}
+
+.tech-grid{
+
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:25px;
+
+}
+
+.tech-grid span{
+
+    padding:18px 35px;
+
+    border-radius:50px;
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    color:white;
+
+    transition:.4s;
+
+    cursor:pointer;
+
+    backdrop-filter:blur(15px);
+
+}
+
+.tech-grid span:hover{
+
+    background:#8A3FFC;
+
+    transform:translateY(-8px);
+
+    box-shadow:
+    0 15px 40px rgba(138,63,252,.4);
+
+}
+
+/*==========================================
+            MEET ELARA
+==========================================*/
+
+.assistant{
+
+    width:90%;
+
+    margin:180px auto;
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:80px;
+
+    align-items:center;
+
+}
+
+.assistant h2{
+
+    font-size:52px;
+
+    margin-bottom:30px;
+
+}
+
+.assistant p{
+
+    color:#B6B8D8;
+
+    line-height:2;
+
+    font-size:18px;
+
+}
+
+.assistant img{
+
+    width:100%;
+
+    animation:floatImage 6s ease-in-out infinite;
+
+    filter:drop-shadow(0 25px 50px rgba(138,63,252,.25));
+
+}
+
+/*==========================================
+                CTA
+==========================================*/
+
+.cta{
+
+    width:90%;
+
+    margin:180px auto 120px;
+
+    padding:100px;
+
+    text-align:center;
+
+    border-radius:35px;
+
+    background:
+
+    linear-gradient(
+
+    135deg,
+
+    rgba(138,63,252,.18),
+
+    rgba(95,114,255,.08)
+
+    );
+
+    border:1px solid rgba(255,255,255,.08);
+
+}
+
+.cta h2{
+
+    font-size:55px;
+
+    margin-bottom:25px;
+
+}
+
+.cta p{
+
+    color:#B6B8D8;
+
+    margin-bottom:40px;
+
+    font-size:18px;
+
+}
+
+.cta button{
+
+    padding:18px 45px;
+
+    border:none;
+
+    border-radius:50px;
+
+    background:linear-gradient(
+
+    135deg,
+
+    #8A3FFC,
+
+    #5F72FF
+
+    );
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:17px;
+
+    transition:.4s;
+
+}
+
+.cta button:hover{
+
+    transform:translateY(-10px);
+
+    box-shadow:
+
+    0 20px 50px rgba(138,63,252,.4);
+
+}
+
+/*==========================================
+        SCROLL REVEAL
+==========================================*/
+
+.reveal{
+
+    opacity:0;
+
+    transform:translateY(80px);
+
+    transition:
+
+    opacity .8s ease,
+
+    transform .8s ease;
+
+}
+
+.reveal.active{
+
+    opacity:1;
+
+    transform:translateY(0);
+
+}
+
+/*==========================================
+        RESPONSIVE
+==========================================*/
+
+@media(max-width:1100px){
+
+.hero{
+
+grid-template-columns:1fr;
+
+text-align:center;
+
+}
+
+.assistant{
+
+grid-template-columns:1fr;
+
+text-align:center;
+
+}
+
+.features{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+.steps{
+
+flex-direction:column;
+
+}
+
+.line{
+
+width:3px;
+
+height:60px;
+
+}
+
+}
+
+@media(max-width:768px){
+
+header{
+
+padding:20px;
+
+flex-direction:column;
+
+gap:20px;
+
+}
+
+nav{
+
+gap:20px;
+
+flex-wrap:wrap;
+
+justify-content:center;
+
+}
+
+.hero h1{
+
+font-size:48px;
+
+}
+
+.glass{
+
+padding:40px;
+
+}
+
+.features{
+
+grid-template-columns:1fr;
+
+}
+
+.background-title{
+
+font-size:26vw;
+
+letter-spacing:10px;
+
+}
+
+.cta{
+
+padding:60px 25px;
+
+}
+
+.cta h2{
+
+font-size:38px;
+
+}
+
+.tech-grid{
+
+gap:15px;
+
+}
+
+.tech-grid span{
+
+padding:14px 22px;
+
+}
+
+}
+
+.assistant-image{
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
     
 
 }
-.About-container p{
-    color: white;
-    flex: 1;                
-    margin-right: 200px;
-    margin-left: 100px; 
-    text-align: left;
-    font-family: Arial, Helvetica, sans-serif;
-    
+
+.assistant-image svg{
+
+    width:360px;
+
+    animation:
+    floatImage 6s ease-in-out infinite,
+    mascotGlow 4s ease-in-out infinite;
+    margin-top:65px;
+
 }
 
-.About-container img {
-    width: 690px;
-    height: 725px;
-    border-radius: 20px;
-    filter: brightness(60%);
-    box-shadow: 0 0 15px chocolate;
+@keyframes mascotGlow{
+
+0%,100%{
+
+filter:
+drop-shadow(0 0 25px rgba(138,63,252,.25));
+
 }
 
-.About {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    flex: 1;
+50%{
+
+filter:
+drop-shadow(0 0 60px rgba(138,63,252,.5));
+
 }
 
-.About-boxes {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-left: 80px;
-    margin-top: 50px;
 }
 
-.box {
-    background-color: white;
-    width: 260px;
-    padding: 20px;
-    border-radius: 20px;
-    text-align: center;
-}
+/*Mascot*/
 
-.box h1{
-    color:black;
-    font-family: Arial, Helvetica, sans-serif;
-    text-align: center;
-}
-
-.box p{
-    color: black;
-    text-align: center;
-    margin: 0;
-    line-height: 1.5;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.box:hover{
-    transform: scale(1.1);
-    box-shadow: none;
-}
-
-
-
+:root {
+    --glow: #ffffff;
+    --plastic-hi: #4c4c58;
+    --plastic-mid: #202024;
+    --plastic-lo: #08080a;
+    --panel: #0c0c0f;
+    --bg: #F6F3EC;
+    --ink: #2B2E33;
+    --shadow: rgba(0, 0, 0, 0.32);
+  }
+ 
+  * { box-sizing: border-box; }
+ 
+ 
+  /* ---------- MASCOT WIDGET ---------- */
+  #mascot-wrap {
+    position: fixed;
+    right: 32px;
+    bottom: 28px;
+    width: 250px;
+    height: 280px;
+    z-index: 999;
+    cursor: pointer;
+    filter: drop-shadow(0 10px 14px var(--shadow));
+    transition: transform 0.25s ease;
+  }
+ 
+  #mascot-wrap:hover { transform: translateY(-4px); }
+ 
+  .mascot-svg { width: 100%; height: 100%; overflow: visible; }
+ 
+  #antenna-group {
+    transform-origin: 54px 26px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+ 
+  #antenna-bulb {
+    animation: bulb-pulse 2.6s ease-in-out infinite;
+    transform-origin: 54px 8px;
+  }
+ 
+  @keyframes bulb-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+ 
+  #head-group {
+    transform-origin: 54px 62px;
+    transition: transform 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+ 
+  .eye-white { fill: #F6F3EC; }
+  .eye-pupil {
+    fill: #0c0c0f;
+    transition: transform 0.12s linear;
+  }
+ 
+  .eye-shine { fill: #fff; opacity: 0.85; }
+ 
+  #speech-bubble {
+    opacity: 0;
+    transform: translateY(6px) scale(0.94);
+    transform-origin: bottom right;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+  }
+ 
+  #mascot-wrap:hover #speech-bubble,
+  #mascot-wrap.talking #speech-bubble {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+ 
+  #speech-bubble text {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--ink);
+  }
+ 
+  .foot {
+    animation: foot-shift 3.4s ease-in-out infinite;
+    transform-origin: center bottom;
+  }
+  .foot.right { animation-delay: 1.7s; }
+ 
+  @keyframes foot-shift {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1.5px); }
+  }
+ 
+  @media (prefers-reduced-motion: reduce) {
+    #antenna-bulb, .foot, #head-group, .eye-pupil { animation: none !important; transition: none !important; }
+  }

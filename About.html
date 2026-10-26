@@ -1,72 +1,492 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home page</title>
+
+    <title>About Elara</title>
+
+    <link rel="icon" href="Elara logo.png">
+
     <link rel="stylesheet" href="About.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
 </head>
+
 <body>
-    <div id="logo-container">
-    <image src="Elara logo.png" id="logo"></image>
-    <h1 id="logo-name">Elara</h1>
-<nav id="nav-container">
-    <a href="Homepage.html">Home</a>
-    <a href="About.html">About </a>
-    <a href="Contactus.html">Contact </a>
-    <a href="Loginpage.html">Log In</a>
-</nav>
 
+    <!-- Background -->
+    <div class="background-gradient"></div>
+
+    <div class="background-title">
+        ELARA
     </div>
 
-<div class="About-container">
-    <div>
-    <div class="About">
-        <h1 id="About-container-h1">ABOUT US</h1>
+    <!-- Navigation -->
+
+    <header>
+
+        <div id="logo-container">
+
+            <img src="Elara logo.png" id="logo">
+
+            <h1 id="logo-name">Elara</h1>
+
+        </div>
+
+        <nav>
+
+            <a href="Homepage.html">Home</a>
+
+            <a class="active" href="#">About</a>
+
+            <a href="Contactus.html">Contact</a>
+
+            <a href="Loginpage.html">Login</a>
+
+        </nav>
+
+    </header>
+
+    <!-- HERO -->
+
+    <section class="hero reveal">
+
+        <div class="hero-left">
+
+            <span class="tag">
+
+                ABOUT ELARA
+
+            </span>
+
+            <h1>
+
+                Smarter Homes.
+                <br>
+                Simpler Living.
+
+            </h1>
+
+            <p>
+
+                Elara is an intelligent home management platform designed to
+                automate everyday living through smart inventory,
+                AI assistance,
+                scheduling,
+                analytics,
+                and connected home devices.
+
+            </p>
+
+            <button onclick="window.location.href='Loginpage.html'">
+
+                Explore Dashboard
+
+            </button>
+
+        </div>
+
+        <div class="hero-right">
+
+            <img src="elara-3d.png">
+
+        </div>
+
+    </section>
+
+    <!-- WHAT IS ELARA -->
+
+    <section class="glass reveal">
+
+        <h2>
+
+            What is Elara?
+
+        </h2>
+
         <p>
-            Elara is a modern home management system developed to simplify and enhance the way households operate.
-             The platform focuses on efficient inventory management, allowing users to track, update, and monitor household items in real time. 
-             By integrating smart features such as automated alerts, reporting, and voice-enabled commands, Elara provides a seamless and intelligent user experience. 
-             The system is designed to reduce manual effort, improve organisation, and give users greater control and visibility over their home environment.
-        </p>
-    </div>
-    <div class="About-boxes">
-    <div class="box">
-        <h1> <i class="fa-solid fa-bullseye"></i> Mission</h1>
-        <p>Our mission is to deliver efficient, reliable, and innovative solutions that simplify processes and enhance user experiences.
-             We aim to provide high-quality services that meet the needs of our users while maintaining excellence, integrity, and continuous improvement.
-        </p>
-        
-    </div>
 
-    <div class="box">
-        <h1><i class="fa-solid fa-eye"></i>Vision</h1>
-        <p>Our vision is to become a leading provider of smart and sustainable solutions, recognized for innovation, quality, and impact. 
-            We strive to shape the future by leveraging technology to create meaningful and lasting value for our users and community.
+            Elara combines modern technology with intelligent automation
+            to simplify household management.
+
+            Manage inventory,
+            monitor smart devices,
+            organise tasks,
+            analyse household activity,
+            and collaborate with family members through one beautifully
+            designed dashboard.
+
         </p>
-        
-    </div>
 
-    <div class="box">
-        <h1><i class="fa-solid fa-trophy"></i>Achievements</h1>
-        <p>We have successfully developed and implemented systems that improve productivity, streamline operations, and enhance user satisfaction. 
-            Our commitment to excellence has enabled us to deliver consistent results, build trust with users, and continuously grow through innovation and learning.
-        </p>
-    </div>
-</div>
-</div>
-    <div>
-    <img src="About.png.png" id="About-picture">
-    </div>
-</div>
+    </section>
 
+    <!-- FEATURES -->
 
+    <section class="features">
+
+        <div class="card reveal">
+
+            <i class="fa-solid fa-box"></i>
+
+            <h3>
+
+                Inventory
+
+            </h3>
+
+            <p>
+
+                Track groceries and household items in real time.
+
+            </p>
+
+        </div>
+
+        <div class="card reveal">
+
+            <i class="fa-solid fa-robot"></i>
+
+            <h3>
+
+                AI Assistant
+
+            </h3>
+
+            <p>
+
+                Voice commands and intelligent recommendations.
+
+            </p>
+
+        </div>
+
+        <div class="card reveal">
+
+            <i class="fa-solid fa-house-signal"></i>
+
+            <h3>
+
+                Smart Home
+
+            </h3>
+
+            <p>
+
+                Control appliances from one dashboard.
+
+            </p>
+
+        </div>
+
+        <div class="card reveal">
+
+            <i class="fa-solid fa-chart-column"></i>
+
+            <h3>
+
+                Analytics
+
+            </h3>
+
+            <p>
+
+                Understand household usage through beautiful graphs.
+
+            </p>
+
+        </div>
+
+        <div class="card reveal">
+
+            <i class="fa-solid fa-calendar-days"></i>
+
+            <h3>
+
+                Scheduling
+
+            </h3>
+
+            <p>
+
+                Never miss chores, reminders or appointments.
+
+            </p>
+
+        </div>
+
+        <div class="card reveal">
+
+            <i class="fa-solid fa-users"></i>
+
+            <h3>
+
+                Multi User
+
+            </h3>
+
+            <p>
+
+                Separate experiences for homeowners,
+                family and tenants.
+
+            </p>
+
+        </div>
+
+    </section>
+
+    <!-- HOW IT WORKS -->
+
+    <section class="workflow reveal">
+
+        <h2>
+
+            How Elara Works
+
+        </h2>
+
+        <div class="steps">
+
+            <div class="step">
+
+                <span>1</span>
+
+                <h4>Create Home</h4>
+
+            </div>
+
+            <div class="line"></div>
+
+            <div class="step">
+
+                <span>2</span>
+
+                <h4>Add Members</h4>
+
+            </div>
+
+            <div class="line"></div>
+
+            <div class="step">
+
+                <span>3</span>
+
+                <h4>Manage</h4>
+
+            </div>
+
+            <div class="line"></div>
+
+            <div class="step">
+
+                <span>4</span>
+
+                <h4>Automate</h4>
+
+            </div>
+
+            <div class="line"></div>
+
+            <div class="step">
+
+                <span>5</span>
+
+                <h4>Analyse</h4>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- TECHNOLOGIES -->
+
+    <section class="tech reveal">
+
+        <h2>
+
+            Technologies Behind Elara
+
+        </h2>
+
+        <div class="tech-grid">
+
+            <span>HTML5</span>
+
+            <span>CSS3</span>
+
+            <span>JavaScript</span>
+
+            <span>Supabase</span>
+
+            <span>Artificial Intelligence</span>
+
+            <span>IoT</span>
+
+            <span>Voice Recognition</span>
+
+            <span>Cloud Computing</span>
+
+        </div>
+
+    </section>
+
+    <!-- MASCOT -->
+
+    <section class="assistant reveal">
+
+        <div>
+
+            <h2>
+
+                Meet Elara
+
+            </h2>
+
+            <p>
+
+                Hello!
+
+                I'm Elara,
+                your intelligent home assistant.
+
+                I'll help organise your home,
+                monitor your inventory,
+                automate your devices
+                and simplify everyday living.
+
+            </p>
+
+        </div>
+
+        <div class="assistant-image">
+
+        <div id="mascot-wrap" aria-label="Elara, your home assistant mascot" role="img">
+  <svg class="mascot-svg" viewBox="0 0 108 140" xmlns="http://www.w3.org/2000/svg">
  
-    <video autoplay loop muted class="background-video">
-        <source src="Back.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-    </video>
-    
+    <defs>
+      <radialGradient id="headGloss" cx="35%" cy="22%" r="85%">
+        <stop offset="0%" stop-color="var(--plastic-hi)" />
+        <stop offset="35%" stop-color="var(--plastic-mid)" />
+        <stop offset="80%" stop-color="var(--plastic-lo)" />
+        <stop offset="100%" stop-color="#000000" />
+      </radialGradient>
+      <radialGradient id="bodyGloss" cx="38%" cy="10%" r="95%">
+        <stop offset="0%" stop-color="var(--plastic-hi)" />
+        <stop offset="40%" stop-color="var(--plastic-mid)" />
+        <stop offset="85%" stop-color="var(--plastic-lo)" />
+        <stop offset="100%" stop-color="#000000" />
+      </radialGradient>
+      <radialGradient id="earGloss" cx="35%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="#3a3a44" />
+        <stop offset="60%" stop-color="#141417" />
+        <stop offset="100%" stop-color="#000000" />
+      </radialGradient>
+ 
+      <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+        <feGaussianBlur stdDeviation="2.6" result="blur1" />
+        <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blur2" />
+        <feMerge>
+          <feMergeNode in="blur1" />
+          <feMergeNode in="blur2" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+ 
+    <!-- speech bubble -->
+    <g id="speech-bubble">
+      <rect x="-6" y="-4" width="92" height="30" rx="10" fill="#fff" stroke="#e4e1d8" stroke-width="1.5" />
+      <path d="M20 26 L12 34 L28 26 Z" fill="#fff" stroke="#e4e1d8" stroke-width="1.5" />
+      <text id="speech-text" x="12" y="15">Hi, I'm Elara!</text>
+    </g>
+ 
+    <!-- feet -->
+    <ellipse class="foot left" cx="38" cy="132" rx="11" ry="5" fill="#000000" />
+    <ellipse class="foot right" cx="70" cy="132" rx="11" ry="5" fill="#000000" />
+ 
+    <!-- body -->
+    <rect x="28" y="82" width="52" height="44" rx="16" fill="url(#bodyGloss)" />
+ 
+    <!-- chest ring, glowing -->
+    <circle cx="54" cy="104" r="9" fill="none" stroke="var(--glow)" stroke-width="3.4" filter="url(#glow)" opacity="0.95" />
+    <circle cx="54" cy="104" r="9" fill="none" stroke="var(--glow)" stroke-width="3.4" opacity="0.9" />
+ 
+    <!-- neck -->
+    <rect x="47" y="72" width="14" height="12" fill="#050506" />
+ 
+    <!-- head group (tilts toward cursor) -->
+    <g id="head-group">
+ 
+      <!-- antenna -->
+      <g id="antenna-group">
+        <rect x="52" y="10" width="4" height="18" rx="2" fill="#0c0c0f" />
+        <circle id="antenna-bulb" cx="54" cy="8" r="6" fill="var(--glow)" filter="url(#glow)" />
+      </g>
+ 
+      <!-- head -->
+      <rect x="22" y="26" width="64" height="52" rx="22" fill="url(#headGloss)" />
+ 
+      <!-- rim highlight -->
+      <path d="M32 34 C42 26, 58 24, 72 30" stroke="#ffffff" stroke-opacity="0.12" stroke-width="5" fill="none" stroke-linecap="round" />
+ 
+      <!-- ears -->
+      <circle cx="20" cy="52" r="7" fill="url(#earGloss)" />
+      <circle cx="88" cy="52" r="7" fill="url(#earGloss)" />
+ 
+      <!-- face panel -->
+      <rect x="32" y="38" width="44" height="28" rx="14" fill="var(--panel)" />
+ 
+      <!-- eyes -->
+      <g id="eye-left">
+        <circle class="eye-white" cx="45" cy="52" r="8" />
+        <circle class="eye-pupil" id="pupil-left" cx="45" cy="52" r="4" />
+        <circle class="eye-shine" cx="43" cy="50" r="1.4" />
+      </g>
+      <g id="eye-right">
+        <circle class="eye-white" cx="63" cy="52" r="8" />
+        <circle class="eye-pupil" id="pupil-right" cx="63" cy="52" r="4" />
+        <circle class="eye-shine" cx="61" cy="50" r="1.4" />
+      </g>
+    </g>
+  </svg>
+</div>
+
+        </div>
+
+    </section>
+
+    <!-- CTA -->
+
+    <section class="cta reveal">
+
+        <h2>
+
+            Ready to build a smarter home?
+
+        </h2>
+
+        <p>
+
+            Experience intelligent home management with Elara.
+
+        </p>
+
+        <button onclick="window.location.href='Loginpage.html'">
+
+            Launch Elara
+
+        </button>
+
+    </section>
+
+    <script src="About.js"></script>
+
 </body>
+
 </html>
