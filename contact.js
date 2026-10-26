@@ -4,12 +4,29 @@ const supabaseUrl = "https://shyvyrvxashetxnmosnd.supabase.co";
 const supabaseKey = "sb_publishable_8G0vG3r2UW8Sx-ltfWQazQ_l2oWS3NX";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+/* ---------- phone field: only digits and an optional leading + ---------- */
+const phoneInput = document.getElementById("Pnumber");
+
+if (phoneInput) {
+    phoneInput.setAttribute("inputmode", "tel");
+    phoneInput.setAttribute("maxlength", "16");
+    phoneInput.setAttribute("autocomplete", "tel");
+
+    // runs on typing and on paste: strips letters and symbols straight away
+    phoneInput.addEventListener("input", () => {
+        const raw = phoneInput.value;
+        const hasPlus = raw.trim().charAt(0) === "+";
+        const digits = raw.replace(/\D/g, "");
+        phoneInput.value = (hasPlus ? "+" : "") + digits;
+    });
+}
+
 document.querySelector("form").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const name = document.getElementById("Name").value.trim();
     const email = document.getElementById("Email").value.trim();
-    const phone = document.getElementById("Pnumber").value.trim();
+    const phone = document.getElementById("Pnumber").value.replace(/[\s\-()]/g, "");
     const message = document.getElementById("Message").value.trim();
 
 
@@ -26,10 +43,11 @@ document.querySelector("form").addEventListener("submit", async (e) => {
         return;
     }
 
-    const phoneRegex = /^[0-9+\-\s()]{10,15}$/;
+    // digits only, optional leading +, 10 to 15 digits (e.g. 0821234567 or +27821234567)
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
 
     if (!phoneRegex.test(phone)) {
-        alert("Please enter a valid phone number.");
+        alert("Please enter a valid phone number using digits only, e.g. 0821234567 or +27821234567.");
         return;
     }
 
