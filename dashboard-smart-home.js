@@ -358,4 +358,59 @@
     sync(); addCbiButton(); drawChart(); renderActivity(); renderEnergyCards(); renderTemperature();
     document.addEventListener("change", function (e) { if (e.target.closest && e.target.closest(".device .switch")) setTimeout(renderEnergyCards, 60); });
     setInterval(renderActivity, 30000);
+
+    /* ---------------- live power from CBi switches (feeds Analytics) ---------------- */
+    // Tuya sends raw numbers: power in 0.1 W, voltage in 0.1 V, current in mA, energy in 0.001 kWh.
+    // If the first reading looks 10x or 100x off, change the matching number in tuyaScales (elara-config.js).
+    var SCALES = { cur_power: 1, cur_voltage: 1, cur_current: 0, add_ele: 3 };
+    var cfgScales = cfg.tuyaScales || {};
+    function readCode(status, code) {
+        var v = null;
+        if (Array.isArray(status)) status.forEach(function (s) { if (s && s.code === code) v = s.value; });
+        else if (status && typeof status === "object" && code in status) v = status[code];
+        return v;
+    }
+    function readNum(res, code) {
+        var v = readCode(res.status || res.result || res, code);
+        if (v == null || v === "" || isNaN(Number(v))) return null;
+        var sc = cfgScales[code] != null ? cfgScales[code] : (res.scales && res.scales[code] != null ? res.scales[code] : SCALES[code]);
+        return Number(v) / Math.pow(10, sc || 0);
+    }
+    function fmtPower(w) { return w >= 1000 ? (w / 1000).toFixed(2) + " kW" : Math.round(w) + " W"; }
+
+    function pollPower() {
+        if (!cfg.tuyaEndpoint || document.hidden) return;
+        D.devices.all().filter(function (d) { return d.tuyaId; }).forEach(function (d) {
+            callTuya({ action: "status", deviceId: d.tuyaId }).then(function (res) {
+                var w = readNum(res, "cur_power");
+                if (w == null) {
+                    if (!sessionStorage.getItem("elaraNoMeterWarn")) {
+                        sessionStorage.setItem("elaraNoMeterWarn", "1");
+                        toast(d.name + " isn\u2019t sending power readings yet, so Analytics keeps estimating.", "info");
+                    }
+                    return;
+                }
+                var on = readCode(res.status || res.result || res, d.tuyaCode || "switch_1");
+                on = on === true || on === "true" ? true : on === false || on === "false" ? false : d.on;
+                var el = document.querySelector('.device[data-id="' + d.id + '"]');
+                if (on !== d.on) {                       // switched outside Elara (e.g. in the CBi app): follow it
+                    D.devices.set(d.id, on, { silent: true });
+                    if (el) { var inp = inputOf(el); if (inp) inp.checked = on; paint(el); counts(); }
+                }
+                D.devices.record(d.id, { w: w, e: readNum(res, "add_ele"), on: on });
+                if (el) {
+                    var p = el.querySelector(".device-info p");
+                    if (p) p.textContent = d.type + " \u2022 CBi \u2022 " + fmtPower(w);
+                }
+                renderEnergyCards();
+            }).catch(function (err) { console.warn("CBi power reading failed:", err.message); });
+        });
+    }
+    var pollMs = Math.max(30, Number(cfg.tuyaPollSeconds) || 60) * 1000;   // each reading is one Tuya API call
+    setTimeout(pollPower, 1500);
+    setInterval(pollPower, pollMs);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) pollPower(); });
+    document.addEventListener("change", function (e) {   // after switching a CBi device, read it again shortly
+        if (e.target && e.target.matches && e.target.matches('.switch input[type="checkbox"]')) setTimeout(pollPower, 5000);
+    });
 })();

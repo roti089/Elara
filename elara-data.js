@@ -320,9 +320,9 @@
     function devices() {
         var d = load("elaraDevices", null);
         if (d) {
-            // the camera feature was removed: drop any camera that an older version saved
-            var kept = d.filter(function (x) { return !/camera/i.test(x.name) && x.type !== "Camera"; });
-            if (kept.length !== d.length) { d = kept; saveDevices(d); }
+            // camera support was removed: drop any camera saved by an earlier version
+            var kept = d.filter(function (x) { return x.type !== "Camera" && !/camera/i.test(x.name); });
+            if (kept.length !== d.length) { d = kept; save("elaraDevices", d); }
             return d;
         }
         var now = Date.now();
@@ -352,7 +352,7 @@
         var n = String(name).toLowerCase();
         if (/geyser|heater/.test(n)) return 3000; if (/oven|stove/.test(n)) return 2200; if (/air|aircon|ac\b/.test(n)) return 1400;
         if (/kettle|iron|dryer/.test(n)) return 2000; if (/fridge|freezer/.test(n)) return 150; if (/tv/.test(n)) return 120;
-        if (/light|lamp|bulb/.test(n)) return 20; if (/fan/.test(n)) return 60; return 50;
+        if (/light|lamp|bulb/.test(n)) return 20; if (/fan/.test(n)) return 60; if (/camera/.test(n)) return 8; return 50;
     }
     function removeDevice(id) { saveDevices(devices().filter(function (d) { return d.id !== id; })); }
 
@@ -381,6 +381,62 @@
         if (on) out.push([t, to]);
         return out;
     }
+    // average power (kW) a metered device really draws while it is switched on
+    function meterAvgKw(m, d) {
+        return m && m.nOn >= 3 ? m.sumOn / m.nOn / 1000 : (d ? d.watts * (d.duty || 1) / 1000 : 0.05);
+    }
+    // add kWh into hourly buckets, spread over [a, z]
+    function spreadBuckets(bk, a, z, kwh) {
+        if (!(kwh > 0) || z <= a) return;
+        var total = z - a;
+        while (a < z) {
+            var dt = new Date(a), nextHour = new Date(dt); nextHour.setMinutes(0, 0, 0); nextHour.setHours(dt.getHours() + 1);
+            var seg = Math.min(z, nextHour.getTime()), key = String(nextHour.getTime() - 3600000);
+            bk[key] = Math.round(((bk[key] || 0) + kwh * (seg - a) / total) * 1e6) / 1e6;
+            a = seg;
+        }
+    }
+
+    /* A real reading from a smart switch with a power meter (CBi / Tuya).
+       r = { w: watts now, e: lifetime kWh counter (optional), on: true/false }.
+       The energy used since the previous reading is worked out and saved by the hour,
+       so Analytics shows what the switch really measured instead of an estimate. */
+    function recordReading(id, r) {
+        var w = Number(r && r.w);
+        if (!isFinite(w) || w < 0) return;
+        var now = (r && r.t) || Date.now(), on = !!r.on;
+        var e = (r.e == null || !isFinite(Number(r.e))) ? null : Number(r.e);
+        var st = load("elaraMeterState", {}), buckets = load("elaraMeterKwh", {});
+        var m = st[id], bk = buckets[id] = buckets[id] || {};
+        if (!m) {
+            st[id] = { first: now, lastT: now, lastW: w, lastE: e, lastOn: on, sumOn: on ? w : 0, nOn: on ? 1 : 0, peak: w };
+        } else if (now > m.lastT + 5000) {
+            var gap = now - m.lastT, dtH = gap / 3600000, kwh = 0;
+            if (gap <= 15 * 60000) {
+                kwh = (m.lastW + w) / 2 / 1000 * dtH;                       // page was open: average the power readings
+            } else {
+                var delta = (e != null && m.lastE != null) ? e - m.lastE : null;
+                if (delta != null && delta >= 0 && delta <= 8 * dtH) {
+                    kwh = delta;                                              // page was closed: use the meter's own energy counter
+                } else {
+                    var dev = devices().filter(function (x) { return x.id === id; })[0];
+                    var kw = meterAvgKw(m, dev);
+                    var evs = load("elaraEnergyLog", []).filter(function (x) { return x.id === id; }).sort(function (a, b) { return a.t - b.t; });
+                    if (dev) intervalsFor(dev, evs, now).forEach(function (iv) {
+                        var a = Math.max(iv[0], m.lastT), z = Math.min(iv[1], now);
+                        if (z > a) kwh += (z - a) / 3600000 * kw;             // no counter: estimate from on/off history
+                    });
+                }
+            }
+            spreadBuckets(bk, m.lastT, now, kwh);
+            m.lastT = now; m.lastW = w; m.lastOn = on;
+            if (e != null) m.lastE = e;
+            if (on) { m.sumOn += w; m.nOn++; }
+            if (w > m.peak) m.peak = w;
+        } else { return; }
+        save("elaraMeterState", st); save("elaraMeterKwh", buckets);
+    }
+
     function rangeBounds(range, now) {
         var sod = startOfDay(now).getTime();
         if (range === "today") return { from: sod, days: 1 };
@@ -396,32 +452,50 @@
         var logAll = load("elaraEnergyLog", []);
         var res = { from: from, to: end, total: 0, byDevice: {}, byRoom: {}, peak: 0, parts: { morning: 0, afternoon: 0, evening: 0, night: 0 },
                     series: new Array(range === "today" ? 24 : b.days).fill(0) };
+        var meterState = load("elaraMeterState", {}), meterKwh = load("elaraMeterKwh", {});
+        function addKwh(d, when, kwh) {
+            var h = when.getHours();
+            res.total += kwh;
+            res.byDevice[d.id] = (res.byDevice[d.id] || 0) + kwh;
+            res.byRoom[d.room] = (res.byRoom[d.room] || 0) + kwh;
+            var part = h >= 6 && h < 12 ? "morning" : h >= 12 && h < 17 ? "afternoon" : h >= 17 && h < 22 ? "evening" : "night";
+            res.parts[part] += kwh;
+            var idx = range === "today" ? h : Math.floor((startOfDay(when).getTime() - from) / 86400000);
+            if (idx >= 0 && idx < res.series.length) res.series[idx] += kwh;
+        }
+        function put(d, a, z, kw) {                       // constant power kw over [a, z]
+            while (a < z) {
+                var dt = new Date(a), nextHour = new Date(dt); nextHour.setMinutes(0, 0, 0); nextHour.setHours(dt.getHours() + 1);
+                var seg = Math.min(z, nextHour.getTime());
+                addKwh(d, dt, (seg - a) / 3600000 * kw);
+                a = seg;
+            }
+        }
         devices().forEach(function (d) {
             var evs = logAll.filter(function (e) { return e.id === d.id; }).sort(function (a, c) { return a.t - c.t; });
             var kw = d.watts * (d.duty || 1) / 1000;
+            var m = meterState[d.id];                      // real meter readings exist for this device
+            var limit = m ? m.first : Infinity;            // before the first reading: rated-power estimate
             intervalsFor(d, evs, now).forEach(function (iv) {
-                var a = Math.max(iv[0], from), z = Math.min(iv[1], end);
-                while (a < z) {
-                    var dt = new Date(a), nextHour = new Date(dt); nextHour.setMinutes(0, 0, 0); nextHour.setHours(dt.getHours() + 1);
-                    var seg = Math.min(z, nextHour.getTime());
-                    var kwh = (seg - a) / 3600000 * kw, h = dt.getHours();
-                    res.total += kwh;
-                    res.byDevice[d.id] = (res.byDevice[d.id] || 0) + kwh;
-                    res.byRoom[d.room] = (res.byRoom[d.room] || 0) + kwh;
-                    var part = h >= 6 && h < 12 ? "morning" : h >= 12 && h < 17 ? "afternoon" : h >= 17 && h < 22 ? "evening" : "night";
-                    res.parts[part] += kwh;
-                    var idx = range === "today" ? h : Math.floor((startOfDay(dt).getTime() - from) / 86400000);
-                    if (idx >= 0 && idx < res.series.length) res.series[idx] += kwh;
-                    a = seg;
-                }
+                put(d, Math.max(iv[0], from), Math.min(iv[1], end, limit), kw);
             });
+            if (m) {
+                var bk = meterKwh[d.id] || {};
+                Object.keys(bk).forEach(function (k) {     // measured energy, saved by the hour
+                    var hr = Number(k);
+                    if (hr >= from && hr < end) addKwh(d, new Date(hr), bk[k]);
+                });
+                // since the last reading (e.g. the page is closed) while it is on: use its real average draw
+                if (!offsetPeriods && d.on && now > m.lastT) put(d, Math.max(m.lastT, from), Math.min(now, end), meterAvgKw(m, d));
+            }
         });
         return res;
     }
     function energy(range) {
         var cur = integrate(range), prev = integrate(range, null, 1);
         var tariff = Number(localStorage.getItem("elaraTariff")) || cfg.tariffPerKwh || 2.5;
-        var rows = devices().map(function (d) { return { id: d.id, name: d.name, room: d.room, icon: d.icon, kwh: cur.byDevice[d.id] || 0 }; })
+        var meterNow = load("elaraMeterState", {});
+        var rows = devices().map(function (d) { return { id: d.id, name: d.name, room: d.room, icon: d.icon, kwh: cur.byDevice[d.id] || 0, measured: !!meterNow[d.id], watts: meterNow[d.id] ? meterNow[d.id].lastW : null }; })
             .sort(function (a, b) { return b.kwh - a.kwh; });
         var rooms = Object.keys(cur.byRoom).map(function (r) { return { room: r, kwh: cur.byRoom[r] }; }).sort(function (a, b) { return b.kwh - a.kwh; });
         var autos = load("elaraAutomations", null), autoPct = 0;
@@ -435,7 +509,7 @@
             devices: rows, rooms: rooms, parts: cur.parts, series: cur.series,
             active: devices().filter(function (d) { return d.on; }).length, deviceCount: devices().length,
             saving: saving, deviceEff: deviceEff, autoPct: autoPct, efficiency: overall,
-            hasData: cur.total >= 0.1 || prev.total >= 0.1, sample: localStorage.getItem("elaraEnergySample") === "1",
+            hasData: cur.total >= 0.005 || prev.total >= 0.005, metered: Object.keys(meterNow).length, sample: localStorage.getItem("elaraEnergySample") === "1",
             change: prev.total > 0 ? Math.round((cur.total - prev.total) / prev.total * 100) : null
         };
     }
@@ -450,14 +524,10 @@
             "Smart Fridge": [[0, 24, 1]], "Garage Door": [[7.5, 7.55, 0.9], [17.4, 17.45, 0.9]], "Smart Curtains": [[7, 7.05, 0.8], [18, 18.05, 0.8]]
         };
         all.forEach(function (d) { d.created = start; d.createdOn = false; });
-        for (var i = 0; i <= days; i++) {
+        for (var i = 0; i < days; i++) {
             var day = addDays(start, i);
             all.forEach(function (d) {
                 (pat[d.name] || []).forEach(function (w) {
-                    if (w[0] === 0 && w[1] === 24) {            // always-on (fridge): switch on once at the very start and never off
-                        if (i === 0) ev.push({ t: day.getTime(), id: d.id, on: true });
-                        return;
-                    }
                     if (Math.random() > w[2]) return;
                     var a = day.getTime() + (w[0] + (Math.random() - .5) * .4) * 3600000;
                     var z = day.getTime() + (w[1] + (Math.random() - .5) * .4) * 3600000;
@@ -475,7 +545,8 @@
     function clearEnergy() {
         var now = Date.now(); var all = devices();
         all.forEach(function (d) { d.created = now; d.createdOn = d.on; });
-        saveDevices(all); save("elaraEnergyLog", []); localStorage.removeItem("elaraEnergySample");
+        saveDevices(all); save("elaraEnergyLog", []); if (localStorage.getItem("elaraEnergySample") !== "1") { save("elaraMeterKwh", {}); save("elaraMeterState", {}); }   // clearing sample data keeps real meter readings
+        localStorage.removeItem("elaraEnergySample");
     }
 
     // wipe everything this person has stored (their tasks, events, members, devices ...)
@@ -497,7 +568,7 @@
         log: log, activity: activity, ago: ago,
         tasks: { all: tasks, save: saveTasks },
         members: { all: members, save: saveMembers, ROLE_PERMS: ROLE_PERMS },
-        devices: { all: devices, save: saveDevices, find: findDevice, ensure: ensureDevice, set: setDevice, remove: removeDevice, id: devId, DEFAULTS: DEFAULT_DEVICES },
+        devices: { all: devices, save: saveDevices, find: findDevice, ensure: ensureDevice, set: setDevice, record: recordReading, remove: removeDevice, id: devId, DEFAULTS: DEFAULT_DEVICES },
         energy: { compute: energy, generateSample: generateSample, clear: clearEnergy },
         util: { dayKey: dayKey, addDays: addDays, startOfDay: startOfDay, pad: pad, load: load, save: save }
     };

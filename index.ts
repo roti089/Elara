@@ -250,12 +250,39 @@ Deno.serve(async (request: Request) => {
       return jsonResponse({ error: "A valid action is required." }, 400);
     }
 
-    if (body.action !== "list" && body.action !== "set") {
+    if (
+      body.action !== "list" &&
+      body.action !== "set" &&
+      body.action !== "status"
+    ) {
       return jsonResponse({ error: "Unsupported action." }, 400);
     }
 
     const token = await getTuyaToken();
     const devices = await getDevices(token);
+
+    if (body.action === "status") {
+      if (typeof body.deviceId !== "string" || !body.deviceId) {
+        return jsonResponse({ error: "A device ID is required." }, 400);
+      }
+
+      const linked = devices.find(
+        (item: any) => String(item.id) === body.deviceId,
+      );
+
+      if (!linked) {
+        return jsonResponse({
+          error: "That device is not linked to this Tuya account.",
+        }, 403);
+      }
+
+      // The device list already carries each device's latest data points
+      // (switch, cur_power, add_ele, ...), so no extra Tuya call is needed.
+      return jsonResponse({
+        status: Array.isArray(linked.status) ? linked.status : [],
+        online: Boolean(linked.online),
+      });
+    }
 
     if (body.action === "list") {
       const supportedDevices = devices
