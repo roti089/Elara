@@ -13,16 +13,31 @@
     <div class="background-title">
         CONTACT
     </div>
-    <div id="logo-container">
-    <image src="Elara logo.png" id="logo"></image>
-    <h1 id="logo-name">Elara</h1>
-<nav id="nav-container">
-    <a href="Homepage.html">Home</a>
-    <a href="About.html">About </a>
-    <a href="Contactus.html">Contact </a>
-    <a href="Loginpage.html">Log In</a>
-</nav>
-    </div>
+    <!-- Navigation -->
+
+    <header>
+
+        <div id="logo-container">
+
+            <img src="Elara logo.png" id="logo">
+
+            <h1 id="logo-name">Elara</h1>
+
+        </div>
+
+        <nav>
+
+            <a href="Homepage.html">Home</a>
+
+            <a href="About.html">About</a>
+
+            <a class="active" href="#">Contact</a>
+
+            <a href="Loginpage.html">Login</a>
+
+        </nav>
+
+    </header>
 
 <div class="Contact-container">
     <div class="Contact-box">
@@ -58,7 +73,10 @@
         name="Pnumber"
         placeholder="Please enter your phone number"
         required
-        pattern="[0-9+\-\s()]{10,15}">
+        inputmode="tel"
+        maxlength="16"
+        pattern="\+?[0-9]{10,15}"
+        title="Digits only, e.g. 0821234567 or +27821234567">
 
     <br><br>
 

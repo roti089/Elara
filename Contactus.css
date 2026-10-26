@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
 /* ==========================
    RESET
 ========================== */
@@ -73,54 +75,120 @@ body{
 }
 
 /* ==========================
-   HEADER
+   HEADER  (same as the About page)
 ========================== */
+
+header{
+
+    font-family:'Poppins',sans-serif;
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:25px 70px;
+
+    position:sticky;
+
+    top:0;
+
+    backdrop-filter:blur(18px);
+
+    background:rgba(10,10,20,.35);
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+    z-index:1000;
+
+}
 
 #logo-container{
 
     display:flex;
+
     align-items:center;
-    padding:25px 70px;
+
+    gap:12px;
 
 }
 
 #logo{
 
     width:70px;
-    height:auto;
 
 }
 
 #logo-name{
 
+    font-size:34px;
+
+    font-weight:700;
+
     color:white;
-    margin-left:12px;
-    font-size:42px;
-    font-weight:bold;
 
 }
 
-#nav-container{
-
-    margin-left:auto;
+nav{
 
     display:flex;
-    gap:55px;
+
+    gap:45px;
 
 }
 
-#nav-container a{
+nav a{
+
+    color:white;
 
     text-decoration:none;
-    color:white;
-    font-weight:600;
+
+    font-size:15px;
+
+    transition:.35s;
+
+    position:relative;
+
+}
+
+nav a:hover{
+
+    color:#8A3FFC;
+
+}
+
+nav a::after{
+
+    content:"";
+
+    position:absolute;
+
+    bottom:-8px;
+
+    left:0;
+
+    width:0;
+
+    height:2px;
+
+    background:#8A3FFC;
+
     transition:.35s;
 
 }
 
-#nav-container a:hover{
+nav a:hover::after{
 
-    color:#7C6CFF;
+    width:100%;
+
+}
+
+nav .active{
+
+    color:#8A3FFC;
 
 }
 
@@ -469,17 +537,22 @@ grid-template-columns:1fr;
 
 @media(max-width:768px){
 
-#logo-container{
+header{
+
+padding:20px;
 
 flex-direction:column;
+
 gap:20px;
 
 }
 
-#nav-container{
+nav{
 
-margin-left:0;
+gap:20px;
+
 flex-wrap:wrap;
+
 justify-content:center;
 
 }
