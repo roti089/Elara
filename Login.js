@@ -11,7 +11,7 @@ const supabaseKey = "sb_publishable_8G0vG3r2UW8Sx-ltfWQazQ_l2oWS3NX";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 /* Where things live (this file is in /Interface, the dashboards are in /pages) */
-const DASHBOARD = new URL("../pages/dashboard-content.html", window.location.href).href;
+const DASHBOARD = new URL("dashboard-content.html", window.location.href).href;
 const LOGIN_PAGE = new URL("Loginpage.html", window.location.href).href;
 
 const $ = (id) => document.getElementById(id);

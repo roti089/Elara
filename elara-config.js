@@ -11,7 +11,7 @@ window.ELARA_CONFIG = {
     supabaseAnonKey: "sb_publishable_8G0vG3r2UW8Sx-ltfWQazQ_l2oWS3NX",
 
     /* ---- Pages (paths are relative to the dashboard pages) ---- */
-    loginPage:     "../Interface/Loginpage.html",
+    loginPage:     "Loginpage.html",
     dashboardPage: "dashboard-content.html",
 
     /* true  = pages bounce to the login page when nobody is logged in

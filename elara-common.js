@@ -21,7 +21,7 @@
     })();
 
     var THEME_KEY = "elaraTheme";
-    var LOGIN_PAGE = "../Interface/Loginpage.html";   // change if your login page moves
+    var LOGIN_PAGE = "Loginpage.html";   // change if your login page moves
 
     function get(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
     function set(key, v) { try { localStorage.setItem(key, v); } catch (e) { /* ignore */ } }
