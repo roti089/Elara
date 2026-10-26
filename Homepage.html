@@ -3,10 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="Elara logo.png" style="color: rgb(0, 0, 0);">
     <title>Home page</title>
     <link rel="stylesheet" href="Homepage.css">
+    <link rel="stylesheet" href="Homepageintro.css">
 </head>
 <body>
+
+  <!-- Intro Screen -->
+<div id="intro-screen">
+
+    <div class="intro-content">
+
+        <img src="Elara logo.png" id="intro-logo" alt="Elara Logo">
+
+        <div class="loader-wrapper" id="intro-title">
+
+            <span class="loader-letter">E</span>
+            <span class="loader-letter">L</span>
+            <span class="loader-letter">A</span>
+            <span class="loader-letter">R</span>
+            <span class="loader-letter">A</span>
+
+            <div class="loader"></div>
+
+        </div>
+
+        <p id="intro-subtitle">
+            Smart Home Management System
+        </p>
+    </div>
+
+</div>
+<div id="homepage">
+<section class="hero">
+
+<canvas id="bend" resize></canvas>
+
+<h1 class="background-title">ELARA</h1>
+
     <div id="logo-container">
     <image src="Elara logo.png" id="logo"></image>
     <h1 id="logo-name">Elara</h1>
@@ -39,11 +74,144 @@
     </div>
 
     </div>
-    <video autoplay loop muted class="background-video">
-        <source src="Back.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-    </video>
     
-    
+
+
+ 
+<div id="mascot-wrap" aria-label="Elara, your home assistant mascot" role="img">
+  <svg class="mascot-svg" viewBox="0 0 108 140" xmlns="http://www.w3.org/2000/svg">
+ 
+    <defs>
+      <radialGradient id="headGloss" cx="35%" cy="22%" r="85%">
+        <stop offset="0%" stop-color="var(--plastic-hi)" />
+        <stop offset="35%" stop-color="var(--plastic-mid)" />
+        <stop offset="80%" stop-color="var(--plastic-lo)" />
+        <stop offset="100%" stop-color="#000000" />
+      </radialGradient>
+      <radialGradient id="bodyGloss" cx="38%" cy="10%" r="95%">
+        <stop offset="0%" stop-color="var(--plastic-hi)" />
+        <stop offset="40%" stop-color="var(--plastic-mid)" />
+        <stop offset="85%" stop-color="var(--plastic-lo)" />
+        <stop offset="100%" stop-color="#000000" />
+      </radialGradient>
+      <radialGradient id="earGloss" cx="35%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="#3a3a44" />
+        <stop offset="60%" stop-color="#141417" />
+        <stop offset="100%" stop-color="#000000" />
+      </radialGradient>
+ 
+      <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+        <feGaussianBlur stdDeviation="2.6" result="blur1" />
+        <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blur2" />
+        <feMerge>
+          <feMergeNode in="blur1" />
+          <feMergeNode in="blur2" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+ 
+    <!-- speech bubble -->
+    <g id="speech-bubble">
+      <rect x="-6" y="-4" width="92" height="30" rx="10" fill="#fff" stroke="#e4e1d8" stroke-width="1.5" />
+      <path d="M20 26 L12 34 L28 26 Z" fill="#fff" stroke="#e4e1d8" stroke-width="1.5" />
+      <text id="speech-text" x="12" y="15">Hi, I'm Elara!</text>
+    </g>
+ 
+    <!-- feet -->
+    <ellipse class="foot left" cx="38" cy="132" rx="11" ry="5" fill="#000000" />
+    <ellipse class="foot right" cx="70" cy="132" rx="11" ry="5" fill="#000000" />
+ 
+    <!-- body -->
+    <rect x="28" y="82" width="52" height="44" rx="16" fill="url(#bodyGloss)" />
+ 
+    <!-- chest ring, glowing -->
+    <circle cx="54" cy="104" r="9" fill="none" stroke="var(--glow)" stroke-width="3.4" filter="url(#glow)" opacity="0.95" />
+    <circle cx="54" cy="104" r="9" fill="none" stroke="var(--glow)" stroke-width="3.4" opacity="0.9" />
+ 
+    <!-- neck -->
+    <rect x="47" y="72" width="14" height="12" fill="#050506" />
+ 
+    <!-- head group (tilts toward cursor) -->
+    <g id="head-group">
+ 
+      <!-- antenna -->
+      <g id="antenna-group">
+        <rect x="52" y="10" width="4" height="18" rx="2" fill="#0c0c0f" />
+        <circle id="antenna-bulb" cx="54" cy="8" r="6" fill="var(--glow)" filter="url(#glow)" />
+      </g>
+ 
+      <!-- head -->
+      <rect x="22" y="26" width="64" height="52" rx="22" fill="url(#headGloss)" />
+ 
+      <!-- rim highlight -->
+      <path d="M32 34 C42 26, 58 24, 72 30" stroke="#ffffff" stroke-opacity="0.12" stroke-width="5" fill="none" stroke-linecap="round" />
+ 
+      <!-- ears -->
+      <circle cx="20" cy="52" r="7" fill="url(#earGloss)" />
+      <circle cx="88" cy="52" r="7" fill="url(#earGloss)" />
+ 
+      <!-- face panel -->
+      <rect x="32" y="38" width="44" height="28" rx="14" fill="var(--panel)" />
+ 
+      <!-- eyes -->
+      <g id="eye-left">
+        <circle class="eye-white" cx="45" cy="52" r="8" />
+        <circle class="eye-pupil" id="pupil-left" cx="45" cy="52" r="4" />
+        <circle class="eye-shine" cx="43" cy="50" r="1.4" />
+      </g>
+      <g id="eye-right">
+        <circle class="eye-white" cx="63" cy="52" r="8" />
+        <circle class="eye-pupil" id="pupil-right" cx="63" cy="52" r="4" />
+        <circle class="eye-shine" cx="61" cy="50" r="1.4" />
+      </g>
+    </g>
+  </svg>
+</div>
+</section>
+
+<section class="hero">
+
+    <h1 class="background-title">ELARA</h1>
+
+    ...
+</section>
+
+
+
+
+<section class="dashboard-section">
+    <h1 class="background-title">ELARA</h1>
+
+    <div class="dashboard-heading">
+        <p class="dashboard-label">YOUR HOME, SIMPLIFIED</p>
+        <h2>Everything in one place.</h2>
+        <p>Manage your household with a smarter, more connected experience.</p>
+    </div>
+
+    <div class="dashboard-preview-container">
+        <img
+            src="elara-3d.png"
+            alt="Elara home management dashboard preview"
+            class="dashboard-image"
+        >
+    </div>
+</section>
+
+
+
+
+<div class="scroll-indicator">
+
+    Scroll
+
+    <span>↓</span>
+
+</div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.18/paper-full.min.js"></script>
+    <script src="homepage.js"></script>
+    <script src="homepage intro.js"></script>
+
 </body>
 </html>

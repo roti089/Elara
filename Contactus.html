@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home page</title>
+    <title>Contact page</title>
     <link rel="stylesheet" href="Contactus.css">
      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
+    <div class="background-gradient"></div>
+
+    <div class="background-title">
+        CONTACT
+    </div>
     <div id="logo-container">
     <image src="Elara logo.png" id="logo"></image>
     <h1 id="logo-name">Elara</h1>
@@ -18,26 +23,59 @@
     <a href="Loginpage.html">Log In</a>
 </nav>
     </div>
-<video autoplay loop muted class="background-video">
-    <source src="Back.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-</video>
 
 <div class="Contact-container">
     <div class="Contact-box">
         <h3>Contact Us</h3>
         <h1>Get In Touch</h1>
-        <form>
-            <label for="Name">Name:</label><br><br>
-            <input type="text" id="Name" name="Name" placeholder="Please enter your name"><br><br>
-            <label for="Email">Email:</label><br><br>
-            <input type="text" id="Email" name="Email" placeholder="Please enter your email"><br><br>
-            <label for="Pnumber">Phone number:</label><br><br>
-            <input type="number" id="Pnumber" name="Pnumber" placeholder="Please enter your phone number"><br><br>
-            <label for="Message">Message:</label><br><br>
-            <textarea rows="10"></textarea><br><br>
-            <button type="submit"> Send now</button>
-        </form>
+        <form id="contact-form">
+    <label for="Name">Name:</label><br><br>
+    <input
+        type="text"
+        id="Name"
+        name="Name"
+        placeholder="Please enter your name"
+        required
+        minlength="2"
+        maxlength="50">
+
+    <br><br>
+
+    <label for="Email">Email:</label><br><br>
+    <input
+        type="email"
+        id="Email"
+        name="Email"
+        placeholder="Please enter your email"
+        required>
+
+    <br><br>
+
+    <label for="Pnumber">Phone Number:</label><br><br>
+    <input
+        type="tel"
+        id="Pnumber"
+        name="Pnumber"
+        placeholder="Please enter your phone number"
+        required
+        pattern="[0-9+\-\s()]{10,15}">
+
+    <br><br>
+
+    <label for="Message">Message:</label><br><br>
+    <textarea
+        id="Message"
+        name="Message"
+        rows="10"
+        placeholder="Type your message..."
+        required
+        minlength="10"
+        maxlength="500"></textarea>
+
+    <br><br>
+
+    <button type="submit">Send Now</button>
+</form>
     </div>
 
     
@@ -49,7 +87,7 @@
         </p>
         </div>
         <div class="div2">
-            <i class="fa-solid fa-phone" style="color: rgb(255, 255, 255);"></i>
+            <i class="fa-solid fa-phone" style="color: rgb(0, 0, 0);"></i>
             <h2>Phone Number</h2>
             <p>+27 82 066 0106</p>
         </div>
@@ -59,12 +97,12 @@
             <p>Elara@gmail.com</p>
         </div>
         <div class="div4"> 
-            <i class="fa-brands fa-whatsapp" style="color: rgb(255, 255, 255);"></i>
+            <i class="fa-brands fa-whatsapp" style="color: rgb(0, 0, 0);"></i>
             <h2>Whatsapp</h2>
             <p>+27 82 066 0106</p>
         </div>
         <div class="div5"> 
-            <i class="fa-solid fa-location-dot" style="color: rgb(255, 255, 255);"></i>
+            <i class="fa-solid fa-location-dot" style="color: rgb(0, 0, 0);"></i>
             <h2>Our Office</h2>
             <p>2445 Oak Ridge Midrand, 1666 </p>
         </div>
@@ -72,7 +110,7 @@
 
 </div>
 
-
+<script type="module" src="contact.js"></script>
     
 </body>
 </html>

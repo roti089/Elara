@@ -1,0 +1,355 @@
+/* ===================================================
+                ELARA INTRO SCREEN
+=================================================== */
+
+#intro-screen{
+    position:fixed;
+    inset:0;
+    background:#05060B;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:99999;
+    transition:opacity 1.2s ease;
+}
+
+.intro-content{
+    text-align:center;
+    color:white;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+/* ===================================================
+                    LOGO
+=================================================== */
+
+#intro-logo{
+    width:220px;
+    margin-bottom:5px;
+    opacity:0;
+    animation:logoAppear 1.4s forwards;
+}
+
+/* ===================================================
+                    TITLE
+=================================================== */
+
+#intro-title{
+    margin-top:10px;
+    opacity:0;
+    animation:titleFade .8s forwards;
+    animation-delay:1s;
+}
+
+.loader-wrapper{
+
+    position:relative;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    width:fit-content;
+
+    margin:auto;
+
+    user-select:none;
+
+    font-family:Arial,Helvetica,sans-serif;
+
+    font-size:90px;
+
+    font-weight:700;
+
+    letter-spacing:14px;
+
+    color:white;
+
+}
+
+/* ===================================================
+                LETTERS
+=================================================== */
+
+.loader-letter{
+
+    display:inline-block;
+
+    opacity:0;
+
+    transform:translateY(15px);
+
+    animation:loader-letter-anim 5s forwards;
+
+    z-index:2;
+
+}
+
+.loader-letter:nth-child(1){
+    animation-delay:.8s;
+}
+
+.loader-letter:nth-child(2){
+    animation-delay:1.3s;
+}
+
+.loader-letter:nth-child(3){
+    animation-delay:1.8s;
+}
+
+.loader-letter:nth-child(4){
+    animation-delay:2.3s;
+}
+
+.loader-letter:nth-child(5){
+    animation-delay:2.8s;
+}
+
+/* ===================================================
+                    SCAN
+=================================================== */
+
+.loader{
+
+    position:absolute;
+
+    inset:0;
+
+    z-index:1;
+
+    mask:repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent 7px,
+        black 8px,
+        black 9px
+    );
+
+}
+
+.loader::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background-image:
+
+    radial-gradient(circle,#8A3FFC 0%,transparent 42%),
+    radial-gradient(circle,#2C6E7E 0%,transparent 42%),
+    radial-gradient(circle,#1F3C88 0%,transparent 42%),
+    radial-gradient(circle,#ffffff 0%,transparent 55%);
+
+    mask:radial-gradient(circle,
+    transparent 0%,
+    transparent 10%,
+    black 25%);
+
+    animation:
+    transform-animation 5.5s forwards,
+    opacity-animation 5.5s forwards;
+
+}
+
+/* ===================================================
+                SUBTITLE
+=================================================== */
+
+#intro-subtitle{
+
+    margin-top:18px;
+
+    color:#B6B8D8;
+
+    opacity:0;
+
+    animation:titleFade .8s forwards;
+
+    animation-delay:3.6s;
+
+}
+
+
+/* ===================================================
+                HOMEPAGE
+=================================================== */
+
+#homepage{
+
+    opacity:0;
+
+    transition:opacity 1.5s ease;
+
+}
+
+/* ===================================================
+                ANIMATIONS
+=================================================== */
+
+@keyframes logoAppear{
+
+    0%{
+
+        opacity:0;
+        transform:scale(.5) rotate(-8deg);
+
+    }
+
+    100%{
+
+        opacity:1;
+        transform:scale(1) rotate(0);
+
+    }
+
+}
+
+@keyframes titleFade{
+
+    from{
+
+        opacity:0;
+
+    }
+
+    to{
+
+        opacity:1;
+
+    }
+
+}
+
+@keyframes loader-letter-anim{
+
+    0%{
+
+        opacity:0;
+        transform:translateY(20px);
+
+    }
+
+    25%{
+
+        opacity:1;
+        transform:translateY(-4px);
+
+        text-shadow:
+        0 0 10px #8A3FFC,
+        0 0 20px #2C6E7E,
+        0 0 45px #1F3C88,
+        0 0 70px white;
+
+    }
+
+    70%{
+
+        opacity:1;
+
+    }
+
+    100%{
+
+        opacity:1;
+        transform:translateY(0);
+
+        text-shadow:
+        0 0 6px rgba(255,255,255,.25);
+
+    }
+
+}
+
+@keyframes transform-animation{
+
+    from{
+
+        transform:translateX(-120%);
+
+    }
+
+    to{
+
+        transform:translateX(120%);
+
+    }
+
+}
+
+@keyframes opacity-animation{
+
+    0%{
+
+        opacity:0;
+
+    }
+
+    15%{
+
+        opacity:1;
+
+    }
+
+    85%{
+
+        opacity:1;
+
+    }
+
+    100%{
+
+        opacity:0;
+
+    }
+
+}
+
+/* ===================================================
+                RESPONSIVE
+=================================================== */
+
+@media(max-width:900px){
+
+    .loader-wrapper{
+
+        font-size:62px;
+
+        letter-spacing:8px;
+
+    }
+
+    #intro-logo{
+
+        width:170px;
+
+    }
+
+}
+
+@media(max-width:600px){
+
+    .loader-wrapper{
+
+        font-size:42px;
+
+        letter-spacing:4px;
+
+    }
+
+    #intro-logo{
+
+        width:130px;
+
+    }
+
+    .status-line{
+
+        font-size:15px;
+
+    }
+
+}

@@ -1,301 +1,998 @@
+/* ================================
+   ELARA LOGIN PAGE
+   PART 1
+================================ */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Montserrat',sans-serif;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+    overflow:hidden;
+    background:#070C18;
+    color:white;
+}
+
+/* ================================
+   VIDEO BACKGROUND
+================================ */
+
 .background-video{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -1;
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:-3;
 }
 
-body::after {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: -1;
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:
+    linear-gradient(
+        135deg,
+        rgba(5,8,20,.82),
+        rgba(16,28,55,.72),
+        rgba(39,66,117,.45)
+    );
+    z-index:-2;
 }
 
-#logo {
-    display: flex;
-    position: top left;
-    max-width: 150px;
-    max-height: 140px;
-    margin-left: 30px;
-    margin-top: 15px;
-    gap: 0px;
+body::after{
+    content:"ELARA";
+    position:fixed;
+    left:50%;
+    top:52%;
+    transform:translate(-50%,-50%);
+    font-size:340px;
+    font-weight:800;
+    color:rgba(255,255,255,.03);
+    letter-spacing:35px;
+    pointer-events:none;
+    z-index:-1;
+}
+
+/* ================================
+   HEADER
+================================ */
+
+#logo-container{
+
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:18px 70px;
+}
+
+#logo{
+
+    width:95px;
+    height:auto;
 }
 
 #logo-name{
-    display: flex;
-    font-family:Arial, Helvetica, sans-serif;
-    margin-top: 0px;
-    color: white;
-    gap: 0p;
+
+    margin-left:-10px;
+    margin-right:auto;
+
+    color:white;
+
+    font-size:42px;
+
+    font-weight:700;
 }
 
-#logo-container {
-    display: flex;
-     align-items: center;
+#nav-container{
+
+    display:flex;
+
+    gap:45px;
+
+    align-items:center;
+
+    text-transform:uppercase;
+
+    font-size:14px;
+
+    letter-spacing:2px;
 }
 
-#nav-container {
-    display: flex;
-    justify-content: space-between; 
-    align-items: center;
-    width: 65%;                      
-    margin: 40px auto; 
-    margin-top: 40px;              
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 14px;
-    text-transform: uppercase;
-    color: white;
+#nav-container a{
+
+    color:white;
+
+    text-decoration:none;
+
+    position:relative;
+
+    transition:.35s;
 }
 
-#nav-container a {
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    transition: all 0.3s ease;
+#nav-container a::after{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    bottom:-6px;
+
+    width:0;
+
+    height:2px;
+
+    background:#6BA9FF;
+
+    transition:.35s;
 }
 
-#nav-container a:hover {
-    transform: scale(1.1);
-    transform:rotate(-1deg);
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-    color: coral;
+#nav-container a:hover{
+
+    color:#79B6FF;
 }
 
-*{
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Montserrat', sans-serif;
+#nav-container a:hover::after{
+
+    width:100%;
 }
 
-body {
-    justify-content: center;
-    flex-direction: column;
-    height: 100vh;
-}
+/* ================================
+   MAIN LOGIN CONTAINER
+================================ */
 
 .container{
-    display: flex;
-    background-color: #fff;
-    border-radius: 30px;
-    margin-top:100px;
-    margin-left:450px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
-    position: relative;
-    overflow: hidden;
-    width: 900px;
-    max-width: 180%;
-    min-height: 600px;
+
+    position:relative;
+
+    overflow:hidden;
+
+    margin-top:35px;
+
+    width:900px;
+
+    max-width:100%;
+
+    min-height:600px;
+
+    border-radius:32px;
+
+    background:rgba(255,255,255,.08);
+
+    backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+    0 25px 80px rgba(0,0,0,.45);
+}
+
+/* ================================
+   FORMS
+================================ */
+
+.container form{
+
+    background:transparent;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    flex-direction:column;
+
+    padding:0 40px;
+
+    height:100%;
+
+    color:white;
+}
+
+.container h1{
+
+    font-size:40px;
+
+    margin-bottom:15px;
+
+    color:white;
 }
 
 .container p{
-    font-size: 14px;
-    line-height: 20px;
-    letter-spacing: 0.3px;
-    margin: 20px 0;
+
+    font-size:14px;
+
+    color:#D6E3FF;
+
+    margin:18px 0;
 }
 
 .container span{
-    font-size: 12px;
+
+    color:#D6E3FF;
+
+    font-size:13px;
 }
 
 .container a{
-    color: #333;
-    font-size: 13px;
-    text-decoration: none;
-    margin: 15px 0 10px;
+
+    color:#D6E3FF;
+
+    text-decoration:none;
+
+    margin:15px 0;
 }
 
+.container a:hover{
+
+    color:#6BA9FF;
+}
+
+/* ================================
+   INPUTS
+================================ */
+
+.container input{
+
+    width:100%;
+
+    padding:14px 18px;
+
+    margin:8px 0;
+
+    border-radius:14px;
+
+    border:1px solid rgba(255,255,255,.10);
+
+    outline:none;
+
+    background:rgba(255,255,255,.08);
+
+    color:white;
+
+    transition:.3s;
+}
+
+.container input::placeholder{
+
+    color:#C8D5F2;
+}
+
+.container input:focus{
+
+    border-color:#6BA9FF;
+
+    background:rgba(255,255,255,.13);
+
+    box-shadow:0 0 18px rgba(107,169,255,.30);
+}
+
+/* ================================
+   BUTTONS
+================================ */
+
 .container button{
-    background-color: linear-gradient(
+
+    margin-top:18px;
+
+    padding:14px 45px;
+
+    border:none;
+
+    border-radius:30px;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:.35s;
+
+    background:
+    linear-gradient(
         135deg,
-        rgba(233, 234, 255, 0.85) 0%,
-        rgba(84, 116, 199, 0.55) 35%,
-        rgba(70, 77, 78, 0.35) 60%,
-        rgba(20, 20, 30, 0.9) 100%
-        );
-    color: #fff;
-    font-size: 12px;
-    padding: 10px 45px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-top: 10px;
-    cursor: pointer;
+        #3F79F8,
+        #69B9FF
+    );
+}
+
+.container button:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:
+    0 10px 30px rgba(72,150,255,.40);
 }
 
 .container button.hidden{
-    background-color: transparent;
-    border-color: #fff;
+
+    background:transparent;
+
+    border:2px solid white;
 }
 
-.container form{
-    background-color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 0 40px;
-    height: 100%;
-}
-
-.container input{
-    background-color: #eee;
-    border: none;
-    margin: 8px 0;
-    padding: 10px 15px;
-    font-size: 13px;
-    border-radius: 8px;
-    width: 100%;
-    outline: none;
-}
+/* ==========================================
+   PART 2
+   SLIDING PANELS (KEEP FUNCTIONALITY)
+========================================== */
 
 .form-container{
-    position: absolute;
-    top: 0;
-    height: 100%;
-    transition: all 0.6s ease-in-out;
+
+    position:absolute;
+
+    top:0;
+
+    height:100%;
+
+    transition:all .6s ease-in-out;
 }
 
-.sign-in{
-    left: 0;
-    width: 50%;
-    z-index: 2;
-}
+/* ---------- SIGN IN ---------- */
 
-.container.active .sign-in{
-    transform: translateX(100%);
-}
+/* ---------- SIGN UP ---------- */
 
 .sign-up{
-    left: 0;
-    width: 50%;
-    opacity: 0;
-    z-index: 1;
+    left:0;
+    width:50%;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    z-index:1;
 }
 
 .container.active .sign-up{
-    transform: translateX(100%);
-    opacity: 1;
-    z-index: 5;
-    animation: move 0.6s;
+    transform:translateX(100%);
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    z-index:5;
+    animation:move .6s;
+}
+
+/* ---------- SIGN UP ---------- */
+
+/* ---------- SIGN IN ---------- */
+
+.sign-in{
+    left:0;
+    width:50%;
+    z-index:2;
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+}
+
+.container.active .sign-in{
+    transform:translateX(100%);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
 }
 
 @keyframes move{
-    0%, 49.99%{
-        opacity: 0;
-        z-index: 1;
+
+    0%,49.99%{
+
+        opacity:0;
+
+        z-index:1;
     }
-    50%, 100%{
-        opacity: 1;
-        z-index: 5;
+
+    50%,100%{
+
+        opacity:1;
+
+        z-index:5;
     }
 }
 
+/* ==========================================
+   SOCIAL ICONS
+========================================== */
+
 .social-icons{
-    margin: 20px 0;
+
+    margin:25px 0;
+
+    display:flex;
+
+    gap:12px;
 }
 
 .social-icons a{
-    border: 1px solid #ccc;
-    border-radius: 20%;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 3px;
-    width: 40px;
-    height: 40px;
+
+    width:46px;
+
+    height:46px;
+
+    border-radius:14px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    text-decoration:none;
+
+    font-size:18px;
+
+    color:white;
+
+    background:rgba(255,255,255,.08);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    transition:.35s;
 }
 
+.social-icons a:hover{
+
+    background:linear-gradient(
+        135deg,
+        #4B8BFF,
+        #7ACBFF
+    );
+
+    transform:translateY(-4px);
+
+    box-shadow:0 10px 25px rgba(77,146,255,.35);
+}
+
+/* ==========================================
+   TOGGLE CONTAINER
+========================================== */
+
 .toggle-container{
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 50%;
-    height: 100%;
-    overflow: hidden;
-    transition: all 0.6s ease-in-out;
-    border-radius: 150px 0 0 100px;
-    z-index: 1000;
+
+    position:absolute;
+
+    top:0;
+
+    left:50%;
+
+    width:50%;
+
+    height:100%;
+
+    overflow:hidden;
+
+    border-radius:160px 0 0 120px;
+
+    transition:all .6s ease-in-out;
+
+    z-index:1000;
 }
 
 .container.active .toggle-container{
-    transform: translateX(-100%);
-    border-radius: 0 150px 100px 0;
+
+    transform:translateX(-100%);
+
+    border-radius:0 160px 120px 0;
 }
 
+/* ==========================================
+   TOGGLE BACKGROUND
+========================================== */
+
 .toggle{
-    background-color: linear-gradient(
-        135deg,
-        rgba(0, 6, 189, 0.85) 0%,
-        rgba(3, 8, 20, 0.55) 35%,
-        rgba(0, 0, 0, 0.35) 60%,
-        rgba(3, 3, 39, 0.9) 100%
-        );
-    height: 100%;
-    background: linear-gradient(
-        135deg,
-        rgba(26, 27, 58, 0.85) 0%,
-        rgba(31, 60, 136, 0.55) 35%,
-        rgba(44, 110, 126, 0.35) 60%,
-        rgba(20, 20, 30, 0.9) 100%
-        );
-    color: #fff;
-    position: relative;
-    left: -100%;
-    height: 100%;
-    width: 200%;
-    transform: translateX(0);
-    transition: all 0.6s ease-in-out;
+
+    position:relative;
+
+    left:-100%;
+
+    width:200%;
+
+    height:100%;
+
+    color:white;
+
+    transform:translateX(0);
+
+    transition:all .6s ease-in-out;
+
+    background:
+    linear-gradient(
+        160deg,
+
+        rgba(15,25,55,.96),
+
+        rgba(33,56,112,.92),
+
+        rgba(58,104,180,.95)
+    );
+
+    overflow:hidden;
+}
+
+/* subtle glow */
+
+.toggle::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:420px;
+
+    height:420px;
+
+    border-radius:50%;
+
+    background:
+
+    radial-gradient(circle,
+    rgba(255,255,255,.18),
+    transparent 70%);
+
+    top:-130px;
+
+    right:-120px;
+
+    filter:blur(15px);
+}
+
+.toggle::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:300px;
+
+    height:300px;
+
+    border-radius:50%;
+
+    background:
+
+    radial-gradient(circle,
+    rgba(130,190,255,.18),
+    transparent 70%);
+
+    bottom:-120px;
+
+    left:-100px;
+
+    filter:blur(20px);
 }
 
 .container.active .toggle{
-    transform: translateX(50%);
+
+    transform:translateX(50%);
 }
 
+/* ==========================================
+   TOGGLE PANELS
+========================================== */
+
 .toggle-panel{
-    position: absolute;
-    width: 50%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 0 30px;
-    text-align: center;
-    top: 0;
-    transform: translateX(0);
-    transition: all 0.6s ease-in-out;
+
+    position:absolute;
+
+    width:50%;
+
+    height:100%;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    text-align:center;
+
+    padding:0 40px;
+
+    transition:all .6s ease-in-out;
+}
+
+.toggle-panel h1{
+
+    font-size:42px;
+
+    margin-bottom:18px;
+}
+
+.toggle-panel p{
+
+    font-size:15px;
+
+    line-height:1.8;
+
+    color:#E5EEFF;
+
+    max-width:320px;
 }
 
 .toggle-left{
-    transform: translateX(-200%);
+
+    transform:translateX(-200%);
 }
 
 .container.active .toggle-left{
-    transform: translateX(0);
+
+    transform:translateX(0);
 }
 
 .toggle-right{
-    right: 0;
-    transform: translateX(0);
+
+    right:0;
+
+    transform:translateX(0);
 }
 
 .container.active .toggle-right{
-    transform: translateX(200%);
+
+    transform:translateX(200%);
 }
 
-button:hover {
-    transform: scale(1.1);
-    box-shadow: none;
+/* ==========================================
+   PART 3
+   FINISHING TOUCHES
+========================================== */
+
+/* ---------- Smooth Fade In ---------- */
+
+.container{
+
+    animation:loginAppear .8s ease;
 }
+
+@keyframes loginAppear{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(35px);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+    }
+}
+
+/* ---------- Logo ---------- */
+
+#logo{
+
+    transition:.35s;
+}
+
+#logo:hover{
+
+    transform:rotate(-5deg) scale(1.06);
+}
+
+/* ---------- Logo Text ---------- */
+
+#logo-name{
+
+    transition:.35s;
+}
+
+#logo-name:hover{
+
+    color:#7FC2FF;
+
+    text-shadow:
+    0 0 18px rgba(120,190,255,.45);
+}
+
+/* ---------- Inputs ---------- */
+
+.container input:hover{
+
+    border-color:rgba(120,190,255,.35);
+}
+
+/* ---------- Forgot Password ---------- */
+
+.sign-in a{
+
+    transition:.3s;
+}
+
+.sign-in a:hover{
+
+    color:#79C2FF;
+
+    text-decoration:underline;
+}
+
+/* ---------- Buttons ---------- */
+
+.container button{
+
+    transition:
+    transform .35s,
+    box-shadow .35s,
+    background .35s;
+}
+
+.container button:active{
+
+    transform:scale(.96);
+}
+
+/* ---------- Hidden Buttons ---------- */
+
+.container button.hidden{
+
+    transition:.35s;
+}
+
+.container button.hidden:hover{
+
+    background:white;
+
+    color:#214A90;
+}
+
+/* ---------- Social Icons ---------- */
+
+.social-icons a i{
+
+    transition:.35s;
+}
+
+.social-icons a:hover i{
+
+    transform:scale(1.15);
+}
+
+/* ---------- Glass Shine ---------- */
+
+.container::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:-120%;
+
+    width:50%;
+
+    height:100%;
+
+    background:
+
+    linear-gradient(
+
+    90deg,
+
+    transparent,
+
+    rgba(255,255,255,.10),
+
+    transparent
+
+    );
+
+    transform:skewX(-20deg);
+
+    animation:shine 8s infinite;
+
+    pointer-events:none;
+}
+
+@keyframes shine{
+
+    0%{
+
+        left:-120%;
+    }
+
+    40%{
+
+        left:130%;
+    }
+
+    100%{
+
+        left:130%;
+    }
+}
+
+/* ---------- Floating Glow ---------- */
+
+.container::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:260px;
+
+    height:260px;
+
+    border-radius:50%;
+
+    background:
+
+    radial-gradient(circle,
+
+    rgba(111,182,255,.18),
+
+    transparent 70%);
+
+    top:-100px;
+
+    left:-90px;
+
+    filter:blur(35px);
+
+    pointer-events:none;
+}
+
+/* ---------- Toggle Text ---------- */
+
+.toggle-panel h1{
+
+    letter-spacing:1px;
+}
+
+.toggle-panel p{
+
+    opacity:.9;
+}
+
+/* ---------- Scrollbar ---------- */
+
+::-webkit-scrollbar{
+
+    width:10px;
+}
+
+::-webkit-scrollbar-track{
+
+    background:#08111E;
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:linear-gradient(
+
+    #5A9DFF,
+
+    #2E66C7
+
+    );
+
+    border-radius:30px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+    background:#83C8FF;
+}
+
+/* ---------- Text Selection ---------- */
+
+::selection{
+
+    background:#4D8EFF;
+
+    color:white;
+}
+
+/* ---------- Responsive ---------- */
+
+@media(max-width:1000px){
+
+    body{
+
+        overflow:auto;
+    }
+
+    .container{
+
+        width:95%;
+
+        min-height:620px;
+
+        margin:30px auto;
+    }
+
+    #logo-container{
+
+        flex-direction:column;
+
+        gap:20px;
+
+        padding:20px;
+    }
+
+    #nav-container{
+
+        flex-wrap:wrap;
+
+        justify-content:center;
+
+        gap:20px;
+    }
+}
+
+@media(max-width:768px){
+
+    body::after{
+
+        font-size:170px;
+
+        letter-spacing:15px;
+    }
+
+    .container{
+
+        min-height:700px;
+    }
+
+    .toggle-panel h1{
+
+        font-size:30px;
+    }
+
+    .container h1{
+
+        font-size:28px;
+    }
+
+    .social-icons{
+
+        gap:8px;
+    }
+
+    .social-icons a{
+
+        width:40px;
+
+        height:40px;
+    }
+}
+
+/* ==========================================
+   FORGOT / RESET PASSWORD DIALOG
+========================================== */
+.auth-modal{
+    position:fixed; inset:0; z-index:5000; display:flex; align-items:center; justify-content:center; padding:20px;
+    background:rgba(5,8,20,.72); backdrop-filter:blur(8px);
+}
+.auth-box{
+    width:100%; max-width:400px; padding:34px 30px; border-radius:26px; text-align:center;
+    background:rgba(18,28,58,.92); border:1px solid rgba(255,255,255,.12); box-shadow:0 25px 80px rgba(0,0,0,.55);
+    display:flex; flex-direction:column; gap:6px;
+}
+.auth-box h2{ font-size:26px; margin-bottom:4px; }
+.auth-box p{ font-size:14px; color:#D6E3FF; margin:0 0 10px; }
+.auth-actions{ display:flex; gap:12px; justify-content:center; margin-top:8px; }
+.auth-actions button{ margin-top:8px; padding:13px 28px; }
+.container button:disabled, .auth-box button:disabled{ opacity:.6; cursor:wait; }
