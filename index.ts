@@ -1,6 +1,8 @@
-﻿const corsHeaders = {
+﻿
+const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -12,19 +14,25 @@ const jsonResponse = (data: unknown, status = 200) =>
 
 const requiredEnv = (name: string): string => {
   const value = Deno.env.get(name)?.trim();
-  if (!value) throw new Error(`Missing server configuration: ${name}`);
+  if (!value) {
+    throw new Error(`Missing server configuration: ${name}`);
+  }
   return value;
 };
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
+
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
 }
 
-async function hmacSha256Hex(secret: string, message: string): Promise<string> {
+async function hmacSha256Hex(
+  secret: string,
+  message: string,
+): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -32,11 +40,13 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
     false,
     ["sign"],
   );
+
   const signature = await crypto.subtle.sign(
     "HMAC",
     key,
     new TextEncoder().encode(message),
   );
+
   return Array.from(new Uint8Array(signature))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("")
@@ -62,29 +72,40 @@ async function tuyaRequest(
   const baseUrl = requiredEnv("TUYA_BASE_URL").replace(/\/+$/, "");
   const clientId = requiredEnv("TUYA_ACCESS_ID");
   const clientSecret = requiredEnv("TUYA_ACCESS_SECRET");
+
+  const upperMethod = method.toUpperCase();
   const timestamp = Date.now().toString();
   const nonce = crypto.randomUUID();
   const bodyHash = await sha256Hex(bodyText);
-  const stringToSign = `${method}\n${bodyHash}\n\n${path}`;
+
+  const stringToSign =
+    `${upperMethod}\n${bodyHash}\n\n${path}`;
+
   const signContent = accessToken
     ? `${clientId}${accessToken}${timestamp}${nonce}${stringToSign}`
     : `${clientId}${timestamp}${nonce}${stringToSign}`;
+
   const sign = await hmacSha256Hex(clientSecret, signContent);
 
   const headers: Record<string, string> = {
-    "client_id": clientId,
-    "sign": sign,
-    "t": timestamp,
-    "sign_method": "HMAC-SHA256",
-    "nonce": nonce,
-    "Accept": "application/json",
+    client_id: clientId,
+    sign,
+    t: timestamp,
+    sign_method: "HMAC-SHA256",
+    nonce,
+    Accept: "application/json",
   };
 
-  if (accessToken) headers["access_token"] = accessToken;
-  if (bodyText) headers["Content-Type"] = "application/json";
+  if (accessToken) {
+    headers.access_token = accessToken;
+  }
+
+  if (bodyText) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const response = await fetch(`${baseUrl}${path}`, {
-    method,
+    method: upperMethod,
     headers,
     body: bodyText || undefined,
   });
@@ -93,21 +114,31 @@ async function tuyaRequest(
 
   if (!response.ok || result.success === false) {
     console.error("Tuya API request failed", {
-      method,
+      method: upperMethod,
       path,
       status: response.status,
       code: result.code,
+      message: result.msg,
     });
-    throw new Error("Tuya Cloud rejected the request. Check the function logs.");
+
+    throw new Error(
+      `Tuya Cloud rejected the request (code ${result.code ?? "unknown"}). Check the function logs.`,
+    );
   }
 
   return result;
 }
 
 async function getTuyaToken(): Promise<string> {
-  if (cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
+  if (cachedToken && Date.now() < tokenExpiresAt) {
+    return cachedToken;
+  }
 
-  const result = await tuyaRequest("GET", "/v1.0/token?grant_type=1");
+  const result = await tuyaRequest(
+    "GET",
+    "/v1.0/token?grant_type=1",
+  );
+
   const token = result.result?.access_token;
   const expiresIn = Number(result.result?.expire_time ?? 3600);
 
@@ -116,12 +147,15 @@ async function getTuyaToken(): Promise<string> {
   }
 
   cachedToken = token;
-  tokenExpiresAt = Date.now() + Math.max(60, expiresIn - 120) * 1000;
+  tokenExpiresAt =
+    Date.now() + Math.max(60, expiresIn - 120) * 1000;
+
   return cachedToken;
 }
 
 async function authenticatedUser(request: Request): Promise<any> {
   const authorization = request.headers.get("Authorization") ?? "";
+
   if (!authorization.startsWith("Bearer ")) {
     throw new Error("Sign in to Elara before connecting your devices.");
   }
@@ -131,17 +165,22 @@ async function authenticatedUser(request: Request): Promise<any> {
 
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: {
-      "Authorization": authorization,
-      "apikey": anonKey,
+      Authorization: authorization,
+      apikey: anonKey,
     },
   });
 
   if (!response.ok) {
-    throw new Error("Your Elara session is invalid or expired. Please sign in again.");
+    throw new Error(
+      "Your Elara session is invalid or expired. Please sign in again.",
+    );
   }
 
   const user = await response.json();
-  if (!user?.id) throw new Error("A valid signed-in Elara user is required.");
+
+  if (!user?.id) {
+    throw new Error("A valid signed-in Elara user is required.");
+  }
 
   const allowlist = (Deno.env.get("TUYA_ALLOWED_EMAILS") ?? "")
     .split(",")
@@ -152,7 +191,9 @@ async function authenticatedUser(request: Request): Promise<any> {
     allowlist.length > 0 &&
     (!user.email || !allowlist.includes(user.email.toLowerCase()))
   ) {
-    throw new Error("This Elara account is not allowed to control these devices.");
+    throw new Error(
+      "This Elara account is not allowed to control these devices.",
+    );
   }
 
   return user;
@@ -160,24 +201,34 @@ async function authenticatedUser(request: Request): Promise<any> {
 
 async function getDevices(token: string): Promise<any[]> {
   const uid = requiredEnv("TUYA_UID");
-  const path = `/v1.0/users/${encodeURIComponent(uid)}/devices?page_no=1&page_size=100`;
-  const result = await tuyaRequest("GET", path, "", token);
-  const items = Array.isArray(result.result)
-    ? result.result
-    : Array.isArray(result.result?.list)
-    ? result.result.list
-    : [];
 
-  return items;
+  const path =
+    `/v1.0/users/${encodeURIComponent(uid)}/devices?page_no=1&page_size=100`;
+
+  const result = await tuyaRequest("GET", path, "", token);
+
+  if (Array.isArray(result.result)) {
+    return result.result;
+  }
+
+  if (Array.isArray(result.result?.list)) {
+    return result.result.list;
+  }
+
+  return [];
 }
 
 function switchCode(device: any): string | null {
   const statuses = Array.isArray(device.status) ? device.status : [];
+
   for (const candidate of ["switch_1", "switch", "switch_led"]) {
-    if (statuses.some((status: any) => status.code === candidate)) {
+    if (
+      statuses.some((status: any) => status.code === candidate)
+    ) {
       return candidate;
     }
   }
+
   return null;
 }
 
@@ -194,6 +245,7 @@ Deno.serve(async (request: Request) => {
     await authenticatedUser(request);
 
     const body = await request.json().catch(() => null);
+
     if (!body || typeof body.action !== "string") {
       return jsonResponse({ error: "A valid action is required." }, 400);
     }
@@ -209,9 +261,18 @@ Deno.serve(async (request: Request) => {
       const supportedDevices = devices
         .map((device: any) => {
           const code = switchCode(device);
-          if (!code || !device.id) return null;
 
-          const status = device.status.find((item: any) => item.code === code);
+          if (!code || !device.id) {
+            return null;
+          }
+
+          const statuses = Array.isArray(device.status)
+            ? device.status
+            : [];
+
+          const status = statuses.find(
+            (item: any) => item.code === code,
+          );
 
           return {
             id: String(device.id),
@@ -234,40 +295,66 @@ Deno.serve(async (request: Request) => {
       typeof body.value !== "boolean"
     ) {
       return jsonResponse({
-        error: "A device ID, supported switch code, and boolean value are required.",
+        error:
+          "A device ID, supported switch code, and boolean value are required.",
       }, 400);
     }
 
-    const device = devices.find((item: any) => String(item.id) === body.deviceId);
+    const device = devices.find(
+      (item: any) => String(item.id) === body.deviceId,
+    );
+
     if (!device) {
-      return jsonResponse({ error: "That device is not linked to this Tuya account." }, 403);
+      return jsonResponse({
+        error: "That device is not linked to this Tuya account.",
+      }, 403);
     }
 
     const supportedCode = switchCode(device);
+
     if (!supportedCode || body.code !== supportedCode) {
-      return jsonResponse({ error: "That device switch control is not supported." }, 400);
+      return jsonResponse({
+        error: "That device switch control is not supported.",
+      }, 400);
     }
 
     const commandPath =
       `/v1.0/devices/${encodeURIComponent(body.deviceId)}/commands`;
+
     const commandBody = JSON.stringify({
-      commands: [{ code: supportedCode, value: body.value }],
+      commands: [
+        {
+          code: supportedCode,
+          value: body.value,
+        },
+      ],
     });
 
-    await tuyaRequest("POST", commandPath, commandBody, token);
+    await tuyaRequest(
+      "POST",
+      commandPath,
+      commandBody,
+      token,
+    );
+
     return jsonResponse({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected server error.";
-    const status = message.includes("Sign in") ||
+    const message = error instanceof Error
+      ? error.message
+      : "Unexpected server error.";
+
+    const status =
+      message.includes("Sign in") ||
         message.includes("session is invalid") ||
         message.includes("signed-in") ||
         message.includes("not allowed")
-      ? 401
-      : message.startsWith("Missing server configuration:")
-      ? 500
-      : 502;
+        ? 401
+        : message.startsWith("Missing server configuration:")
+        ? 500
+        : 502;
 
     console.error("Elara Tuya function error:", message);
+
     return jsonResponse({ error: message }, status);
   }
 });
