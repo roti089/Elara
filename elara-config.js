@@ -31,5 +31,5 @@ window.ELARA_CONFIG = {
        Leave empty until you deploy them. */
     inviteEndpoint: "https://shyvyrvxashetxnmosnd.supabase.co/functions/v1/bright-action",           // Edge Function URL that EMAILS household invitations (elara-invite)
     aiEndpoint:   "",             // Supabase Edge Function URL for the AI assistant
-    tuyaEndpoint: ""              // Supabase Edge Function URL for CBi / Tuya device control
+    tuyaEndpoint: "https://shyvyrvxashetxnmosnd.supabase.co/functions/v1/elara-tuya"             // Supabase Edge Function URL for CBi / Tuya device control
 };
