@@ -672,7 +672,11 @@
                         return roster();
                     });
                 });
-        }).catch(function (e) { console.warn("[Elara] roster:", e.message || e); return roster(); })
+        }).catch(function (e) {
+            console.warn("[Elara] roster:", e.message || e);
+            if (/column|relation|does not exist|schema cache/i.test(e.message || "")) { setupIssue = "The members list can't load because the database is out of date. Run the latest elara-setup.sql (README, step 2)."; emit(["setup"]); }
+            return roster();
+        })
           .then(function (r) { rosterLoading = null; return r; });
         return rosterLoading;
     }

@@ -99,6 +99,7 @@
         if (!isOwner()) return;
         if (act === "edit") return openModal(m);
         if (act === "resend") {
+            if (isLocal() && !/^https?:/i.test((window.ELARA_CONFIG || {}).siteUrl || "")) return UI.toast("Resend from your live site, or set siteUrl in elara-config.js: from this computer the link would point to " + location.host + ".", "error");
             b.disabled = true;
             D.household.invite({ email: m.email, name: m.name, role: m.role, permissions: perms(m), redirectTo: redirectUrl() })
                 .then(function (r) { UI.toast(r && r.message ? r.message : "Invitation sent again to " + m.email + "."); })
@@ -119,10 +120,14 @@
 
     /* ---------------- invite / edit modal ---------------- */
     var modal = $("memberModal"), form = $("memberForm");
+    /* invitation links always go to the published site (siteUrl in elara-config.js), even when the owner
+       sends them from Live Server on their own computer */
     function redirectUrl() {
-        var cfg = window.ELARA_CONFIG || {};
-        return new URL(cfg.loginPage || "Loginpage.html", location.href).href;
+        var cfg = window.ELARA_CONFIG || {}, base = location.href;
+        if (/^https?:\/\/[^\s]+$/i.test(cfg.siteUrl || "")) base = cfg.siteUrl.replace(/\/?$/, "/");
+        return new URL(cfg.loginPage || "Loginpage.html", base).href;
     }
+    function isLocal() { return /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname) || location.protocol === "file:"; }
     function drawPermGrid(p) {
         $("permGrid").innerHTML = AREAS.map(function (a) {
             return '<label class="perm-row"><span><i class="fa-solid ' + a[2] + '"></i> ' + a[1] + '</span><select data-area="' + a[0] + '" aria-label="' + a[1] + ' access">' +
@@ -164,6 +169,10 @@
         else if (!editing && D.members.all().some(function (m) { return (m.email || "").toLowerCase() === email; })) err = "That person is already in your home or has been invited.";
         else if (["adult", "member", "guest"].indexOf(role) < 0) err = "Choose a role.";
         if (err) { $("memberError").textContent = err; return; }
+        if (!editing && isLocal() && !/^https?:/i.test((window.ELARA_CONFIG || {}).siteUrl || "")) {
+            $("memberError").textContent = "You're on your own computer (" + location.host + "), so the invitation link wouldn't open on anyone else's phone. Put your Vercel address in siteUrl in elara-config.js, or send the invite from the live site.";
+            return;
+        }
         var btn = $("memberSubmit"); btn.disabled = true;
         var job = editing
             ? D.household.update(editing.linkId, { role: role, permissions: p, name: name }).then(function () {
@@ -174,6 +183,17 @@
             : D.household.invite({ email: email, name: name, role: role, permissions: p, redirectTo: redirectUrl() }).then(function (r) {
                   D.log("invited " + name + " (" + ROLE_LABEL[role] + ")", "fa-user-plus");
                   UI.toast(r && r.demo ? "Demo mode: no email sent." : r && r.message ? r.message : r && r.recordedOnly ? "Invitation saved. Deploy the invite function to send emails (README, step 5)." : "Invitation sent to " + email + ".", r && (r.demo || r.recordedOnly) ? "info" : "success");
+                  if (r && r.demo) return;
+                  // make sure the invitation was really recorded: an old invite function only sends the email,
+                  // and then the person gets a home of their own instead of joining this one
+                  return D.members.refresh().then(function (list) {
+                      var found = (list || D.members.all()).some(function (m) { return (m.email || "").toLowerCase() === email; });
+                      if (!found) UI.confirm({
+                          title: "The invitation wasn't recorded",
+                          message: "The email went out, but your home has no record of " + email + ", so they would get a home of their own. Your Supabase invite function is an old version: redeploy bright-action from the latest Elara files (README, step 5) and run the latest elara-setup.sql, then invite them again.",
+                          confirmText: "OK", cancelText: "Close", icon: "fa-triangle-exclamation", danger: false
+                      });
+                  });
               });
         job.then(function () { closeModal(); render(); }).catch(function (e2) { $("memberError").textContent = e2.message || "Something went wrong."; })
            .then(function () { btn.disabled = false; });
