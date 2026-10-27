@@ -2183,3 +2183,38 @@ body.light-theme .member-portal button{ color:#17182b; }
 .mp-perms .off{ background:rgba(255,77,109,.12); color:#ff6b86; }
 body.light-theme .mp-grid div{ background:#f3f5fb; }
 .empty-state.small{ padding:26px 16px; } .empty-state.small p{ font-size:14px; }
+
+/* ===== additions: member actions, permission table, invite permissions ===== */
+.member-actions{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.mact{ border:none; background:rgba(124,108,255,.14); color:var(--primary-light); border-radius:10px; padding:7px 11px; font:inherit; font-size:12px; cursor:pointer; display:inline-flex; gap:6px; align-items:center; transition:var(--transition); }
+.mact:hover{ background:rgba(124,108,255,.28); }
+.mact.danger{ background:rgba(251,113,133,.14); color:var(--red); }
+.mact.danger:hover{ background:rgba(251,113,133,.26); }
+.member-right{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.table-wrap{ overflow-x:auto; }
+.perm-table{ width:100%; border-collapse:collapse; font-size:14px; }
+.perm-table th,.perm-table td{ padding:10px 8px; text-align:center; border-bottom:1px solid var(--border); white-space:nowrap; }
+.perm-table th:first-child{ text-align:left; }
+.perm-table thead th{ font-size:12px; opacity:.7; font-weight:600; }
+.perm-table thead small{ display:block; font-weight:400; opacity:.7; }
+.perm-table tbody th i{ color:var(--primary-light); width:18px; }
+.lvl{ display:inline-block; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+.lvl.edit{ background:rgba(34,197,94,.15); color:var(--green); }
+.lvl.view{ background:rgba(100,228,255,.12); color:var(--cyan); }
+.lvl.none{ background:rgba(255,255,255,.06); color:var(--text-secondary); }
+.perm-legend{ margin-top:14px; font-size:12px; color:var(--text-secondary); display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.perm-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.perm-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; background:rgba(255,255,255,.04); font-size:13px; }
+.perm-row i{ color:var(--primary-light); margin-right:4px; }
+.perm-row select{ padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.06); color:inherit; font:inherit; font-size:13px; }
+.perm-row select option{ color:#111; }
+.hint{ display:block; font-size:12px; color:var(--text-secondary); margin-top:6px; }
+.field-error{ color:var(--red); font-size:13px; min-height:18px; margin:6px 0; }
+.leave-box{ margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
+.leave-box p{ font-size:13px; color:var(--text-secondary); margin-bottom:10px; }
+.leave-btn{ border:none; background:rgba(251,113,133,.14); color:var(--red); padding:10px 16px; border-radius:12px; font:inherit; cursor:pointer; }
+.modal-content{ max-height:90vh; overflow-y:auto; }
+[hidden]{ display:none !important; }
+body.light-theme .perm-row{ background:rgba(0,0,0,.04); }
+body.light-theme .perm-row select{ background:#fff; color:#17182b; }
+@media (max-width:600px){ .perm-grid{ grid-template-columns:1fr; } .member-right{ align-items:flex-start; } }

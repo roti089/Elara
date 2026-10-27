@@ -107,8 +107,9 @@ body.light-theme .menu li.active a { color: #ffffff; }
 ========================================================== */
 .elara-bell{ position:relative; }
 .elara-bell-dot{
-    position:absolute; top:9px; right:10px; width:9px; height:9px; border-radius:50%;
-    background:#ff4d6d; box-shadow:0 0 0 2px rgba(9,9,19,.9);
+    position:absolute; top:5px; right:5px; min-width:17px; height:17px; padding:0 4px; border-radius:9px;
+    background:#ff4d6d; color:#fff; font-size:10px; font-weight:700; line-height:17px; text-align:center;
+    box-shadow:0 0 0 2px rgba(9,9,19,.9);
 }
 #elaraNotifPanel{
     position:fixed; z-index:12000; width:340px; max-width:calc(100vw - 24px);
@@ -224,3 +225,129 @@ body.light-theme #eui-search{ background:#fff; color:#17182b; border-color:rgba(
 body.light-theme .sec-facts, body.light-theme .sec-row{ background:#f3f5fb; }
 body.light-theme .sec-code{ background:#f3f5fb; border-color:rgba(0,0,0,.12); }
 body.light-theme .sec-secret code{ background:rgba(0,0,0,.06); color:#17182b; }
+
+
+/* ==========================================================
+   v3: access control, view-only pages, voice, forms, banners
+========================================================== */
+body.elara-readonly .needs-edit{ display:none !important; }
+body.elara-readonly [data-needs-edit]{ pointer-events:none; opacity:.55; }
+.elara-viewonly, .elara-setup-issue{
+    display:flex; align-items:center; gap:10px; margin:-14px 0 24px; padding:12px 16px; border-radius:14px; font-size:14px;
+    background:rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.28); color:#7dd3fc;
+}
+.elara-setup-issue{ background:rgba(251,191,36,.12); border-color:rgba(251,191,36,.3); color:#fbbf24; }
+body.light-theme .elara-viewonly{ color:#0369a1; }
+body.light-theme .elara-setup-issue{ color:#92400e; }
+.elara-locked{ max-width:480px; margin:12vh auto; text-align:center; padding:40px 28px; border-radius:26px; background:rgba(20,24,44,.75); border:1px solid rgba(255,255,255,.08); }
+.elara-locked i{ font-size:42px; color:#9b8cff; margin-bottom:16px; }
+.elara-locked h2{ margin-bottom:10px; }
+.elara-locked p{ color:#9ba6c6; line-height:1.6; margin-bottom:20px; }
+.elara-locked a{ display:inline-block; padding:12px 22px; border-radius:14px; background:linear-gradient(135deg,#6c63ff,#4f46e5); color:#fff; text-decoration:none; }
+body.light-theme .elara-locked{ background:#fff; border-color:rgba(0,0,0,.08); }
+
+#elaraNotifPanel .enp-item.unread{ background:rgba(124,108,255,.09); }
+#elaraNotifPanel .enp-item.unread strong::after{ content:""; display:inline-block; width:7px; height:7px; margin-left:7px; border-radius:50%; background:#9b8cff; vertical-align:middle; }
+#elaraNotifPanel .enp-text em{ font-style:normal; font-size:11px; opacity:.5; }
+
+/* form dialog (ElaraUI.form) */
+.eui-form{ text-align:left; display:flex; flex-direction:column; gap:12px; max-width:440px; max-height:90vh; overflow-y:auto; }
+.eui-form h3, .eui-form > p, .eui-form .eui-icon{ text-align:center; margin-left:auto; margin-right:auto; }
+.eui-form label{ display:flex; flex-direction:column; gap:6px; font-size:13px; color:#9ba6c6; }
+.eui-form input, .eui-form select, .eui-form textarea{
+    padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
+    color:inherit; font:inherit; outline:none;
+}
+.eui-form select option{ color:#111; }
+.eui-form input:focus, .eui-form select:focus, .eui-form textarea:focus{ border-color:#6c63ff; }
+.eui-err{ min-height:18px; margin:0 !important; color:#ff6b86 !important; font-size:13px !important; text-align:left; }
+body.light-theme .eui-form input, body.light-theme .eui-form select, body.light-theme .eui-form textarea{ background:#f3f5fb; border-color:rgba(0,0,0,.12); }
+
+/* form validation messages used by the pages */
+.field-error{ display:block; margin-top:6px; font-size:12px; color:#ff6b86; }
+input.invalid, select.invalid, textarea.invalid{ border-color:#ff4d6d !important; }
+
+/* voice control */
+#voiceBtn.listening, #voiceBtn:focus-visible{ outline:2px solid #9b8cff; }
+#elaraVoice{
+    position:fixed; inset:0; z-index:13500; display:flex; align-items:center; justify-content:center; padding:20px;
+    background:rgba(5,6,15,.72); backdrop-filter:blur(6px);
+}
+#elaraVoice .ev-box{
+    position:relative; width:100%; max-width:420px; padding:34px 26px 24px; border-radius:26px; text-align:center;
+    background:linear-gradient(160deg,#171b35,#0f1226); color:#fff; border:1px solid rgba(255,255,255,.09); font-family:'Outfit',sans-serif;
+}
+#elaraVoice .ev-x{ position:absolute; top:14px; right:14px; width:34px; height:34px; border:none; border-radius:10px; background:rgba(255,255,255,.07); color:inherit; cursor:pointer; }
+#elaraVoice .ev-mic{ width:84px; height:84px; margin:0 auto 16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px;
+    background:linear-gradient(135deg,#6c63ff,#4f46e5); box-shadow:0 0 0 0 rgba(108,99,255,.5); }
+#elaraVoice.listening .ev-mic{ animation:evPulse 1.4s ease-out infinite; }
+#elaraVoice.thinking .ev-mic{ opacity:.6; }
+#elaraVoice.error .ev-mic{ background:linear-gradient(135deg,#ff4d6d,#e11d48); }
+@keyframes evPulse{ 0%{ box-shadow:0 0 0 0 rgba(108,99,255,.55); } 100%{ box-shadow:0 0 0 26px rgba(108,99,255,0); } }
+#elaraVoice .ev-state{ font-size:18px; font-weight:600; margin-bottom:8px; }
+#elaraVoice .ev-text{ min-height:22px; color:#c7cdea; line-height:1.55; margin-bottom:18px; }
+#elaraVoice .ev-type{ display:flex; gap:8px; }
+#elaraVoice .ev-type input{ flex:1; min-width:0; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:inherit; font:inherit; outline:none; }
+#elaraVoice .ev-type button{ width:46px; border:none; border-radius:12px; background:linear-gradient(135deg,#6c63ff,#4f46e5); color:#fff; cursor:pointer; }
+body.light-theme #elaraVoice .ev-box{ background:#fff; color:#17182b; border-color:rgba(0,0,0,.08); }
+body.light-theme #elaraVoice .ev-text{ color:#4b5470; }
+body.light-theme #elaraVoice .ev-type input{ background:#f3f5fb; border-color:rgba(0,0,0,.12); }
+
+/* phones: the sidebar becomes a bottom bar so every page stays reachable */
+@media (max-width: 900px){
+    body .sidebar{
+        display:flex !important; position:fixed; left:0; right:0; bottom:0; top:auto; width:100% !important; height:64px;
+        padding:6px 8px; flex-direction:row; z-index:1500; background:#0c0d1a; border-top:1px solid rgba(255,255,255,.08); border-right:none;
+        overflow-x:auto; overflow-y:hidden;
+    }
+    body.light-theme .sidebar{ background:#fff; border-top-color:rgba(0,0,0,.08); }
+    body .sidebar .logo, body .sidebar .sidebar-bottom{ display:none; }
+    body .menu{ flex-direction:row; gap:2px; width:100%; justify-content:space-around; }
+    body .menu li a{ min-height:52px; padding:8px 10px; flex-direction:column; gap:3px; justify-content:center; font-size:10px; border-radius:12px; }
+    body .menu li a span{ font-size:10px; opacity:1 !important; }
+    body .menu li a i{ font-size:17px; min-width:0; }
+    body .menu li a:hover{ transform:none; }
+    body .main-content{ margin-left:0 !important; padding-bottom:90px !important; }
+    #eui-toasts{ left:12px; right:12px; top:12px; }
+    .eui-toast{ max-width:none; min-width:0; }
+}
+body.light-theme .sidebar .logo img{ filter:invert(1) brightness(.35); }
+
+/* ---------- never scroll sideways; let the top bar wrap on small screens ---------- */
+html, body{ overflow-x:hidden; max-width:100%; }
+.main-content{ min-width:0; }
+@media (max-width: 900px){
+    body .topbar{ flex-wrap:wrap; gap:14px; height:auto; }
+    body .welcome{ min-width:0; flex:1 1 100%; }
+    body .welcome h1{ font-size:clamp(22px,6vw,32px); overflow-wrap:anywhere; }
+    body .top-actions{ flex-wrap:wrap; width:100%; gap:10px; justify-content:flex-start; }
+    body .top-actions .search{ flex:1 1 100%; width:auto; min-width:0; max-width:none; order:5; }
+    body .top-actions .search input{ width:100%; min-width:0; }
+    body .top-actions .profile{ margin-left:auto; }
+    body .main-content{ width:100% !important; max-width:100vw; padding-left:16px !important; padding-right:16px !important; }
+}
+@media (max-width: 600px){
+    body .stats{ grid-template-columns:1fr 1fr !important; gap:12px; }
+    body .smart-grid, body .schedule-layout, body .shopping-layout, body .dashboard-grid, body .lower-grid, body .bottom-grid,
+    body .settings-layout, body .rooms-grid, body .tasks-layout, body .energy-cards{ grid-template-columns:1fr !important; }
+    body .panel{ padding:18px; }
+    body .card h2{ font-size:26px; }
+}
+
+/* ---------- installed app (home-screen) ---------- */
+@supports (padding: env(safe-area-inset-top)){
+    html.elara-app body .main-content{ padding-top:calc(env(safe-area-inset-top) + 12px) !important; }
+    @media (max-width: 900px){
+        body .sidebar{ height:calc(64px + env(safe-area-inset-bottom)); padding-bottom:calc(6px + env(safe-area-inset-bottom)); }
+        body .main-content{ padding-bottom:calc(90px + env(safe-area-inset-bottom)) !important; }
+        body .fab, body .floating-btn{ bottom:calc(84px + env(safe-area-inset-bottom)) !important; }
+    }
+}
+@media (max-width: 900px){ body .fab, body .floating-btn{ bottom:84px; right:16px; } }
+html.elara-app body{ -webkit-tap-highlight-color:transparent; overscroll-behavior-y:none; }
+.elara-install-bar{ position:fixed; left:12px; right:12px; bottom:calc(76px + env(safe-area-inset-bottom, 0px)); z-index:1600; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:16px; background:#171a33; color:#fff; border:1px solid rgba(255,255,255,.1); box-shadow:0 12px 30px rgba(0,0,0,.45); font-size:14px; }
+.elara-install-bar img{ width:36px; height:36px; border-radius:9px; }
+.elara-install-bar span{ flex:1; line-height:1.35; }
+.elara-install-bar button{ border:none; border-radius:10px; padding:8px 14px; font:inherit; font-weight:600; cursor:pointer; background:linear-gradient(135deg,#7C6CFF,#5F72FF); color:#fff; }
+.elara-install-bar button[data-i="x"]{ background:transparent; padding:6px 8px; font-size:20px; color:#a7b2d1; }
+body.light-theme .elara-install-bar{ background:#fff; color:#17182b; border-color:rgba(0,0,0,.1); }

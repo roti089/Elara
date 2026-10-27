@@ -2096,3 +2096,19 @@ body.light-theme .task-add input{ background:#f3f5fb; border-color:rgba(0,0,0,.1
 .home-clock{ display:inline-flex; align-items:center; gap:6px; margin-left:12px; padding:3px 12px; border-radius:20px; font-size:13px;
     background:rgba(108,99,255,.14); color:#9b8cff; white-space:nowrap; }
 body.light-theme .home-clock{ background:rgba(108,99,255,.1); }
+
+/* ===== additions: live data, links, chat mic ===== */
+.stats a.card{ color:inherit; text-decoration:none; display:block; }
+.dash-chart{ position:relative; height:260px; }
+.task-list li{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.task-list li label{ display:flex; align-items:center; gap:10px; cursor:pointer; }
+.task-list li small{ opacity:.6; font-size:12px; white-space:nowrap; }
+.task-list li small.late{ color:#FB7185; opacity:1; }
+a.schedule-item{ color:inherit; text-decoration:none; }
+.dash-busy{ margin-top:12px; font-size:13px; color:#FBBF24; }
+.avatar-letter{ width:45px; height:45px; border-radius:50%; display:grid; place-items:center; font-weight:700; background:linear-gradient(135deg,#6C63FF,#6EE7F9); color:#fff; flex-shrink:0; }
+.chat-window{ max-height:320px; overflow-y:auto; }
+.message p{ white-space:pre-line; }
+.chat-input{ display:flex; gap:8px; }
+.chat-input #chatMic{ background:rgba(255,255,255,.08); }
+.weather-content h3{ text-transform:none; }

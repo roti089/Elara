@@ -2,90 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0d1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Elara">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <title>Log In | Elara</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
     <link rel="stylesheet" href="Login.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 </head>
 <body>
-    <div id="logo-container">
-    <img src="Elara logo.png" id="logo" alt="Elara">
-    <h1 id="logo-name">Elara</h1>
-<nav id="nav-container">
-    <a href="Homepage.html">Home</a>
-    <a href="About.html">About </a>
-    <a href="Contactus.html">Contact </a>
-    <a href="Loginpage.html">Log In</a>
-</nav>
-</div>
+    <header id="logo-container">
+        <a href="Homepage.html" class="brand"><img src="Elara logo.png" id="logo" alt=""><span id="logo-name">Elara</span></a>
+        <nav id="nav-container" aria-label="Main">
+            <a href="Homepage.html">Home</a>
+            <a href="About.html">About</a>
+            <a href="Contactus.html">Contact</a>
+            <a href="Loginpage.html" aria-current="page">Log In</a>
+        </nav>
+    </header>
 
-    <div class="container" id="container">
+    <main class="container" id="container">
         <div class="form-container sign-up">
-            <form id="signup-form">
+            <form id="signup-form" novalidate>
                 <h1>Create Account</h1>
                 <div class="social-icons">
-                    <a href="#" id="signupGoogleBtn" class="icon">
-                        <i class="fa-brands fa-google"></i>
-                    </a>
-
-                    <a href="#" id="signupGithubBtn" class="icon">
-                        <i class="fa-brands fa-github"></i>
-                    </a>
-
-                    <a href="#" id="signupLinkedinBtn" class="icon">
-                        <i class="fa-brands fa-linkedin-in"></i>
-                    </a>
+                    <a href="#" id="signupGoogleBtn" class="icon" aria-label="Sign up with Google"><i class="fa-brands fa-google"></i></a>
+                    <a href="#" id="signupGithubBtn" class="icon" aria-label="Sign up with GitHub"><i class="fa-brands fa-github"></i></a>
+                    <a href="#" id="signupLinkedinBtn" class="icon" aria-label="Sign up with LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
                 </div>
-                <span>or use your email for registration</span>
-                <input type="text" id="signup-name" placeholder="Name">
-                <input type="email" id="signup-email" placeholder="Email">
-                <input type="password" id="signup-password" placeholder="Password">
-                <button id="register" class="signup-btn">Sign Up</button>
+                <span>or use your email to register</span>
+                <input type="text" id="signup-name" placeholder="Full name" aria-label="Full name" autocomplete="name" maxlength="60" required>
+                <input type="email" id="signup-email" placeholder="Email" aria-label="Email" autocomplete="email" maxlength="120" required>
+                <input type="password" id="signup-password" placeholder="Password (8+ characters, a letter and a number)" aria-label="Password" autocomplete="new-password" minlength="8" maxlength="72" required>
+                <button type="submit" id="register" class="signup-btn">Sign Up</button>
+                <p class="mobile-switch">Already have an account? <button type="button" class="link-switch" data-show="signin">Sign in</button></p>
             </form>
         </div>
         <div class="form-container sign-in">
-            <form id="signin-form">
+            <form id="signin-form" novalidate>
                 <h1>Sign In</h1>
-               <div class="social-icons">
-                    <a href="#" id="signinGoogleBtn" class="icon">
-                        <i class="fa-brands fa-google"></i>
-                    </a>
-
-                    <a href="#" id="signinGithubBtn" class="icon">
-                        <i class="fa-brands fa-github"></i>
-                    </a>
-
-                    <a href="#" id="signinLinkedinBtn" class="icon">
-                        <i class="fa-brands fa-linkedin-in"></i>
-                    </a>
+                <div class="social-icons">
+                    <a href="#" id="signinGoogleBtn" class="icon" aria-label="Sign in with Google"><i class="fa-brands fa-google"></i></a>
+                    <a href="#" id="signinGithubBtn" class="icon" aria-label="Sign in with GitHub"><i class="fa-brands fa-github"></i></a>
+                    <a href="#" id="signinLinkedinBtn" class="icon" aria-label="Sign in with LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
                 </div>
-                <span>or use your email password</span>
-                <input type="email" id="signin-email" placeholder="Email">
-                <input type="password" id="signin-password" placeholder="Password">
-                <a href="#" id="forgot-link">Forget Your Password?</a>
-                <button id="login" class="signin-btn">Sign In</button>
+                <span>or use your email and password</span>
+                <input type="email" id="signin-email" placeholder="Email" aria-label="Email" autocomplete="email" maxlength="120" required>
+                <input type="password" id="signin-password" placeholder="Password" aria-label="Password" autocomplete="current-password" maxlength="72" required>
+                <a href="#" id="forgot-link">Forgot your password?</a>
+                <button type="submit" id="login" class="signin-btn">Sign In</button>
+                <p class="mobile-switch">New to Elara? <button type="button" class="link-switch" data-show="signup">Create an account</button></p>
             </form>
         </div>
         <div class="toggle-container">
             <div class="toggle">
                 <div class="toggle-panel toggle-left">
                     <h1>Welcome Back!</h1>
-                    <p>Enter your personal details to use all of site features</p>
-        
-                    <button class="hidden" id="show-login">Sign In</button>
+                    <p>Sign in to see your home, your tasks and everyone in your household.</p>
+                    <button type="button" class="hidden" id="show-login">Sign In</button>
                 </div>
                 <div class="toggle-panel toggle-right">
                     <h1>Hello!</h1>
-                    <p>Register with your personal details to use all of site features</p>
-                    <button class="hidden" id="show-register">Sign Up</button>
+                    <p>Create an account to start managing your home with Elara.</p>
+                    <button type="button" class="hidden" id="show-register">Sign Up</button>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+    <script src="elara-config.js"></script>
     <script src="ui.js"></script>
     <script type="module" src="Login.js"></script>
+<script src="elara-pwa.js"></script>
 </body>
 </html>

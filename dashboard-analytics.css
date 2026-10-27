@@ -1764,3 +1764,15 @@ body.light-theme .panel-header select option{ background:#ffffff; color:#17182b;
     font:inherit; font-size:13px; cursor:pointer;
 }
 body.light-theme .data-banner{ background:rgba(108,99,255,.08); }
+
+/* ===== real readings only ===== */
+.data-banner{ display:flex; gap:12px; align-items:flex-start; padding:14px 18px; margin:0 0 24px; border-radius:16px; background:rgba(124,108,255,.12); border:1px solid rgba(124,108,255,.3); font-size:14px; line-height:1.5; }
+.data-banner[hidden]{ display:none; }
+.data-banner i{ color:#9d95ff; margin-top:3px; }
+.data-banner a{ color:#b3adff; }
+.chart-box{ position:relative; }
+.chart-empty{ position:absolute; inset:0; display:grid; place-items:center; opacity:.6; font-size:14px; }
+.chart-empty[hidden]{ display:none; }
+a.analytics-device{ color:inherit; text-decoration:none; }
+.muted-row{ opacity:.65; padding:14px 4px; font-size:14px; }
+body.light-theme .data-banner{ background:rgba(124,108,255,.08); }

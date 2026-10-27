@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0d1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Elara">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <title>Reports | Elara</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="dashboard-reports.css">
+    <link rel="stylesheet" href="elara-sidebar.css">
+</head>
+<body>
+<div class="smart-home">
+
+    <!-- SIDEBAR (the menu is rebuilt by elara-common.js to hide pages a member may not see) -->
+    <aside class="sidebar">
+        <div class="logo">
+            <img src="Elara logo.png" alt="Elara">
+            <div><h2>Elara</h2><span>Smart Home</span></div>
+        </div>
+        <ul class="menu">
+            <li><a href="dashboard-content.html"><i class="fa-solid fa-house"></i><span>Dashboard</span></a></li>
+            <li><a href="dashboard-tasks.html"><i class="fa-solid fa-list-check"></i><span>Tasks</span></a></li>
+            <li><a href="dashboard-shopping.html"><i class="fa-solid fa-cart-shopping"></i><span>Shopping</span></a></li>
+            <li><a href="dashboard-schedule.html"><i class="fa-solid fa-calendar-days"></i><span>Schedule</span></a></li>
+            <li><a href="dashboard-smart-home.html"><i class="fa-solid fa-lightbulb"></i><span>Smart Home</span></a></li>
+            <li><a href="dashboard-analytics.html"><i class="fa-solid fa-chart-simple"></i><span>Analytics</span></a></li>
+            <li class="active"><a href="dashboard-reports.html"><i class="fa-solid fa-file-lines"></i><span>Reports</span></a></li>
+            <li><a href="dashboard-members.html"><i class="fa-solid fa-users"></i><span>Members</span></a></li>
+            <li><a href="dashboard-settings.html"><i class="fa-solid fa-gear"></i><span>Settings</span></a></li>
+        </ul>
+        <div class="sidebar-bottom">
+            <button class="logout" type="button"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <div class="welcome">
+                <h1 id="heading">Reports</h1>
+                <p>Who used what: energy, groceries, tasks and events per person.</p>
+            </div>
+            <div class="top-actions">
+                <div class="search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text"  placeholder="Search anything..." aria-label="Search anything...">
+                </div>
+                <button type="button" id="notificationBtn" aria-label="Notifications"><i class="fa-solid fa-bell"></i></button>
+                <button type="button" id="themeBtn" aria-label="Toggle theme"><i class="fa-solid fa-moon"></i></button>
+                <div class="profile">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="">
+                    <div><h4 id="userName"></h4><span></span></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- REPORT CONTROLS -->
+        <section class="panel report-controls">
+            <form id="reportForm" class="report-form" novalidate>
+                <label>Period
+                    <select id="reportPeriod">
+                        <option value="week">Last 7 days</option>
+                        <option value="month" selected>Last 30 days</option>
+                        <option value="thisMonth">This calendar month</option>
+                        <option value="lastMonth">Last calendar month</option>
+                        <option value="custom">Custom dates</option>
+                    </select>
+                </label>
+                <label class="custom-only">From <input type="date" id="reportFrom"></label>
+                <label class="custom-only">To <input type="date" id="reportTo"></label>
+                <label>Person
+                    <select id="reportPerson"><option value="">Everyone</option></select>
+                </label>
+                <div class="report-buttons">
+                    <button type="button" id="exportCsv" class="report-btn"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                    <button type="button" id="printReport" class="report-btn"><i class="fa-solid fa-print"></i> Print / PDF</button>
+                </div>
+            </form>
+            <p class="field-error" id="reportError" aria-live="assertive"></p>
+            <p class="report-range" id="reportRange"></p>
+        </section>
+
+        <!-- TOTALS -->
+        <section class="stats">
+            <div class="card" data-area="smartHome"><i class="fa-solid fa-bolt"></i><h3>Energy</h3><h2 id="sumEnergy">0 kWh</h2><p id="sumEnergyNote">&nbsp;</p></div>
+            <div class="card" data-area="shopping"><i class="fa-solid fa-basket-shopping"></i><h3>Groceries</h3><h2 id="sumGroceries">R0.00</h2><p id="sumGroceriesNote">&nbsp;</p></div>
+            <div class="card" data-area="tasks"><i class="fa-solid fa-list-check"></i><h3>Tasks Completed</h3><h2 id="sumTasks">0</h2><p id="sumTasksNote">&nbsp;</p></div>
+            <div class="card" data-area="schedule"><i class="fa-solid fa-calendar-plus"></i><h3>Events Added</h3><h2 id="sumEvents">0</h2><p id="sumEventsNote">&nbsp;</p></div>
+        </section>
+
+        <!-- PER PERSON TABLE -->
+        <section class="panel">
+            <div class="panel-header"><div><h2>Usage per Person</h2><p class="panel-subtitle">Energy is measured by your switches and counted for whoever switched each device on. Groceries for whoever marked them as bought.</p></div></div>
+            <div class="table-wrap"><table class="report-table" id="reportTable"></table></div>
+        </section>
+
+        <section class="smart-grid report-charts">
+            <section class="panel" data-area="smartHome">
+                <div class="panel-header"><div><h2>Energy by Person</h2><p class="panel-subtitle">kWh in the selected period</p></div></div>
+                <div class="report-chart"><canvas id="energyPersonChart" aria-label="Energy per person"></canvas></div>
+            </section>
+            <section class="panel" data-area="shopping">
+                <div class="panel-header"><div><h2>Grocery Spending by Person</h2><p class="panel-subtitle">Rand in the selected period</p></div></div>
+                <div class="report-chart"><canvas id="spendPersonChart" aria-label="Grocery spending per person"></canvas></div>
+            </section>
+        </section>
+
+        <!-- DETAIL CARDS -->
+        <section class="panel">
+            <div class="panel-header"><div><h2>Details</h2><p class="panel-subtitle">What each person did most</p></div></div>
+            <div class="person-cards" id="personCards"></div>
+        </section>
+
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="elara-config.js"></script>
+<script src="elara-pwa.js"></script>
+<script src="elara-data.js"></script>
+<script src="elara-theme.js"></script>
+<script src="elara-assistant.js"></script>
+<script src="elara-common.js"></script>
+<script src="dashboard-reports.js"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 =========================================================== */
 
 (function () {
-
+    if (!document.getElementById("mascot-wrap")) return;
     const wrap = document.getElementById("mascot-wrap");
     const headGroup = document.getElementById("head-group");
     const antennaGroup = document.getElementById("antenna-group");
@@ -95,7 +95,6 @@
         [pupilLeft, pupilRight].forEach(p => {
 
             p.parentElement.style.transform = "scaleY(.15)";
-            p.parentElement.style.transformOrigin = "center";
 
         });
 
@@ -127,6 +126,8 @@
 
     ];
 
+    if (!wrap) return;
+    wrap.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); wrap.click(); } });
     wrap.addEventListener("click", () => {
 
         speechText.textContent =
@@ -149,199 +150,75 @@
 
 
 /* ===========================================================
-   ELARA WAVES BACKGROUND
+   ELARA WAVES BACKGROUND (skipped if paper.js didn't load or motion is reduced)
 =========================================================== */
+(function () {
+    const canvas = document.getElementById("bend");
+    if (!canvas || typeof paper === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    paper.setup(canvas);
 
-paper.install(window);
+    const pathCounts = 10, pathPoints = 24, speed = 0.9, offset = 7, delay = 0.9;
+    const frequency = [0,-30,50,-50,-35,35, 0,-30,50,-50,-35,35, 0,-30,50,-50,-35,35, 0,-30,50,-50,-35,35];
+    const paths = [];
+    let horizon = window.innerHeight / 2;
 
-const canvas = document.getElementById("bend");
-
-paper.setup(canvas);
-
-let h = window.innerHeight;
-let w = window.innerWidth;
-
-let horizon = h / 2;
-
-const pathCounts = 10;
-const pathPoints = 24;
-
-const strokeWidth = 1.2;
-const strokeColor = "#8B5CF6";
-
-const speed = 0.9;
-const offset = 7;
-const delay = 0.9;
-
-const frequency = [
-
-0,-30,50,-50,-35,35,
-0,-30,50,-50,-35,35,
-0,-30,50,-50,-35,35,
-0,-30,50,-50,-35,35
-
-];
-
-const paths = [];
-
-initializePaths();
-
-
-
-function initializePaths(){
-
-    h = window.innerHeight;
-    w = window.innerWidth;
-
-    horizon = h/2;
-
-    paper.project.activeLayer.removeChildren();
-
-    paths.length = 0;
-
-    for(let i=0;i<pathCounts;i++){
-
-        const path = new paper.Path();
-
-        path.add(new paper.Point(-10,h));
-        path.add(new paper.Point(-10,horizon));
-
-        for(let p=0;p<pathPoints-1;p++){
-
-            path.add(
-
-                new paper.Point(
-
-                    w/(pathPoints-1)*p+p,
-
-                    horizon+frequency[p]
-
-                )
-
-            );
-
+    function build() {
+        const h = window.innerHeight, w = window.innerWidth;
+        horizon = h / 2;
+        paper.project.activeLayer.removeChildren();
+        paths.length = 0;
+        for (let i = 0; i < pathCounts; i++) {
+            const path = new paper.Path();
+            path.add(new paper.Point(-10, h));
+            path.add(new paper.Point(-10, horizon));
+            for (let p = 0; p < pathPoints - 1; p++) path.add(new paper.Point(w / (pathPoints - 1) * p + p, horizon + frequency[p]));
+            path.add(new paper.Point(w + 10, horizon));
+            path.add(new paper.Point(w + 10, h));
+            path.strokeWidth = 1.2; path.strokeColor = "#8B5CF6"; path.shadowColor = "#8B5CF6"; path.shadowBlur = 18;
+            if (i === 0) path.fillColor = "rgba(255,255,255,.03)";
+            path.smooth();
+            paths.push(path);
         }
-
-        path.add(new paper.Point(w+10,horizon));
-        path.add(new paper.Point(w+10,h));
-
-        path.strokeWidth=strokeWidth;
-
-        path.strokeColor=strokeColor;
-
-        path.shadowColor="#8B5CF6";
-        path.shadowBlur=18;
-
-        if(i===0){
-
-            path.fillColor="rgba(255,255,255,.03)";
-
-        }
-
-        path.smooth();
-
-        paths.push(path);
-
     }
-
-}
-
-
-
-view.onFrame=function(event){
-
-    for(let p=0;p<pathCounts;p++){
-
-        for(let s=0;s<pathPoints;s++){
-
-            const value=(s%2)?-1:1;
-
-            const segment=paths[p].segments[2+s];
-
-            segment.point.y=
-
-                horizon+
-
-                Math.sin((event.time+s*delay)*speed)
-
-                *
-
-                (frequency[s]*value+(p*offset*value));
-
+    build();
+    paper.view.onFrame = function (event) {
+        for (let p = 0; p < pathCounts; p++) {
+            for (let s = 0; s < pathPoints; s++) {
+                const value = (s % 2) ? -1 : 1, segment = paths[p].segments[2 + s];
+                if (segment) segment.point.y = horizon + Math.sin((event.time + s * delay) * speed) * (frequency[s] * value + (p * offset * value));
+            }
         }
+    };
+    let t = null;
+    window.addEventListener("resize", () => {
+        clearTimeout(t);
+        t = setTimeout(() => { paper.view.viewSize = new paper.Size(window.innerWidth, window.innerHeight); build(); }, 150);
+    });
+})();
 
+/* ===========================================================
+   SCROLL: background lettering drifts, sections fade in (one handler)
+=========================================================== */
+(function () {
+    const titles = document.querySelectorAll(".background-title");
+    let ticking = false;
+    function update() {
+        ticking = false;
+        titles.forEach((title) => {
+            const progress = title.parentElement.getBoundingClientRect().top / window.innerHeight;
+            title.style.transform = "translate(-50%, calc(-50% - " + (progress * 80) + "px))";
+            title.style.opacity = String(Math.max(0.02, 0.08 - Math.abs(progress) * 0.08));
+        });
     }
+    window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    update();
 
-};
+    const sections = document.querySelectorAll(".fade-section");
+    if (!("IntersectionObserver" in window)) { sections.forEach((s) => s.classList.add("show")); return; }
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("show"); observer.unobserve(entry.target); } });
+    }, { threshold: 0.15 });
+    sections.forEach((s) => observer.observe(s));
 
-
-
-window.addEventListener("resize",()=>{
-
-    view.viewSize=new paper.Size(
-
-        window.innerWidth,
-
-        window.innerHeight
-
-    );
-
-    initializePaths();
-
-});
-
-/*scroller*/
-const title = document.querySelector(".background-title");
-
-window.addEventListener("scroll", () => {
-
-    const scroll = window.scrollY;
-
-    title.style.transform =
-        `translate(-50%, calc(-50% - ${scroll * 0.25}px))`;
-
-});
-
-const titles = document.querySelectorAll(".background-title");
-
-window.addEventListener("scroll", () => {
-
-    const scroll = window.scrollY;
-
-    titles.forEach(title => {
-
-        const section = title.parentElement;
-
-        const rect = section.getBoundingClientRect();
-
-        const progress = rect.top / window.innerHeight;
-
-        title.style.transform =
-        `translate(-50%, calc(-50% - ${progress * 80}px))`;
-
-        title.style.opacity =
-        Math.max(0, 0.05 - Math.abs(progress)*0.05);
-
-    });
-
-});
-
-const observer = new IntersectionObserver(entries=>{
-
-    entries.forEach(entry=>{
-
-        if(entry.isIntersecting){
-
-            entry.target.classList.add("show");
-
-        }
-
-    });
-
-},{threshold:.25});
-
-document.querySelectorAll(".fade-section").forEach(section=>{
-
-    observer.observe(section);
-
-});
+    const y = document.getElementById("year"); if (y) y.textContent = new Date().getFullYear();
+})();

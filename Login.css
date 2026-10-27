@@ -19,7 +19,7 @@ body{
     flex-direction:column;
     align-items:center;
     min-height:100vh;
-    overflow:hidden;
+    overflow-x:hidden;
     background:#070C18;
     color:white;
 }
@@ -996,3 +996,34 @@ body::after{
 .auth-actions{ display:flex; gap:12px; justify-content:center; margin-top:8px; }
 .auth-actions button{ margin-top:8px; padding:13px 28px; }
 .container button:disabled, .auth-box button:disabled{ opacity:.6; cursor:wait; }
+
+
+/* ==========================================
+   FIXES: header link, mobile layout, inline errors
+========================================== */
+.brand{ display:flex; align-items:center; text-decoration:none; margin-right:auto; }
+.brand #logo-name{ margin-left:-10px; }
+#nav-container a[aria-current="page"]{ color:#79B6FF; }
+.container{ margin-bottom:40px; }
+.mobile-switch{ display:none; font-size:13px; margin-top:14px; }
+.link-switch{ background:none !important; border:none !important; color:#79B6FF !important; padding:0 !important; margin:0 !important; font-size:13px !important; text-transform:none !important; letter-spacing:0 !important; text-decoration:underline; cursor:pointer; box-shadow:none !important; }
+.auth-box input{ width:100%; }
+.auth-err{ color:#ff8a9a; font-size:13px; min-height:16px; }
+input.invalid{ outline:2px solid #ff6b86; }
+
+@media (max-width:640px){
+    #logo-container{ padding:14px 16px; }
+    #logo{ width:60px; }
+    #logo-name{ font-size:30px; }
+    #nav-container{ gap:14px; font-size:12px; letter-spacing:1px; }
+    .container{ width:calc(100% - 32px); min-height:0; height:auto; margin:10px auto 40px; }
+    .toggle-container{ display:none; }
+    .form-container{ position:relative !important; width:100% !important; height:auto !important; left:0 !important; transform:none !important; opacity:1 !important; z-index:1 !important; animation:none !important; }
+    .form-container form{ padding:34px 22px !important; height:auto !important; }
+    .container .sign-up{ display:none; }
+    .container.active .sign-up{ display:block; }
+    .container.active .sign-in{ display:none; }
+    .mobile-switch{ display:block; }
+    body::after{ display:none; }
+}
+@supports (padding: env(safe-area-inset-top)){ html.elara-app #logo-container{ padding-top:calc(env(safe-area-inset-top) + 14px); } }

@@ -4,11 +4,19 @@
 <head>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0d1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Elara">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
-    <title>About Elara</title>
+    <title>About | Elara</title>
+    <meta name="description" content="What Elara is, what it does and how it helps your household.">
 
-    <link rel="icon" href="Elara logo.png">
+    <link rel="icon" href="favicon.ico">
 
     <link rel="stylesheet" href="About.css">
 
@@ -22,7 +30,7 @@
     <!-- Background -->
     <div class="background-gradient"></div>
 
-    <div class="background-title">
+    <div class="background-title" aria-hidden="true">
         ELARA
     </div>
 
@@ -32,9 +40,9 @@
 
         <div id="logo-container">
 
-            <img src="Elara logo.png" id="logo">
+            <a href="Homepage.html" class="brand-link"><img src="Elara logo.png" id="logo" alt="">
 
-            <h1 id="logo-name">Elara</h1>
+            <span id="logo-name">Elara</span></a>
 
         </div>
 
@@ -42,11 +50,11 @@
 
             <a href="Homepage.html">Home</a>
 
-            <a class="active" href="#">About</a>
+            <a class="active" href="About.html" aria-current="page">About</a>
 
             <a href="Contactus.html">Contact</a>
 
-            <a href="Loginpage.html">Login</a>
+            <a href="Loginpage.html">Log In</a>
 
         </nav>
 
@@ -83,17 +91,17 @@
 
             </p>
 
-            <button onclick="window.location.href='Loginpage.html'">
+            <a class="cta-btn" href="Loginpage.html">
 
                 Explore Dashboard
 
-            </button>
+            </a>
 
         </div>
 
         <div class="hero-right">
 
-            <img src="elara-3d.png">
+            <img src="dashboard-preview.jpg" alt="The Elara dashboard" width="1600" height="973" loading="lazy">
 
         </div>
 
@@ -366,7 +374,7 @@
 
         <div class="assistant-image">
 
-        <div id="mascot-wrap" aria-label="Elara, your home assistant mascot" role="img">
+        <div id="mascot-wrap" role="button" tabindex="0" aria-label="Elara, your home assistant. Press for a tip.">
   <svg class="mascot-svg" viewBox="0 0 108 140" xmlns="http://www.w3.org/2000/svg">
  
     <defs>
@@ -477,16 +485,17 @@
 
         </p>
 
-        <button onclick="window.location.href='Loginpage.html'">
+        <a class="cta-btn" href="Loginpage.html?signup=1">
 
             Launch Elara
 
-        </button>
+        </a>
 
     </section>
 
     <script src="About.js"></script>
 
+<script src="elara-pwa.js"></script>
 </body>
 
 </html>

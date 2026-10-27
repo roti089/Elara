@@ -1,635 +1,612 @@
 /* ==========================================================
-            ELARA HOME MANAGEMENT SYSTEM
-                 SCHEDULE ENGINE V2
-   (theme + logout are handled by elara-common.js)
+            ELARA SCHEDULE
+   - events with validation; who is involved gets notified
+   - busy / away / available for every member on every day (changeable)
+   - adding an event on a day someone is busy or away notifies them
+   - Sync Calendar imports from a calendar file or private iCal link,
+     only ADDING events (never removing existing ones)
+   (theme, logout, dialogs: elara-common.js)
 ========================================================== */
 (function () {
     "use strict";
+    var D = window.ElaraData, UI = window.ElaraUI, cfg = window.ELARA_CONFIG || {};
+    if (!D) return;
+    window.ElaraPageLive = true;
 
     var STORAGE_KEY = "elaraSchedules";
     var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     var DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    var ICONS = { Personal: "fa-user", Household: "fa-house", Shopping: "fa-cart-shopping", Maintenance: "fa-wrench", "Smart Home": "fa-lightbulb", Imported: "fa-calendar-plus" };
+    var STATES = ["available", "busy", "away"];
 
-    var ICONS = {
-        "Personal": "fa-user", "Household": "fa-house", "Shopping": "fa-cart-shopping",
-        "Maintenance": "fa-wrench", "Smart Home": "fa-lightbulb",
-        "Cleaning": "fa-broom", "Security": "fa-lock"
-    };
-
-    /* ---------- date helpers (LOCAL time; toISOString() would be UTC and off by a day) ---------- */
     function pad(n) { return n < 10 ? "0" + n : "" + n; }
     function toKey(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
     function fromKey(k) { var p = k.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
     function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
     function startOfWeek(d) { return addDays(d, -d.getDay()); }
-    function prettyDate(key) {
-        var d = fromKey(key);
-        return DAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3);
-    }
-
-    function esc(s) {
-        return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-        });
-    }
+    function prettyDate(key) { var d = fromKey(key); return DAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3); }
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
     function $(id) { return document.getElementById(id); }
+    function todayKey() { return toKey(new Date()); }
+    function nowHM() { var n = new Date(); return pad(n.getHours()) + ":" + pad(n.getMinutes()); }
+    function canEdit() { return D.can("schedule", "edit"); }
+    function me() { return D.me(); }
+    function people() { return D.members.active(); }
+    function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
     /* ---------- state ---------- */
-    var today = new Date();
-    var todayKey = toKey(today);
-    var viewYear = today.getFullYear();
-    var viewMonth = today.getMonth();
-    var selectedKey = todayKey;
-    var viewMode = "Month";        // Month | Week | Today
-    var categoryFilter = "All Categories";
-    var searchTerm = "";
-    var showAll = false;
-    var editingId = null;
+    var urlDate = (location.search.match(/[?&]date=(\d{4}-\d{2}-\d{2})/) || [])[1];
+    var selectedKey = urlDate || todayKey();
+    var viewYear = fromKey(selectedKey).getFullYear(), viewMonth = fromKey(selectedKey).getMonth();
+    var weekStart = startOfWeek(fromKey(selectedKey));
+    var viewMode = "Day", categoryFilter = "", searchTerm = "", showAll = false, editingId = null;
 
-    var seq = 0;
-    var events = loadEvents();
-    events.forEach(function (e) { if (typeof e.id !== "number" || isNaN(e.id)) e.id = Date.now() + (seq++); });
-    save();
+    function events() {
+        var list = D.util.load(STORAGE_KEY, null);
+        if (list) return list;
+        if (!D.demo) return [];
+        var t = new Date(), mk = function (title, cat, date, time, desc) { return { id: Date.now() + Math.floor(Math.random() * 1e5), title: title, category: cat, date: date, time: time, description: desc, createdBy: "demo-1", createdByName: "Justin" }; };
+        list = [mk("Morning Routine", "Household", toKey(t), "07:00", "Kitchen • Coffee • Breakfast"), mk("Pick Up Groceries", "Shopping", toKey(t), "13:00", "Checkers Hyper"),
+                mk("Water Plants", "Household", toKey(addDays(t, 1)), "08:00", "Garden"), mk("Vehicle Service", "Maintenance", toKey(addDays(t, 3)), "09:30", "Book maintenance appointment")];
+        D.util.save(STORAGE_KEY, list);
+        return list;
+    }
+    function saveEvents(list) { D.util.save(STORAGE_KEY, list); }
+    function matchesCategory(ev) { return !categoryFilter || ev.category === categoryFilter; }
+    function eventsOn(key) { return events().filter(function (e) { return e.date === key && matchesCategory(e); }).sort(function (a, b) { return a.time.localeCompare(b.time); }); }
+    function shared(text, icon) { D.log(text, icon); }
 
-    function loadEvents() {
-        var raw = null;
-        try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { /* ignore */ }
-        if (raw !== null) {
-            try {
-                var parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) return parsed;
-            } catch (e) { /* fall through to seed */ }
-        }
-        // logged-in users start with an empty calendar; guests get demo events
-        if (window.ElaraData && !ElaraData.demo) return [];
-        var t = new Date();
-        return [
-            mk("Morning Routine",  "Household", toKey(t), "07:00", "Kitchen • Coffee • Breakfast"),
-            mk("Pick Up Groceries","Shopping",  toKey(t), "13:00", "Checkers Hyper"),
-            mk("Gym Session",      "Personal",  toKey(t), "18:00", "Virgin Active"),
-            mk("Water Plants",     "Household", toKey(addDays(t, 1)), "08:00", "Garden irrigation reminder"),
-            mk("Vehicle Service",  "Maintenance", toKey(addDays(t, 3)), "09:30", "Book maintenance appointment")
-        ];
+    /* ---------- who may change whose status ---------- */
+    function canSetStatus(uid) { return uid === me().id || D.household.isOwner; }
+    function stateOf(date, uid) {
+        var pres = D.presence.all()[uid];
+        if (date === todayKey() && pres && pres.state === "away" && D.availability.on(date, uid) === "available") return "away";
+        return D.availability.on(date, uid);
     }
-    function mk(title, category, date, time, description) {
-        return { id: Date.now() + (seq++), title: title, category: category, date: date, time: time,
-                 description: description || "", completed: false };
-    }
-    function shared(text, icon) { if (window.ElaraData) ElaraData.log(text, icon); }
-    function save() {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(events)); } catch (e) { /* ignore */ }
-    }
-
-    function matchesCategory(ev) {
-        return categoryFilter === "All Categories" || ev.category === categoryFilter;
-    }
-    function eventsOn(key) {
-        return events
-            .filter(function (e) { return e.date === key && matchesCategory(e); })
-            .sort(function (a, b) { return a.time.localeCompare(b.time); });
-    }
-
-    /* ---------- toast ---------- */
-    function toast(message, type) {
-        var box = $("toastContainer");
-        if (!box) { box = document.createElement("div"); box.id = "toastContainer"; document.body.appendChild(box); }
-        var el = document.createElement("div");
-        el.className = "toast " + (type || "success");
-        el.innerHTML = '<i class="fa-solid ' + (type === "error" ? "fa-circle-exclamation" : "fa-circle-check") + '"></i><span>' + esc(message) + "</span>";
-        box.appendChild(el);
-        requestAnimationFrame(function () { el.classList.add("show"); });
-        setTimeout(function () {
-            el.classList.remove("show");
-            setTimeout(function () { el.remove(); }, 350);
-        }, 3000);
+    function setStatus(date, person, state) {
+        if (!canSetStatus(person.userId)) return UI.toast("Only the home owner can change someone else's status.", "error");
+        D.availability.set(date, person.userId, state);
+        shared((person.isMe ? "is now " : "marked " + person.name + " as ") + state + " on " + prettyDate(date), "fa-user-clock");
+        if (!person.isMe) D.notify({ to: [person.userId], kind: "schedule", title: "Your status was changed", body: me().first + " marked you as " + state + " on " + prettyDate(date) + ".", href: "dashboard-schedule.html?date=" + date });
+        // tell the person if there are already events that day while they're busy/away
+        refresh();
     }
 
     /* ---------- calendar ---------- */
     function renderCalendar() {
-        var grid = $("calendarDates");
-        if (!grid) return;
-
-        var title = $("calendarMonth");
-        if (title) title.textContent = MONTHS[viewMonth] + " " + viewYear;
-
-        var first = new Date(viewYear, viewMonth, 1);
-        var gridStart = addDays(first, -first.getDay());
-        var html = "";
-
+        var grid = $("calendarDates"); if (!grid) return;
+        $("calendarMonth").textContent = MONTHS[viewMonth] + " " + viewYear;
+        var first = new Date(viewYear, viewMonth, 1), gridStart = addDays(first, -first.getDay()), html = "", ppl = people();
         for (var i = 0; i < 42; i++) {
-            var d = addDays(gridStart, i);
-            var key = toKey(d);
-            var cls = [];
+            var d = addDays(gridStart, i), key = toKey(d), cls = [];
             if (d.getMonth() !== viewMonth) cls.push("inactive");
-            if (key === todayKey) cls.push("today");
+            if (key === todayKey()) cls.push("today");
             if (key === selectedKey) cls.push("selected");
-            if (eventsOn(key).length) cls.push("event-day");
-            html += '<span class="' + cls.join(" ") + '" data-date="' + key + '">' + d.getDate() + "</span>";
+            var n = eventsOn(key).length; if (n) cls.push("event-day");
+            var dots = ppl.filter(function (p) { return stateOf(key, p.userId) !== "available"; }).slice(0, 4).map(function (p) {
+                return '<b class="sdot ' + stateOf(key, p.userId) + '" title="' + esc(p.name + ": " + stateOf(key, p.userId)) + '"></b>';
+            }).join("");
+            html += '<span class="' + cls.join(" ") + '" data-date="' + key + '" role="button" tabindex="0" aria-label="' + esc(prettyDate(key) + (n ? ", " + n + " event(s)" : "")) + '">' + d.getDate() + (dots ? '<em class="sdots">' + dots + "</em>" : "") + "</span>";
         }
         grid.innerHTML = html;
     }
 
     /* ---------- agenda ---------- */
     function agendaItemHTML(ev, showDate) {
-        var icon = ICONS[ev.category] || "fa-calendar";
-        var sub = ev.description || ev.category;
-        return '' +
-        '<div class="agenda-item" data-id="' + ev.id + '">' +
-            '<div class="agenda-left">' +
-                '<div class="agenda-icon"><i class="fa-solid ' + icon + '"></i></div>' +
-                '<div class="agenda-text"><h4>' + esc(ev.title) + '</h4><p>' +
-                    (showDate ? esc(prettyDate(ev.date)) + " • " : "") + esc(sub) + '</p></div>' +
-            '</div>' +
-            '<div class="agenda-right">' +
-                '<span class="agenda-time">' + esc(ev.time) + '</span>' +
-                '<button type="button" class="agenda-btn" data-action="edit" data-id="' + ev.id + '" title="Edit"><i class="fa-solid fa-pen"></i></button>' +
-                '<button type="button" class="agenda-btn" data-action="delete" data-id="' + ev.id + '" title="Delete"><i class="fa-solid fa-trash"></i></button>' +
-            '</div>' +
-        '</div>';
+        var icon = ICONS[ev.category] || "fa-calendar", who = (ev.involves || []).map(function (id) { var p = D.members.find(id); return p ? p.name : null; }).filter(Boolean);
+        return '<div class="agenda-item" data-id="' + esc(ev.id) + '"><div class="agenda-left"><div class="agenda-icon"><i class="fa-solid ' + icon + '"></i></div>' +
+            '<div class="agenda-text"><h4>' + esc(ev.title) + "</h4><p>" + (showDate ? esc(prettyDate(ev.date)) + " • " : "") + esc(ev.description || ev.category) + "</p>" +
+            (who.length ? '<p class="agenda-who"><i class="fa-solid fa-user-group"></i> ' + esc(who.join(", ")) + "</p>" : "") +
+            (ev.createdByName ? '<p class="agenda-who">Added by ' + esc(ev.createdByName) + (ev.source === "ics" ? " (imported)" : "") + "</p>" : "") + "</div></div>" +
+            '<div class="agenda-right"><span class="agenda-time">' + esc(ev.allDay ? "All day" : ev.time) + "</span>" +
+            (canEdit() ? '<button type="button" class="agenda-btn" data-action="edit" title="Edit" aria-label="Edit ' + esc(ev.title) + '"><i class="fa-solid fa-pen"></i></button>' +
+             '<button type="button" class="agenda-btn" data-action="delete" title="Delete" aria-label="Delete ' + esc(ev.title) + '"><i class="fa-solid fa-trash"></i></button>' : "") + "</div></div>";
     }
-
     function renderAgenda() {
-        var list = $("agendaList");
-        if (!list) return;
-        var panel = list.closest(".panel");
-        var h2 = panel && panel.querySelector(".panel-header h2");
-        var sub = panel && panel.querySelector(".panel-subtitle");
-        var items, showDate = false, heading, subtitle;
-
+        var list = $("agendaList"), panel = list.closest(".panel"), h2 = panel.querySelector(".panel-header h2"), sub = panel.querySelector(".panel-subtitle");
+        var items, showDate = false, heading, subtitle, all = events();
         if (searchTerm) {
-            items = events.filter(function (e) {
-                return matchesCategory(e) &&
-                    (e.title + " " + e.description + " " + e.category).toLowerCase().indexOf(searchTerm) > -1;
-            });
-            showDate = true;
-            heading = "Search Results"; subtitle = items.length + " event(s) found";
-        } else if (showAll) {
-            items = events.filter(function (e) { return matchesCategory(e) && e.date >= todayKey; });
-            showDate = true;
-            heading = "Upcoming Events"; subtitle = "Everything coming up";
+            items = all.filter(function (e) { return matchesCategory(e) && (e.title + " " + (e.description || "") + " " + e.category).toLowerCase().indexOf(searchTerm) > -1; });
+            showDate = true; heading = "Search Results"; subtitle = items.length + " event(s) found";
+        } else if (showAll || viewMode === "Upcoming") {
+            items = all.filter(function (e) { return matchesCategory(e) && e.date >= todayKey(); }).slice(0, 60);
+            showDate = true; heading = "Upcoming Events"; subtitle = "Everything coming up";
         } else if (viewMode === "Week") {
             var ws = startOfWeek(fromKey(selectedKey)), we = addDays(ws, 6);
-            items = events.filter(function (e) { return matchesCategory(e) && e.date >= toKey(ws) && e.date <= toKey(we); });
-            showDate = true;
-            heading = "This Week"; subtitle = prettyDate(toKey(ws)) + " – " + prettyDate(toKey(we));
+            items = all.filter(function (e) { return matchesCategory(e) && e.date >= toKey(ws) && e.date <= toKey(we); });
+            showDate = true; heading = "This Week"; subtitle = prettyDate(toKey(ws)) + " – " + prettyDate(toKey(we));
         } else {
             items = eventsOn(selectedKey);
-            heading = selectedKey === todayKey ? "Today's Agenda" : "Agenda";
-            subtitle = selectedKey === todayKey ? "Your schedule for today" : "Schedule for " + prettyDate(selectedKey);
+            heading = selectedKey === todayKey() ? "Today's Agenda" : "Agenda";
+            subtitle = selectedKey === todayKey() ? "Your schedule for today" : "Schedule for " + prettyDate(selectedKey);
         }
-
         items.sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); });
-
-        if (h2) h2.textContent = heading;
-        if (sub) sub.textContent = subtitle;
-
-        list.innerHTML = items.length
-            ? items.map(function (e) { return agendaItemHTML(e, showDate); }).join("")
-            : '<div class="agenda-empty"><i class="fa-regular fa-calendar"></i><p>No events here yet.<br>Click <strong>New Event</strong> to add one.</p></div>';
-
-        var viewAll = panel && panel.querySelector(".view-btn");
-        if (viewAll) viewAll.textContent = showAll ? "Back" : "View All";
+        h2.textContent = heading; sub.textContent = subtitle;
+        list.innerHTML = items.length ? items.map(function (e) { return agendaItemHTML(e, showDate); }).join("")
+            : '<div class="agenda-empty"><i class="fa-regular fa-calendar"></i><p>No events here yet.' + (canEdit() ? "<br>Click <strong>New Event</strong> to add one." : "") + "</p></div>";
+        var viewAll = panel.querySelector(".view-btn"); if (viewAll) viewAll.textContent = showAll ? "Back" : "View All";
     }
 
-    /* ---------- member availability (shared by the list, the stat card and the weekly bars) ---------- */
-    function memberState(m) {
-        if (m.availability) return m.availability;
-        if (m.status === "away") return "away";
-        var nowT = new Date(), hm = pad(nowT.getHours()) + ":" + pad(nowT.getMinutes());
-        var from = pad(Math.max(0, nowT.getHours() - 1)) + ":00";
-        var inEvent = events.some(function (e) {
-            return e.date === todayKey && e.time <= hm && e.time >= from &&
-                   (e.title + " " + (e.description || "")).toLowerCase().indexOf(m.name.toLowerCase()) > -1;
-        });
-        return inEvent ? "busy" : "available";
+    /* ---------- availability: the selected day ---------- */
+    function avatarHTML(p) {
+        return p.avatar ? '<img src="' + esc(p.avatar) + '" alt="">' : '<div class="avail-avatar">' + esc((p.name || "?").charAt(0).toUpperCase()) + "</div>";
     }
-    function activeMembers() {
-        return window.ElaraData ? ElaraData.members.all().filter(function (m) { return m.status !== "pending"; }) : [];
+    function renderDayAvailability() {
+        var box = $("dayAvailability"), ppl = people(), roles = { owner: "Home Owner", adult: "Adult", member: "Member", guest: "Guest" };
+        $("availDayLabel").textContent = (selectedKey === todayKey() ? "Today, " : "") + prettyDate(selectedKey);
+        box.innerHTML = ppl.map(function (p) {
+            var st = stateOf(selectedKey, p.userId), editable = canSetStatus(p.userId);
+            return '<div class="member"><div class="member-info">' + avatarHTML(p) + "<div><h4>" + esc(p.name + (p.isMe ? " (you)" : "")) + "</h4><p>" + esc(roles[p.role] || p.role) + "</p></div></div>" +
+                '<div class="status-seg" role="group" aria-label="Status of ' + esc(p.name) + '">' + STATES.map(function (s) {
+                    return '<button type="button" class="seg ' + s + (s === st ? " on" : "") + '" data-uid="' + esc(p.userId) + '" data-state="' + s + '" data-date="' + selectedKey + '"' +
+                        (editable ? "" : " disabled") + ' aria-pressed="' + (s === st) + '">' + cap(s) + "</button>";
+                }).join("") + "</div></div>";
+        }).join("") || '<p class="muted">Invite people on the Members page.</p>';
+    }
+
+    /* ---------- availability: everyone, every day of the week ---------- */
+    function renderWeekGrid() {
+        var grid = $("availGrid"), ppl = people(), days = [];
+        for (var i = 0; i < 7; i++) days.push(addDays(weekStart, i));
+        $("weekLabel").textContent = prettyDate(toKey(days[0])) + " – " + prettyDate(toKey(days[6])) + " • click a status to change it";
+        var head = '<div class="ag-row ag-head"><span></span>' + days.map(function (d) {
+            var k = toKey(d); return '<button type="button" class="ag-day' + (k === todayKey() ? " today" : "") + (k === selectedKey ? " picked" : "") + '" data-pick="' + k + '">' + DAYS[d.getDay()] + "<small>" + d.getDate() + "</small></button>";
+        }).join("") + "</div>";
+        grid.innerHTML = head + ppl.map(function (p) {
+            return '<div class="ag-row"><span class="ag-name">' + esc(p.isMe ? p.name + " (you)" : p.name) + "</span>" + days.map(function (d) {
+                var k = toKey(d), st = stateOf(k, p.userId);
+                return '<button type="button" class="ag-cell ' + st + '" data-uid="' + esc(p.userId) + '" data-date="' + k + '" data-cycle="1"' +
+                    (canSetStatus(p.userId) ? "" : " disabled") + ' title="' + esc(p.name + " • " + prettyDate(k) + ": " + st) + '" aria-label="' + esc(p.name + " " + prettyDate(k) + " " + st) + '">' + st.charAt(0).toUpperCase() + "</button>";
+            }).join("") + "</div>";
+        }).join("");
+    }
+
+    document.addEventListener("click", function (e) {
+        var seg = e.target.closest("[data-state][data-uid]");
+        if (seg && !seg.disabled) { var p = D.members.find(seg.dataset.uid); if (p) setStatus(seg.dataset.date, p, seg.dataset.state); return; }
+        var cell = e.target.closest("[data-cycle]");
+        if (cell && !cell.disabled) {
+            var person = D.members.find(cell.dataset.uid);
+            var cur = stateOf(cell.dataset.date, cell.dataset.uid);
+            if (person) setStatus(cell.dataset.date, person, STATES[(STATES.indexOf(cur) + 1) % STATES.length]);
+            return;
+        }
+        var pick = e.target.closest("[data-pick]");
+        if (pick) { pickDate(pick.dataset.pick); return; }
+        var day = e.target.closest(".week-timeline [data-day]");
+        if (day) pickDate(day.dataset.day);
+    });
+    function pickDate(key) {
+        selectedKey = key; var d = fromKey(key);
+        viewYear = d.getFullYear(); viewMonth = d.getMonth(); showAll = false; searchTerm = ""; viewMode = viewMode === "Upcoming" ? "Day" : viewMode;
+        refresh();
     }
 
     /* ---------- stats ---------- */
     function renderStats() {
-        var tEl = $("todayEvents"), wEl = $("weekEvents");
-        if (tEl) tEl.textContent = events.filter(function (e) { return e.date === todayKey; }).length;
-        if (wEl) {
-            var ws = toKey(startOfWeek(today)), we = toKey(addDays(startOfWeek(today), 6));
-            wEl.textContent = events.filter(function (e) { return e.date >= ws && e.date <= we; }).length;
-        }
-
-        // Recurring = an event or task title that shows up on 2 or more different days
-        var rEl = $("recurringTasks");
-        if (rEl) {
-            var seen = {};
-            function note(title, date) {
-                var k = String(title || "").trim().toLowerCase(); if (!k) return;
-                (seen[k] = seen[k] || {})[date] = 1;
-            }
-            events.forEach(function (e) { note(e.title, e.date); });
-            (window.ElaraData ? ElaraData.tasks.all() : []).forEach(function (t) { note(t.title, t.date); });
-            rEl.textContent = Object.keys(seen).filter(function (k) { return Object.keys(seen[k]).length >= 2; }).length;
-        }
-
-        // Family availability = share of (joined) members who are available right now
-        var aEl = $("availability");
-        if (aEl) {
-            var ms = activeMembers();
-            var free = ms.filter(function (m) { return memberState(m) === "available"; }).length;
-            aEl.textContent = ms.length ? Math.round(free / ms.length * 100) + "%" : "\u2014";
-        }
+        var all = events(), tk = todayKey();
+        $("todayEvents").textContent = all.filter(function (e) { return e.date === tk; }).length;
+        var ws = toKey(startOfWeek(new Date())), we = toKey(addDays(startOfWeek(new Date()), 6));
+        $("weekEvents").textContent = all.filter(function (e) { return e.date >= ws && e.date <= we; }).length;
+        var seen = {};
+        function note(title, date) { var k = String(title || "").trim().toLowerCase(); if (k) (seen[k] = seen[k] || {})[date] = 1; }
+        all.forEach(function (e) { note(e.title, e.date); });
+        if (D.can("tasks")) D.tasks.all().forEach(function (t) { note(t.title, t.date); });
+        $("recurringTasks").textContent = Object.keys(seen).filter(function (k) { return Object.keys(seen[k]).length >= 2; }).length;
+        var ppl = people(), free = ppl.filter(function (p) { return stateOf(tk, p.userId) === "available"; }).length;
+        $("availability").textContent = ppl.length ? free + " of " + ppl.length : "—";
     }
 
-    /* ---------- activity feed ---------- */
-    var D = window.ElaraData;
-    function loadLog() { return D ? D.util.load("elaraScheduleLog", []) : []; }
-    function relTime(t) { return D ? D.ago(t) : "Just now"; }
-
-    function logActivity(title, subtitle, icon) {
-        if (D) {
-            var list = loadLog();
-            list.unshift({ t: Date.now(), title: title, sub: subtitle, icon: icon || "fa-calendar-check" });
-            D.util.save("elaraScheduleLog", list.slice(0, 60));
-        }
-        renderRecent();
-    }
-
-    /* "Recent Activity" = the real changes you made to the schedule */
-    function renderRecent() {
-        var list = $("activityList");
-        if (!list) return;
-        var items = loadLog().slice(0, 5);
-        list.innerHTML = items.length ? items.map(function (a) {
-            return '<div class="activity-item"><div class="activity-icon"><i class="fa-solid ' + esc(a.icon) + '"></i></div>' +
-                   '<div class="activity-info"><h4>' + esc(a.title) + '</h4><p>' + esc(a.sub) + '</p></div><span>' + esc(relTime(a.t)) + '</span></div>';
-        }).join("") : '<div class="activity-empty"><i class="fa-regular fa-clock"></i><p>No changes yet. When you add, move or delete events they\u2019ll be listed here.</p></div>';
-    }
-    setInterval(renderRecent, 30000);
-
-    /* ---------- upcoming reminders: events, tasks and warranties that need you soon ---------- */
-    var REM_TYPES = {
-        "Household":   { cls: "plants",   icon: "fa-house" },
-        "Shopping":    { cls: "shopping", icon: "fa-cart-shopping" },
-        "Maintenance": { cls: "car",      icon: "fa-wrench" },
-        "Personal":    { cls: "",         icon: "fa-user" },
-        "Smart Home":  { cls: "",         icon: "fa-lightbulb" }
-    };
-    function friendlyDay(key, time) {
-        var d = fromKey(key), diff = Math.round((d - startOfDay(new Date())) / 86400000);
-        var base = diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : diff > 1 && diff < 7 ? DAYS[d.getDay()] : d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3);
-        return time && diff <= 1 ? base + " \u2022 " + time : base;
-    }
-    function startOfDay(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
-
-    function renderReminders() {
-        var box = $("reminderList");
-        if (!box) return;
-        box.className = "reminder-list";
-        var now = new Date(), nowKey = toKey(now), hm = pad(now.getHours()) + ":" + pad(now.getMinutes());
-        var limit = toKey(addDays(now, 14)), items = [];
-
-        events.forEach(function (e) {
-            if (e.date < nowKey || e.date > limit) return;
-            if (e.date === nowKey) {                       // today's events are already in the Agenda: only nudge for ones starting within 3 hours
-                var soonHM = pad(Math.min(23, now.getHours() + 3)) + ":" + pad(now.getMinutes());
-                if (e.time < hm || e.time > soonHM) return;
-            }
-            var t = REM_TYPES[e.category] || { cls: "", icon: "fa-calendar" };
-            if (/bill|pay|invoice|rent/i.test(e.title)) t = { cls: "bill", icon: "fa-file-invoice-dollar" };
-            items.push({ when: e.date + " " + e.time, title: e.title, sub: e.description || e.category, cls: t.cls, icon: t.icon, label: friendlyDay(e.date, e.time) });
-        });
-        if (D) {
-            D.tasks.all().forEach(function (t) {
-                if (t.status === "Completed") return;
-                var late = (t.date + " " + t.time) < (nowKey + " " + hm);
-                if (!late && t.date > limit) return;
-                items.push({ when: late ? "0000" : t.date + " " + t.time, title: t.title, sub: "Task \u2022 " + t.assignee, cls: late ? "shopping" : "", icon: "fa-list-check",
-                             label: late ? "Overdue" : friendlyDay(t.date, t.time), overdue: late });
-            });
-            D.util.load("elaraWarranties", []).forEach(function (w) {
-                var days = Math.ceil((new Date(w.expires + "T23:59:59") - now) / 86400000);
-                if (days < 0 || days > 45) return;
-                items.push({ when: w.expires + " 23:59", title: w.name + " warranty", sub: "Warranty ends soon", cls: "bill", icon: "fa-shield-halved",
-                             label: days === 0 ? "Today" : days + (days === 1 ? " day" : " days") });
-            });
-        }
-        items.sort(function (a, b) { return a.when.localeCompare(b.when); });
-        items = items.slice(0, 5);
-
-        box.innerHTML = items.length ? items.map(function (r) {
-            return '<div class="reminder ' + r.cls + '"><div class="reminder-left"><div class="reminder-icon"><i class="fa-solid ' + r.icon + '"></i></div>' +
-                   '<div class="reminder-text"><h4>' + esc(r.title) + '</h4><p>' + esc(r.sub) + '</p></div></div>' +
-                   '<span class="reminder-date' + (r.overdue ? " overdue" : "") + '">' + esc(r.label) + '</span></div>';
-        }).join("") : '<div class="reminder-empty"><i class="fa-regular fa-bell"></i><p>Nothing to remind you about. Add an event or a task and it will show up here.</p></div>';
-    }
-
-    /* ---------- weekly activity (events + tasks per day, this week) ---------- */
+    /* ---------- weekly activity ---------- */
     function renderWeek() {
-        var box = document.querySelector(".week-timeline");
-        if (!box) return;
-        var tasks = window.ElaraData ? ElaraData.tasks.all() : [];
-        var start = startOfWeek(new Date()), html = "";
+        var box = document.querySelector(".week-timeline"); if (!box) return;
+        var tasks = D.can("tasks") ? D.tasks.all() : [], start = startOfWeek(new Date()), html = "", all = events(), ppl = people();
         for (var i = 0; i < 7; i++) {
             var d = addDays(start, i), key = toKey(d);
-            var dayEvents = events.filter(function (e) { return e.date === key; });
+            var dayEvents = all.filter(function (e) { return e.date === key; });
             var dayTasks = tasks.filter(function (t) { return t.date === key && t.status !== "Completed"; });
-            var n = dayEvents.length + dayTasks.length;
-            var busyNow = 0;
-            if (key === todayKey) {   // people marked Busy or Away today make today a heavier day
-                busyNow = activeMembers().filter(function (m) { return memberState(m) !== "available"; }).length;
-            }
-            n += busyNow;
+            var busy = ppl.filter(function (p) { return stateOf(key, p.userId) !== "available"; });
+            var n = dayEvents.length + dayTasks.length + busy.length;
             var cls = n >= 6 ? "full" : n >= 4 ? "busy" : n >= 2 ? "medium" : "low";
-            var names = dayEvents.map(function (e) { return e.time + " " + e.title; }).concat(dayTasks.map(function (t) { return "Task: " + t.title; })).slice(0, 5);
-            if (busyNow) names.push(busyNow + (busyNow === 1 ? " member is" : " members are") + " busy or away");
-            html += '<div class="day' + (key === todayKey ? " today" : "") + (key === selectedKey ? " picked" : "") + '" data-day="' + key + '" role="button" tabindex="0">' +
-                    '<h4>' + DAYS[d.getDay()] + '</h4>' +
-                    '<div class="bar ' + cls + '" title="' + esc(n ? names.join("\n") : "Nothing planned") + '"></div>' +
-                    '<span>' + (n === 0 ? "Free" : n + (n === 1 ? " item" : " items")) + '</span></div>';
+            var names = dayEvents.map(function (e) { return e.time + " " + e.title; }).concat(dayTasks.map(function (t) { return "Task: " + t.title; }), busy.map(function (p) { return p.name + " is " + stateOf(key, p.userId); })).slice(0, 6);
+            html += '<div class="day' + (key === todayKey() ? " today" : "") + (key === selectedKey ? " picked" : "") + '" data-day="' + key + '" role="button" tabindex="0">' +
+                    "<h4>" + DAYS[d.getDay()] + '</h4><div class="bar ' + cls + '" title="' + esc(n ? names.join("\n") : "Nothing planned") + '"></div><span>' + (n === 0 ? "Free" : n + (n === 1 ? " item" : " items")) + "</span></div>";
         }
         box.innerHTML = html;
     }
-    document.addEventListener("click", function (e) {
-        var day = e.target.closest(".week-timeline [data-day]");
-        if (!day) return;
-        selectedKey = day.dataset.day;
-        var d = fromKey(selectedKey); viewYear = d.getFullYear(); viewMonth = d.getMonth();
-        showAll = false; searchTerm = "";
-        refresh();
-        var agendaPanel = $("agendaList") && $("agendaList").closest(".panel");
-        if (agendaPanel) agendaPanel.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
 
-    /* ---------- household availability (from Members, click to change) ---------- */
-    function renderAvailability() {
-        var list = document.querySelector(".family-list");
-        if (!list || !window.ElaraData) return;
-        var members = ElaraData.members.all().filter(function (m) { return m.status !== "pending"; });
-        var roles = { owner: "Home Owner", adult: "Adult", member: "Family Member", guest: "Guest" };
-        var pic = localStorage.getItem("elaraProfileImage") || "";
-        list.innerHTML = members.map(function (m) {
-            var state = memberState(m);
-            var img = m.role === "owner" && pic ? pic : m.avatar;
-            var avatar = img ? '<img src="' + esc(img) + '" alt="' + esc(m.name) + '">' : '<div class="avail-avatar">' + esc(m.name.charAt(0).toUpperCase()) + '</div>';
-            return '<div class="member"><div class="member-info">' + avatar + '<div><h4>' + esc(m.name) + '</h4><p>' + esc(roles[m.role] || m.role) + '</p></div></div>' +
-                   '<button type="button" class="status-badge ' + state + '" data-avail="' + m.id + '" title="Click to change">' + state.charAt(0).toUpperCase() + state.slice(1) + '</button></div>';
-        }).join("") || '<p style="opacity:.65;padding:12px">Invite people on the Members page.</p>';
+    /* ---------- activity + reminders ---------- */
+    function loadLog() { return D.util.load("elaraScheduleLog", []); }
+    function logActivity(title, subtitle, icon) {
+        if (!canEdit()) return;
+        var list = loadLog(), m = me();
+        list.unshift({ k: D.rid(), t: Date.now(), title: title, sub: subtitle, icon: icon || "fa-calendar-check", who: m.first, by: m.id });
+        D.util.save("elaraScheduleLog", list.slice(0, 80));
     }
-    document.addEventListener("click", function (e) {
-        var b = e.target.closest("[data-avail]");
-        if (!b || !window.ElaraData) return;
-        var all = ElaraData.members.all(), m = all.filter(function (x) { return String(x.id) === b.dataset.avail; })[0];
-        if (!m) return;
-        var order = ["available", "busy", "away"];
-        var shown = b.classList.contains("busy") ? "busy" : b.classList.contains("away") ? "away" : "available";
-        var next = order[(order.indexOf(shown) + 1) % order.length];
-        m.availability = next;
-        ElaraData.members.save(all);
-        shared(m.name + " is now " + next, "fa-user-clock");
-        renderAvailability(); renderStats(); renderWeek();
-    });
-
-    function refresh() {
-        renderCalendar();
-        renderAgenda();
-        renderStats();
-        renderWeek();
-        renderAvailability();
-        renderReminders();
-        renderRecent();
+    function renderRecent() {
+        var items = loadLog().slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 5);
+        $("activityList").innerHTML = items.length ? items.map(function (a) {
+            return '<div class="activity-item"><div class="activity-icon"><i class="fa-solid ' + esc(a.icon) + '"></i></div><div class="activity-info"><h4>' + esc(a.title) + "</h4><p>" + esc((a.who ? a.who + " • " : "") + a.sub) + "</p></div><span>" + esc(D.ago(a.t)) + "</span></div>";
+        }).join("") : '<div class="activity-empty"><i class="fa-regular fa-clock"></i><p>No changes yet. When anyone adds, moves or deletes events they’ll be listed here.</p></div>';
+    }
+    function friendlyDay(key, time) {
+        var d = fromKey(key), diff = Math.round((d - fromKey(todayKey())) / 86400000);
+        var base = diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : diff > 1 && diff < 7 ? DAYS[d.getDay()] : d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3);
+        return time && diff <= 1 ? base + " • " + time : base;
+    }
+    function renderReminders() {
+        var box = $("reminderList"); box.className = "reminder-list";
+        var now = new Date(), nowKey = toKey(now), hm = nowHM(), limit = toKey(addDays(now, 14)), items = [];
+        events().forEach(function (e) {
+            if (e.date < nowKey || e.date > limit) return;
+            if (e.date === nowKey && (e.time < hm || e.time > pad(Math.min(23, now.getHours() + 3)) + ":" + pad(now.getMinutes()))) return;
+            var bill = /bill|pay|invoice|rent/i.test(e.title);
+            items.push({ when: e.date + " " + e.time, title: e.title, sub: e.description || e.category, cls: bill ? "bill" : e.category === "Maintenance" ? "car" : e.category === "Shopping" ? "shopping" : "", icon: bill ? "fa-file-invoice-dollar" : ICONS[e.category] || "fa-calendar", label: friendlyDay(e.date, e.time) });
+        });
+        if (D.can("tasks")) D.tasks.all().forEach(function (t) {
+            if (t.status === "Completed") return;
+            var late = (t.date + " " + t.time) < (nowKey + " " + hm);
+            if (!late && t.date > limit) return;
+            items.push({ when: late ? "0000" : t.date + " " + t.time, title: t.title, sub: "Task • " + (t.assignee || "Unassigned"), cls: late ? "shopping" : "", icon: "fa-list-check", label: late ? "Overdue" : friendlyDay(t.date, t.time), overdue: late });
+        });
+        if (D.can("shopping")) D.util.load("elaraWarranties", []).forEach(function (w) {
+            var days = Math.ceil((new Date(w.expires + "T23:59:59") - now) / 86400000);
+            if (days < 0 || days > 45) return;
+            items.push({ when: w.expires + " 23:59", title: w.name + " warranty", sub: "Warranty ends soon", cls: "bill", icon: "fa-shield-halved", label: days === 0 ? "Today" : days + (days === 1 ? " day" : " days") });
+        });
+        items.sort(function (a, b) { return a.when.localeCompare(b.when); });
+        box.innerHTML = items.length ? items.slice(0, 5).map(function (r) {
+            return '<div class="reminder ' + r.cls + '"><div class="reminder-left"><div class="reminder-icon"><i class="fa-solid ' + r.icon + '"></i></div><div class="reminder-text"><h4>' + esc(r.title) + "</h4><p>" + esc(r.sub) + '</p></div></div><span class="reminder-date' + (r.overdue ? " overdue" : "") + '">' + esc(r.label) + "</span></div>";
+        }).join("") : '<div class="reminder-empty"><i class="fa-regular fa-bell"></i><p>Nothing to remind you about. Add an event or a task and it will show up here.</p></div>';
     }
 
-    /* ---------- modal ---------- */
-    var modal = $("eventModal");
-    var form = $("eventForm");
+    function refresh() { renderCalendar(); renderAgenda(); renderStats(); renderWeek(); renderDayAvailability(); renderWeekGrid(); renderReminders(); renderRecent(); }
 
+    /* ---------- event modal (validated) ---------- */
+    var modal = $("eventModal"), form = $("eventForm");
+    function renderPeoplePicks(selected) {
+        $("eventPeople").innerHTML = people().map(function (p) {
+            return '<label class="pick"><input type="checkbox" value="' + esc(p.userId) + '"' + (selected.indexOf(p.userId) > -1 ? " checked" : "") + "><span>" + esc(p.isMe ? p.name + " (you)" : p.name) + "</span></label>";
+        }).join("");
+        updateBusyWarning();
+    }
+    function updateBusyWarning() {
+        var date = $("eventDate").value, w = $("busyWarning");
+        if (!date) { w.hidden = true; return; }
+        var busy = people().filter(function (p) { return !p.isMe && stateOf(date, p.userId) !== "available"; });
+        w.hidden = !busy.length;
+        w.innerHTML = busy.length ? '<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(busy.map(function (p) { return p.name + " is " + stateOf(date, p.userId); }).join(", ")) + " that day. They'll be notified." : "";
+    }
     function openModal(ev) {
-        if (!modal) return;
+        if (!canEdit()) return UI.toast("You can view the schedule but not change it.", "error");
         editingId = ev ? ev.id : null;
-        if (form) form.reset();
+        form.reset();
+        $("eventError").textContent = "";
         $("eventTitle").value = ev ? ev.title : "";
-        $("eventCategory").value = ev ? ev.category : "Personal";
-        $("eventDate").value = ev ? ev.date : selectedKey;
+        $("eventCategory").value = ev ? (ev.category === "Imported" ? "Personal" : ev.category) : "Personal";
+        $("eventDate").value = ev ? ev.date : (selectedKey < todayKey() ? todayKey() : selectedKey);
+        $("eventDate").min = ev ? "" : todayKey();
         $("eventTime").value = ev ? ev.time : "09:00";
-        $("eventDescription").value = ev ? ev.description : "";
-        var h2 = modal.querySelector(".modal-header h2");
-        if (h2) h2.textContent = ev ? "Edit Event" : "Add New Event";
-        modal.classList.add("active");
-        document.body.style.overflow = "hidden";
+        $("eventDescription").value = ev ? ev.description || "" : "";
+        $("eventRepeat").value = ""; $("eventRepeat").disabled = !!ev;
+        renderPeoplePicks(ev ? ev.involves || [] : []);
+        $("eventModalTitle").textContent = ev ? "Edit Event" : "Add New Event";
+        modal.classList.add("active"); document.body.style.overflow = "hidden";
         setTimeout(function () { $("eventTitle").focus(); }, 50);
     }
-    function closeModal() {
-        if (!modal) return;
-        modal.classList.remove("active");
-        document.body.style.overflow = "";
-        editingId = null;
+    function closeModal() { modal.classList.remove("active"); document.body.style.overflow = ""; editingId = null; }
+    ["addEventBtn", "fabButton"].forEach(function (id) { $(id).addEventListener("click", function () { openModal(null); }); });
+    ["closeModal", "cancelEvent"].forEach(function (id) { $(id).addEventListener("click", closeModal); });
+    modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeModal(); closeSync(); } });
+    $("eventDate").addEventListener("change", updateBusyWarning);
+
+    function validateEvent(v, isNew) {
+        if (v.title.length < 2 || v.title.length > 80) return "The event name must be 2 to 80 characters.";
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date) || isNaN(fromKey(v.date))) return "Choose a valid date.";
+        if (!/^\d{2}:\d{2}$/.test(v.time)) return "Choose a valid start time.";
+        if (isNew && (v.date + " " + v.time) < (todayKey() + " " + nowHM())) return "A new event can't start in the past.";
+        if (v.date > toKey(addDays(new Date(), 5 * 365))) return "That date is too far in the future.";
+        if (v.description.length > 500) return "The description can be at most 500 characters.";
+        var clash = events().filter(function (e) { return e.id !== editingId && e.date === v.date && e.time === v.time && e.title.toLowerCase() === v.title.toLowerCase(); });
+        if (clash.length) return "That event is already on the calendar.";
+        return null;
     }
 
-    ["addEventBtn", "fabButton"].forEach(function (id) {
-        var b = $(id);
-        if (b) b.addEventListener("click", function () { openModal(null); });
-    });
-    ["closeModal", "cancelEvent"].forEach(function (id) {
-        var b = $(id);
-        if (b) b.addEventListener("click", closeModal);
-    });
-    if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
-
-    if (form) {
-        form.addEventListener("submit", function (e) {
-            e.preventDefault();
-            var title = $("eventTitle").value.trim();
-            var date = $("eventDate").value;
-            var time = $("eventTime").value;
-            if (!title || !date || !time) { toast("Please fill in the name, date and time.", "error"); return; }
-
-            var data = {
-                title: title, category: $("eventCategory").value, date: date, time: time,
-                description: $("eventDescription").value.trim()
-            };
-
-            if (editingId !== null) {
-                var before = events.filter(function (ev) { return ev.id === editingId; })[0];
-                var moved = before && (before.date !== date || before.time !== time);
-                var oldTitle = before ? before.title : title;
-                events.forEach(function (ev) { if (ev.id === editingId) { for (var k in data) ev[k] = data[k]; } });
-                if (moved) {
-                    logActivity(title + " rescheduled", "Moved to " + prettyDate(date) + " \u2022 " + time, "fa-arrows-rotate");
-                    shared("rescheduled \u201c" + title + "\u201d to " + prettyDate(date), "fa-arrows-rotate");
-                } else {
-                    logActivity(title + " updated", (oldTitle !== title ? "Renamed from " + oldTitle : prettyDate(date) + " \u2022 " + time), "fa-pen");
-                    shared("updated event \u201c" + title + "\u201d", "fa-pen");
-                }
-                toast("Event updated.");
-            } else {
-                var created = mk(data.title, data.category, data.date, data.time, data.description);
-                events.push(created);
-                logActivity(title + " added", prettyDate(date) + " \u2022 " + time, "fa-calendar-check");
-                shared("scheduled \u201c" + title + "\u201d for " + prettyDate(date), "fa-calendar-check");
-                toast("Event added.");
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var v = { title: $("eventTitle").value.trim(), category: $("eventCategory").value, date: $("eventDate").value, time: $("eventTime").value,
+                  description: $("eventDescription").value.trim(), repeat: $("eventRepeat").value,
+                  involves: Array.prototype.map.call($("eventPeople").querySelectorAll("input:checked"), function (x) { return x.value; }) };
+        var err = validateEvent(v, editingId === null);
+        if (err) { $("eventError").textContent = err; return; }
+        var list = events(), m = me();
+        if (editingId !== null) {
+            var before = list.filter(function (x) { return x.id === editingId; })[0];
+            if (!before) { $("eventError").textContent = "That event was deleted by someone else."; return; }
+            var moved = before.date !== v.date || before.time !== v.time;
+            var newPeople = v.involves.filter(function (id) { return (before.involves || []).indexOf(id) === -1; });
+            Object.assign(before, { title: v.title, category: v.category, date: v.date, time: v.time, description: v.description, involves: v.involves, updatedBy: m.id, updatedAt: Date.now() });
+            saveEvents(list);
+            logActivity(v.title + (moved ? " rescheduled" : " updated"), prettyDate(v.date) + " • " + v.time, moved ? "fa-arrows-rotate" : "fa-pen");
+            shared((moved ? "rescheduled “" : "updated event “") + v.title + "”", moved ? "fa-arrows-rotate" : "fa-pen");
+            notifyForEvent(before, moved ? "moved" : "updated", newPeople);
+            UI.toast("Event updated.");
+        } else {
+            var dates = [v.date];
+            if (v.repeat) {
+                var n = v.repeat === "daily" ? 14 : v.repeat === "weekly" ? 13 : 12, d0 = fromKey(v.date);
+                for (var i = 1; i < n; i++) { var d = v.repeat === "daily" ? addDays(d0, i) : v.repeat === "weekly" ? addDays(d0, 7 * i) : new Date(d0.getFullYear(), d0.getMonth() + i, d0.getDate()); dates.push(toKey(d)); }
             }
+            var series = dates.length > 1 ? "s" + Date.now() : undefined, first = null;
+            dates.forEach(function (date, idx) {
+                var ev = { id: Date.now() + idx, title: v.title, category: v.category, date: date, time: v.time, description: v.description, involves: v.involves,
+                           createdBy: m.id, createdByName: m.first, createdAt: Date.now(), series: series };
+                list.push(ev); if (!first) first = ev;
+            });
+            saveEvents(list);
+            logActivity(v.title + " added", prettyDate(v.date) + " • " + v.time + (dates.length > 1 ? " (" + dates.length + " times)" : ""), "fa-calendar-check");
+            shared("scheduled “" + v.title + "” for " + prettyDate(v.date) + (dates.length > 1 ? " (repeats)" : ""), "fa-calendar-check");
+            notifyForEvent(first, "added", v.involves);
+            UI.toast(dates.length > 1 ? "Event added " + dates.length + " times." : "Event added.");
+        }
+        var d1 = fromKey(v.date);
+        viewYear = d1.getFullYear(); viewMonth = d1.getMonth(); selectedKey = v.date; weekStart = startOfWeek(d1);
+        showAll = false; searchTerm = ""; $("eventSearch").value = ""; $("searchEvents").value = "";
+        closeModal(); refresh();
+    });
 
-            save();
-            // jump to the month/day of the saved event so the person sees it
-            var d = fromKey(date);
-            viewYear = d.getFullYear(); viewMonth = d.getMonth(); selectedKey = date;
-            showAll = false; searchTerm = "";
-            ["eventSearch", "searchEvents"].forEach(function (id) { if ($(id)) $(id).value = ""; });
-            closeModal();
-            refresh();
-        });
-    }
-
-    /* ---------- calendar clicks ---------- */
-    var dates = $("calendarDates");
-    if (dates) {
-        dates.addEventListener("click", function (e) {
-            var cell = e.target.closest("span[data-date]");
-            if (!cell) return;
-            selectedKey = cell.dataset.date;
-            var d = fromKey(selectedKey);
-            viewYear = d.getFullYear(); viewMonth = d.getMonth();
-            showAll = false;
-            refresh();
-        });
-    }
-
-    function shiftMonth(delta) {
-        viewMonth += delta;
-        if (viewMonth < 0) { viewMonth = 11; viewYear--; }
-        if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-        renderCalendar();
-    }
-    if ($("prevMonth")) $("prevMonth").addEventListener("click", function () { shiftMonth(-1); });
-    if ($("nextMonth")) $("nextMonth").addEventListener("click", function () { shiftMonth(1); });
-
-    function goToday() {
-        selectedKey = todayKey;
-        viewYear = today.getFullYear(); viewMonth = today.getMonth();
-        showAll = false;
-        refresh();
-    }
-    if ($("todayBtn")) $("todayBtn").addEventListener("click", goToday);
-
-    /* ---------- agenda actions (delegation) ---------- */
-    var agenda = $("agendaList");
-    if (agenda) {
-        agenda.addEventListener("click", function (e) {
-            var btn = e.target.closest("[data-action]");
-            if (!btn) return;
-            var id = Number(btn.dataset.id);
-            var ev = events.filter(function (x) { return x.id === id; })[0];
-            if (!ev) return;
-            if (btn.dataset.action === "edit") {
-                openModal(ev);
-            } else if (btn.dataset.action === "delete") {
-                ElaraUI.confirm({ title: "Delete this event?", message: "\u201c" + ev.title + "\u201d on " + prettyDate(ev.date) + " will be removed from your schedule.", confirmText: "Delete event" })
-                    .then(function (ok) {
-                        if (!ok) return;
-                        events = events.filter(function (x) { return x.id !== id; });
-                        save();
-                        logActivity(ev.title + " deleted", prettyDate(ev.date), "fa-trash");
-                        shared("deleted event \u201c" + ev.title + "\u201d", "fa-trash");
-                        toast("Event deleted.");
-                        refresh();
-                    });
+    /* who to tell: people busy/away that day get a personal warning; people involved get "you're in this";
+       everyone else with schedule access gets "new event" */
+    function notifyForEvent(ev, how, newlyInvolved) {
+        var m = me(), when = prettyDate(ev.date) + " at " + ev.time, told = {};
+        people().forEach(function (p) {
+            if (p.isMe) return;
+            var st = stateOf(ev.date, p.userId);
+            if (st !== "available") {
+                told[p.userId] = 1;
+                D.notify({ to: [p.userId], kind: "schedule", title: "Event on a day you're " + st, body: m.first + " " + how + " “" + ev.title + "” on " + when + ". You're marked " + st + ".", href: "dashboard-schedule.html?date=" + ev.date });
             }
         });
-        var panel = agenda.closest(".panel");
-        var viewAll = panel && panel.querySelector(".view-btn");
-        if (viewAll) viewAll.addEventListener("click", function () { showAll = !showAll; renderAgenda(); });
+        (newlyInvolved || []).forEach(function (id) {
+            if (id === m.id || told[id]) return;
+            told[id] = 1;
+            D.notify({ to: [id], kind: "schedule", title: "You're in a new event", body: m.first + " added you to “" + ev.title + "” on " + when + ".", href: "dashboard-schedule.html?date=" + ev.date });
+        });
+        var rest = people().filter(function (p) { return !p.isMe && !told[p.userId]; }).map(function (p) { return p.userId; });
+        if (rest.length) D.notify({ to: rest, kind: "schedule", title: how === "added" ? "New event" : "Event " + how, body: m.first + " " + how + " “" + ev.title + "” on " + when + ".", href: "dashboard-schedule.html?date=" + ev.date });
     }
 
-    /* ---------- filters / search ---------- */
-    if ($("viewFilter")) {
-        $("viewFilter").addEventListener("change", function () {
-            viewMode = this.value.trim();
-            showAll = false;
-            if (viewMode === "Today") goToday(); else refresh();
-        });
-    }
-    if ($("categoryFilter")) {
-        $("categoryFilter").addEventListener("change", function () {
-            categoryFilter = this.value.trim();
-            refresh();
-        });
-    }
+    /* ---------- calendar + agenda clicks ---------- */
+    $("calendarDates").addEventListener("click", function (e) { var c = e.target.closest("span[data-date]"); if (c) pickDate(c.dataset.date); });
+    $("calendarDates").addEventListener("keydown", function (e) { var c = e.target.closest("span[data-date]"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickDate(c.dataset.date); } });
+    function shiftMonth(delta) { viewMonth += delta; if (viewMonth < 0) { viewMonth = 11; viewYear--; } if (viewMonth > 11) { viewMonth = 0; viewYear++; } renderCalendar(); }
+    $("prevMonth").addEventListener("click", function () { shiftMonth(-1); });
+    $("nextMonth").addEventListener("click", function () { shiftMonth(1); });
+    $("prevWeek").addEventListener("click", function () { weekStart = addDays(weekStart, -7); renderWeekGrid(); });
+    $("nextWeek").addEventListener("click", function () { weekStart = addDays(weekStart, 7); renderWeekGrid(); });
+    $("todayBtn").addEventListener("click", function () { weekStart = startOfWeek(new Date()); pickDate(todayKey()); });
+
+    $("agendaList").addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-action]"); if (!btn || !canEdit()) return;
+        var id = Number(btn.closest(".agenda-item").dataset.id), ev = events().filter(function (x) { return x.id === id; })[0];
+        if (!ev) return;
+        if (btn.dataset.action === "edit") return openModal(ev);
+        var inSeries = ev.series ? events().filter(function (x) { return x.series === ev.series && x.date >= ev.date; }).length : 1;
+        UI.confirm({ title: "Delete this event?", message: "“" + ev.title + "” on " + prettyDate(ev.date) + " will be removed" + (inSeries > 1 ? " (and the " + (inSeries - 1) + " later repeats)" : "") + ".", confirmText: "Delete event" })
+            .then(function (ok) {
+                if (!ok) return;
+                saveEvents(events().filter(function (x) { return x.id !== id && !(ev.series && x.series === ev.series && x.date >= ev.date); }));
+                logActivity(ev.title + " deleted", prettyDate(ev.date), "fa-trash");
+                shared("deleted event “" + ev.title + "”", "fa-trash");
+                UI.toast("Event deleted."); refresh();
+            });
+    });
+    document.querySelector("#agendaList").closest(".panel").querySelector(".view-btn").addEventListener("click", function () { showAll = !showAll; renderAgenda(); });
+
+    $("viewFilter").addEventListener("change", function () { viewMode = this.value; showAll = false; renderAgenda(); });
+    $("categoryFilter").addEventListener("change", function () { categoryFilter = this.value; refresh(); });
     function onSearch(e) {
-        searchTerm = e.target.value.toLowerCase().trim();
-        // keep the two search boxes in sync
-        ["eventSearch", "searchEvents"].forEach(function (id) {
-            var el = $(id); if (el && el !== e.target) el.value = e.target.value;
-        });
+        searchTerm = e.target.value.toLowerCase().trim().slice(0, 80);
+        ["eventSearch", "searchEvents"].forEach(function (id) { var el = $(id); if (el && el !== e.target) el.value = e.target.value; });
         renderAgenda();
     }
-    ["eventSearch", "searchEvents"].forEach(function (id) {
-        if ($(id)) $(id).addEventListener("input", onSearch);
+    ["eventSearch", "searchEvents"].forEach(function (id) { if ($(id)) $(id).addEventListener("input", onSearch); });
+
+    /* ---------- history ---------- */
+    $("historyBtn").addEventListener("click", function () {
+        var changes = loadLog().slice().sort(function (a, b) { return b.t - a.t; });
+        var past = events().filter(function (e) { return e.date < todayKey(); }).sort(function (a, b) { return (b.date + b.time).localeCompare(a.date + a.time); }).slice(0, 100);
+        var box = document.createElement("div");
+        box.className = "history-modal";
+        box.innerHTML = '<div class="history-box" role="dialog" aria-modal="true"><div class="history-head"><h2>Schedule History</h2><button type="button" class="history-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div><div class="history-list">' +
+            '<h3 class="history-sub">Recent changes</h3>' + (changes.length ? changes.map(function (a) { return '<div class="history-row"><div><strong>' + esc(a.title) + "</strong><small>" + esc((a.who ? a.who + " • " : "") + a.sub) + "</small></div><span>" + esc(D.ago(a.t)) + "</span></div>"; }).join("") : '<p class="history-empty">No changes recorded yet.</p>') +
+            '<h3 class="history-sub">Past events</h3>' + (past.length ? past.map(function (e) { return '<div class="history-row"><div><strong>' + esc(e.title) + "</strong><small>" + esc(e.category) + "</small></div><span>" + esc(prettyDate(e.date)) + " • " + esc(e.time) + "</span></div>"; }).join("") : '<p class="history-empty">No past events yet.</p>') +
+            "</div>" + (past.length && canEdit() ? '<button type="button" class="history-clear">Clear past events</button>' : "") + "</div>";
+        document.body.appendChild(box);
+        box.addEventListener("click", function (e) {
+            if (e.target === box || e.target.closest(".history-close")) box.remove();
+            if (e.target.closest(".history-clear")) UI.confirm({ title: "Clear past events?", message: "All past events will be permanently deleted for everyone.", confirmText: "Clear past events" }).then(function (ok) {
+                if (!ok) return;
+                saveEvents(events().filter(function (x) { return x.date >= todayKey(); })); refresh(); UI.toast("Past events cleared."); box.remove();
+            });
+        });
     });
 
-    /* ---------- sync + notifications ---------- */
-    if ($("syncBtn")) {
-        $("syncBtn").addEventListener("click", function () {
-            var overlay = $("loadingOverlay");
-            if (overlay) overlay.classList.add("active");
-            setTimeout(function () {
-                if (overlay) overlay.classList.remove("active");
-                toast("Calendar synced successfully.");
-            }, 1500);
-        });
+    /* =====================================================================
+       CALENDAR SYNC  (.ics file or private iCal link; adds only, never removes)
+    ===================================================================== */
+    function unfold(text) { return String(text).replace(/\r\n/g, "\n").replace(/\n[ \t]/g, ""); }
+    function unescapeIcs(s) { return String(s || "").replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1").trim(); }
+    function tzOffsetMs(ms, tz) {
+        var f = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        var p = {}; f.formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+        return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - ms;
     }
-    if ($("notificationBtn")) {
-        $("notificationBtn").addEventListener("click", function () {
-            var now = pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
-            var left = events.filter(function (e) { return e.date === todayKey && e.time >= now; }).length;
-            toast(left ? left + " event(s) still to come today." : "No more events today.");
-        });
+    /* returns {date: local Date, allDay} */
+    function parseIcsDate(value, params) {
+        var m = String(value).match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);
+        if (!m) return null;
+        if (!m[4]) return { date: new Date(+m[1], +m[2] - 1, +m[3]), allDay: true };
+        var parts = [+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)];
+        if (m[7]) return { date: new Date(Date.UTC.apply(null, parts)), allDay: false };
+        var tz = (params.match(/TZID=([^;:]+)/i) || [])[1];
+        if (tz) {
+            try { var guess = Date.UTC.apply(null, parts); return { date: new Date(guess - tzOffsetMs(guess, tz.replace(/"/g, ""))), allDay: false }; } catch (e) { /* unknown zone: treat as local */ }
+        }
+        return { date: new Date(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]), allDay: false };
     }
-
-    /* ---------- activity "View History" ---------- */
-    function openHistory() {
-        var old = $("historyModal");
-        if (old) old.remove();
-
-        var changes = loadLog();
-        var past = events.filter(function (e) { return e.date < todayKey; })
-            .sort(function (a, b) { return (b.date + b.time).localeCompare(a.date + a.time); });
-
-        var box = document.createElement("div");
-        box.id = "historyModal";
-        box.className = "history-modal";
-        box.innerHTML =
-            '<div class="history-box">' +
-                '<div class="history-head"><h2>Schedule History</h2>' +
-                '<button type="button" class="history-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>' +
-                '<div class="history-list">' +
-                '<h3 class="history-sub">Recent changes</h3>' +
-                (changes.length ? changes.map(function (a) {
-                    return '<div class="history-row"><div><strong>' + esc(a.title) + '</strong><small>' + esc(a.sub) + '</small></div><span>' + esc(relTime(a.t)) + '</span></div>';
-                }).join("") : '<p class="history-empty">No changes recorded yet.</p>') +
-                '<h3 class="history-sub">Past events</h3>' +
-                (past.length ? past.map(function (e) {
-                    return '<div class="history-row"><div><strong>' + esc(e.title) + '</strong><small>' + esc(e.category) + '</small></div><span>' + esc(prettyDate(e.date)) + ' \u2022 ' + esc(e.time) + '</span></div>';
-                }).join("") : '<p class="history-empty">No past events yet.</p>') +
-                '</div>' +
-                (past.length ? '<button type="button" class="history-clear">Clear past events</button>' : "") +
-            '</div>';
-        document.body.appendChild(box);
-
-        function close() { box.remove(); }
-        box.addEventListener("click", function (e) {
-            if (e.target === box || e.target.closest(".history-close")) close();
-            if (e.target.closest(".history-clear")) {
-                ElaraUI.confirm({ title: "Clear past events?", message: "All " + past.length + " past event(s) will be permanently deleted.", confirmText: "Clear past events" })
-                    .then(function (ok) {
-                        if (!ok) return;
-                        events = events.filter(function (x) { return x.date >= todayKey; });
-                        save(); refresh(); toast("Past events cleared."); close();
-                    });
+    function parseIcs(text) {
+        var out = [], cur = null, lines = unfold(text).split("\n");
+        lines.forEach(function (line) {
+            if (/^BEGIN:VEVENT/i.test(line)) { cur = {}; return; }
+            if (/^END:VEVENT/i.test(line)) { if (cur) out.push(cur); cur = null; return; }
+            if (!cur) return;
+            var i = line.indexOf(":"); if (i < 0) return;
+            var left = line.slice(0, i), val = line.slice(i + 1), name = left.split(";")[0].toUpperCase(), params = left.slice(name.length);
+            if (name === "SUMMARY") cur.summary = unescapeIcs(val);
+            else if (name === "DESCRIPTION") cur.description = unescapeIcs(val);
+            else if (name === "LOCATION") cur.location = unescapeIcs(val);
+            else if (name === "UID") cur.uid = val.trim();
+            else if (name === "DTSTART") cur.start = parseIcsDate(val.trim(), params);
+            else if (name === "RRULE") cur.rrule = val.trim();
+            else if (name === "STATUS") cur.status = val.trim().toUpperCase();
+            else if (name === "EXDATE") (cur.exdates = cur.exdates || []).push.apply(cur.exdates, val.split(",").map(function (v) { var d = parseIcsDate(v.trim(), params); return d ? toKey(d.date) : ""; }));
+            else if (name === "RECURRENCE-ID") cur.recurrence = true;
+        });
+        return out;
+    }
+    var BYDAY = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+    function occurrences(ev, from, to) {
+        var start = ev.start.date, res = [];
+        if (!ev.rrule) { if (start >= from && start <= to) res.push(start); return res; }
+        var r = {}; ev.rrule.split(";").forEach(function (p) { var kv = p.split("="); r[kv[0].toUpperCase()] = kv[1]; });
+        var freq = r.FREQ, interval = Math.max(1, +r.INTERVAL || 1), count = r.COUNT ? +r.COUNT : Infinity;
+        var until = r.UNTIL ? (parseIcsDate(r.UNTIL, "") || {}).date : null;
+        var days = r.BYDAY ? r.BYDAY.split(",").map(function (d) { return BYDAY[d.slice(-2)]; }).filter(function (x) { return x != null; }) : null;
+        var n = 0, guard = 0, d = new Date(start);
+        function push(x) { n++; if (x >= from && x <= to) res.push(new Date(x)); }
+        while (n < count && guard++ < 2000 && res.length < 200) {
+            if (until && d > until) break;
+            if (d > to) break;
+            if (freq === "WEEKLY" && days) {
+                var ws = addDays(d, -d.getDay());
+                days.slice().sort().forEach(function (wd) {
+                    var x = addDays(ws, wd); x.setHours(start.getHours(), start.getMinutes(), 0, 0);
+                    if (x >= start && (!until || x <= until) && n < count) push(x);
+                });
+                d = addDays(ws, 7 * interval); d.setHours(start.getHours(), start.getMinutes(), 0, 0);
+            } else {
+                push(d);
+                if (freq === "DAILY") d = addDays(d, interval);
+                else if (freq === "WEEKLY") d = addDays(d, 7 * interval);
+                else if (freq === "MONTHLY") d = new Date(d.getFullYear(), d.getMonth() + interval, d.getDate(), d.getHours(), d.getMinutes());
+                else if (freq === "YEARLY") d = new Date(d.getFullYear() + interval, d.getMonth(), d.getDate(), d.getHours(), d.getMinutes());
+                else break;
             }
+        }
+        return res;
+    }
+    /* adds new events, never removes or changes existing ones */
+    function importIcs(text, sourceName) {
+        if (!/BEGIN:VCALENDAR/i.test(text)) throw new Error("That isn't a calendar (.ics) file.");
+        var parsed = parseIcs(text).filter(function (e) { return e.start && e.summary && e.status !== "CANCELLED" && !e.recurrence; });
+        var from = addDays(new Date(), -30), to = addDays(new Date(), 365);
+        var list = events(), m = me(), added = 0, skipped = 0;
+        var have = {};
+        list.forEach(function (e) { if (e.uid) have[e.uid] = 1; have["t|" + e.title.toLowerCase() + "|" + e.date + "|" + e.time] = 1; });
+        parsed.forEach(function (ev, i) {
+            occurrences(ev, from, to).forEach(function (when, j) {
+                var date = toKey(when), time = ev.start.allDay ? "00:00" : pad(when.getHours()) + ":" + pad(when.getMinutes());
+                if (ev.exdates && ev.exdates.indexOf(date) > -1) return;
+                var uid = (ev.uid || "noid-" + i) + "@" + date;
+                var title = ev.summary.slice(0, 80);
+                if (have[uid] || have["t|" + title.toLowerCase() + "|" + date + "|" + time]) { skipped++; return; }
+                have[uid] = 1;
+                list.push({ id: Date.now() * 10 + added, uid: uid, title: title, category: "Imported", date: date, time: time, allDay: ev.start.allDay || undefined,
+                            description: [ev.location, ev.description].filter(Boolean).join(" • ").slice(0, 300), source: "ics", sourceName: sourceName,
+                            createdBy: m.id, createdByName: m.first, createdAt: Date.now() });
+                added++;
+            });
+        });
+        if (added > 1500) throw new Error("That calendar has too many events to import at once.");
+        if (added) {
+            saveEvents(list);
+            logActivity("Calendar synced", added + " event(s) added from " + sourceName, "fa-arrows-rotate");
+            shared("imported " + added + " event(s) from " + sourceName, "fa-arrows-rotate");
+        }
+        return { added: added, skipped: skipped };
+    }
+
+    var syncModal = $("syncModal");
+    function openSync() {
+        if (!canEdit()) return UI.toast("You can view the schedule but not change it.", "error");
+        $("syncError").textContent = ""; $("syncResult").textContent = "";
+        renderSavedLinks();
+        syncModal.classList.add("active"); document.body.style.overflow = "hidden";
+    }
+    function closeSync() { syncModal.classList.remove("active"); document.body.style.overflow = ""; }
+    $("syncBtn").addEventListener("click", openSync);
+    $("closeSync").addEventListener("click", closeSync);
+    syncModal.addEventListener("click", function (e) { if (e.target === syncModal) closeSync(); });
+    function showResult(r, name) {
+        $("syncResult").textContent = r.added ? "Added " + r.added + " event(s) from " + name + (r.skipped ? " (" + r.skipped + " already on your calendar)." : ".") : "Nothing new: all " + r.skipped + " event(s) were already on your calendar.";
+        UI.toast(r.added ? r.added + " event(s) imported." : "Your calendar is already up to date.", r.added ? "success" : "info");
+        refresh();
+    }
+    $("icsFile").addEventListener("change", function () {
+        var f = this.files[0]; this.value = "";
+        $("syncError").textContent = "";
+        if (!f) return;
+        if (f.size > 3 * 1024 * 1024) { $("syncError").textContent = "That file is bigger than 3 MB."; return; }
+        if (!/\.ics$/i.test(f.name) && f.type !== "text/calendar") { $("syncError").textContent = "Choose a calendar file ending in .ics."; return; }
+        var reader = new FileReader();
+        reader.onload = function () { try { showResult(importIcs(String(reader.result), f.name.replace(/\.ics$/i, "")), f.name); } catch (e) { $("syncError").textContent = e.message; } };
+        reader.onerror = function () { $("syncError").textContent = "Could not read that file."; };
+        reader.readAsText(f);
+    });
+    function savedLinks() { return D.util.load("elaraCalendarLinks", []); }
+    function renderSavedLinks() {
+        var list = savedLinks();
+        $("savedLinks").innerHTML = list.length ? '<p class="saved-title">Saved on this device:</p>' + list.map(function (l, i) {
+            return '<div class="saved-link"><span title="' + esc(l.url) + '">' + esc(l.name) + "</span><small>" + (l.last ? "synced " + esc(D.ago(l.last)) : "") + '</small><button type="button" data-sync-link="' + i + '">Sync now</button><button type="button" data-forget-link="' + i + '" aria-label="Forget link"><i class="fa-solid fa-xmark"></i></button></div>';
+        }).join("") : "";
+    }
+    function linkName(url) { try { var u = new URL(url.replace(/^webcal:/i, "https:")); return u.hostname.replace(/^www\./, "").replace(/calendar\.google\.com/, "Google Calendar").replace(/.*icloud\.com/, "iCloud").replace(/outlook\.(live|office365)\.com/, "Outlook"); } catch (e) { return "Calendar link"; } }
+    function syncLink(url, quiet) {
+        if (!cfg.icsEndpoint || !D.user) return Promise.reject(new Error("Importing from a link needs the elara-ics function (README, step 9). You can import a .ics file instead."));
+        return D.callFunction(cfg.icsEndpoint, { url: url }).then(function (j) {
+            var r = importIcs(j.ics, linkName(url));
+            var list = savedLinks(); list.forEach(function (l) { if (l.url === url) l.last = Date.now(); }); D.util.save("elaraCalendarLinks", list);
+            if (!quiet) showResult(r, linkName(url)); else if (r.added) { UI.toast(r.added + " new event(s) synced from " + linkName(url) + ".", "info"); refresh(); }
+            return r;
         });
     }
-    var activityPanel = $("activityList") && $("activityList").closest(".panel");
-    var historyBtn = activityPanel && activityPanel.querySelector(".view-btn");
-    if (historyBtn) historyBtn.addEventListener("click", openHistory);
+    $("icsLinkForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var url = $("icsUrl").value.trim();
+        $("syncError").textContent = ""; $("syncResult").textContent = "";
+        if (!/^(https|webcal):\/\/[^\s]{8,}$/i.test(url)) { $("syncError").textContent = "Paste the calendar's https:// or webcal:// link."; return; }
+        var overlay = $("loadingOverlay"); overlay.classList.add("active");
+        syncLink(url).then(function () {
+            if ($("rememberLink").checked) {
+                var list = savedLinks();
+                if (!list.some(function (l) { return l.url === url; })) list.push({ url: url, name: linkName(url), last: Date.now() });
+                D.util.save("elaraCalendarLinks", list.slice(0, 5));
+            }
+            $("icsUrl").value = ""; renderSavedLinks();
+        }).catch(function (err) { $("syncError").textContent = err.message; }).then(function () { overlay.classList.remove("active"); });
+    });
+    $("savedLinks").addEventListener("click", function (e) {
+        var s = e.target.closest("[data-sync-link]"), f = e.target.closest("[data-forget-link]"), list = savedLinks();
+        if (s) { var overlay = $("loadingOverlay"); overlay.classList.add("active"); syncLink(list[+s.dataset.syncLink].url).catch(function (err) { $("syncError").textContent = err.message; }).then(function () { overlay.classList.remove("active"); renderSavedLinks(); }); }
+        if (f) { list.splice(+f.dataset.forgetLink, 1); D.util.save("elaraCalendarLinks", list); renderSavedLinks(); }
+    });
+    // saved links sync quietly when the page opens (at most once an hour)
+    if (canEdit()) savedLinks().forEach(function (l) { if (!l.last || Date.now() - l.last > 3600000) syncLink(l.url, true).catch(function (e) { console.warn("[Elara] calendar sync:", e.message); }); });
 
+    D.onChange(refresh);
+    document.addEventListener("elara:refresh", refresh);
+    if (/[?&]new=1/.test(location.search)) setTimeout(function () { openModal(null); }, 300);
     refresh();
 })();

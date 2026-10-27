@@ -1,81 +1,63 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm";
 
-const supabaseUrl = "https://shyvyrvxashetxnmosnd.supabase.co";
-const supabaseKey = "sb_publishable_8G0vG3r2UW8Sx-ltfWQazQ_l2oWS3NX";
-const supabase = createClient(supabaseUrl, supabaseKey);
+/* Contact form: checked here AND by the database (elara-setup.sql), so bad data can't get in either way.
+   Messages can only be written, never read back, by visitors. */
+const cfg = window.ELARA_CONFIG || {};
+const supabase = cfg.supabaseUrl ? createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
 
-/* ---------- phone field: only digits and an optional leading + ---------- */
-const phoneInput = document.getElementById("Pnumber");
+const form = document.getElementById("contact-form");
+const $ = (id) => document.getElementById(id);
+const msg = $("formMsg");
 
-if (phoneInput) {
-    phoneInput.setAttribute("inputmode", "tel");
-    phoneInput.setAttribute("maxlength", "16");
-    phoneInput.setAttribute("autocomplete", "tel");
-
-    // runs on typing and on paste: strips letters and symbols straight away
-    phoneInput.addEventListener("input", () => {
-        const raw = phoneInput.value;
-        const hasPlus = raw.trim().charAt(0) === "+";
-        const digits = raw.replace(/\D/g, "");
-        phoneInput.value = (hasPlus ? "+" : "") + digits;
-    });
+const RULES = {
+    Name: (v) => v.length < 2 || v.length > 50 ? "Your name must be 2 to 50 characters." : !/^[\p{L}][\p{L}\p{M}' .-]*$/u.test(v) ? "Please use letters only in your name." : "",
+    Email: (v) => !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) || v.length > 120 ? "Please enter a valid email address." : "",
+    Pnumber: (v) => !/^\+?[0-9]{10,15}$/.test(v) ? "Use 10 to 15 digits, e.g. 0821234567 or +27821234567." : "",
+    Message: (v) => v.length < 10 ? "Your message must be at least 10 characters." : v.length > 500 ? "Your message can be at most 500 characters." : ""
+};
+function value(id) {
+    const v = $(id).value.trim();
+    return id === "Pnumber" ? v.replace(/[\s\-()]/g, "") : id === "Email" ? v.toLowerCase() : v.replace(/\s+/g, id === "Message" ? " " : " ");
+}
+function check(id) {
+    const err = RULES[id](value(id));
+    $(id + "-err").textContent = err;
+    $(id).classList.toggle("invalid", !!err);
+    $(id).setAttribute("aria-invalid", err ? "true" : "false");
+    return !err;
 }
 
-document.querySelector("form").addEventListener("submit", async (e) => {
+/* phone: digits and one leading + only, as you type or paste */
+$("Pnumber").addEventListener("input", (e) => {
+    const raw = e.target.value, plus = raw.trim().charAt(0) === "+";
+    e.target.value = (plus ? "+" : "") + raw.replace(/\D/g, "").slice(0, 15);
+});
+$("Message").addEventListener("input", () => { $("Message-count").textContent = $("Message").value.length + " / 500"; });
+Object.keys(RULES).forEach((id) => $(id).addEventListener("blur", () => { if ($(id).value) check(id); }));
+
+form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    msg.textContent = ""; msg.className = "form-msg";
+    const ok = Object.keys(RULES).map(check).every(Boolean);
+    if (!ok) { const first = form.querySelector(".invalid"); if (first) first.focus(); return; }
 
-    const name = document.getElementById("Name").value.trim();
-    const email = document.getElementById("Email").value.trim();
-    const phone = document.getElementById("Pnumber").value.replace(/[\s\-()]/g, "");
-    const message = document.getElementById("Message").value.trim();
+    // spam trap filled in, or sending too fast: act as if it worked
+    if ($("website").value) { form.reset(); msg.textContent = "Thanks! Your message was sent."; msg.className = "form-msg ok"; return; }
+    let last = 0; try { last = Number(localStorage.getItem("elaraContactSent") || 0); } catch (x) { /* ignore */ }
+    if (Date.now() - last < 60000) { msg.textContent = "Please wait a minute before sending another message."; msg.className = "form-msg bad"; return; }
+    if (!supabase) { msg.textContent = "Messages can't be sent right now. Please email us instead."; msg.className = "form-msg bad"; return; }
 
-
-
-    if (name.length < 2) {
-        alert("Name must be at least 2 characters long.");
-        return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-        alert("Please enter a valid email address.");
-        return;
-    }
-
-    // digits only, optional leading +, 10 to 15 digits (e.g. 0821234567 or +27821234567)
-    const phoneRegex = /^\+?[0-9]{10,15}$/;
-
-    if (!phoneRegex.test(phone)) {
-        alert("Please enter a valid phone number using digits only, e.g. 0821234567 or +27821234567.");
-        return;
-    }
-
-    if (message.length < 10) {
-        alert("Message must be at least 10 characters long.");
-        return;
-    }
-
- 
-
-    const { error } = await supabase
-        .from("contacts")
-        .insert([
-            {
-                name,
-                email,
-                phone,
-                message
-            }
-        ]);
+    const btn = form.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Sending...";
+    const { error } = await supabase.from("contacts").insert([{ name: value("Name"), email: value("Email"), phone: value("Pnumber"), message: value("Message") }]);
+    btn.disabled = false; btn.textContent = "Send Now";
 
     if (error) {
-        alert("Error sending message: " + error.message);
+        msg.textContent = /violates|check constraint/i.test(error.message) ? "Some details weren't accepted. Please check the form." : /fetch/i.test(error.message) ? "No connection. Please try again." : "Sorry, your message couldn't be sent. Please email us instead.";
+        msg.className = "form-msg bad";
         return;
     }
-
-    alert("Message sent successfully!");
-
-  
-    document.querySelector("form").reset();
+    try { localStorage.setItem("elaraContactSent", String(Date.now())); } catch (x) { /* ignore */ }
+    form.reset(); $("Message-count").textContent = "0 / 500";
+    msg.textContent = "Thanks! Your message was sent. We'll reply as soon as we can."; msg.className = "form-msg ok";
 });

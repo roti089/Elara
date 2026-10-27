@@ -2,83 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="Elara logo.png" style="color: rgb(0, 0, 0);">
-    <title>Home page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0d1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Elara">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <title>Elara | Smart Home Management</title>
+    <meta name="description" content="Elara helps your household share tasks, shopping, schedules and smart devices in one place.">
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="Homepage.css">
-    <link rel="stylesheet" href="Homepageintro.css">
+    <link rel="stylesheet" href="homepageintro.css">
 </head>
 <body>
 
-  <!-- Intro Screen -->
-<div id="intro-screen">
-
+<!-- Intro screen (first visit in a session only) -->
+<div id="intro-screen" aria-hidden="true">
     <div class="intro-content">
-
-        <img src="Elara logo.png" id="intro-logo" alt="Elara Logo">
-
+        <img src="Elara logo.png" id="intro-logo" alt="">
         <div class="loader-wrapper" id="intro-title">
-
-            <span class="loader-letter">E</span>
-            <span class="loader-letter">L</span>
-            <span class="loader-letter">A</span>
-            <span class="loader-letter">R</span>
-            <span class="loader-letter">A</span>
-
+            <span class="loader-letter">E</span><span class="loader-letter">L</span><span class="loader-letter">A</span><span class="loader-letter">R</span><span class="loader-letter">A</span>
             <div class="loader"></div>
-
         </div>
-
-        <p id="intro-subtitle">
-            Smart Home Management System
-        </p>
+        <p id="intro-subtitle">Smart Home Management System</p>
     </div>
-
 </div>
+
 <div id="homepage">
-<section class="hero">
+    <canvas id="bend" aria-hidden="true"></canvas>
 
-<canvas id="bend" resize></canvas>
+    <header id="site-header">
+        <a href="Homepage.html" class="brand"><img src="Elara logo.png" id="logo" alt=""><span id="logo-name">Elara</span></a>
+        <nav id="nav-container" aria-label="Main">
+            <a href="Homepage.html" aria-current="page">Home</a>
+            <a href="About.html">About</a>
+            <a href="Contactus.html">Contact</a>
+            <a href="Loginpage.html">Log In</a>
+        </nav>
+    </header>
 
-<h1 class="background-title">ELARA</h1>
+    <main>
+        <section class="hero">
+            <h2 class="background-title" aria-hidden="true">ELARA</h2>
+            <div class="hero-text">
+                <h3>Welcome to</h3>
+                <h1>Elara Home Management System</h1>
+                <p>Elara is a smart home management system that makes running a household simpler. Share tasks, shopping and schedules with everyone at home,
+                   control your smart devices, keep track of energy and spending, and get reminders, reports and voice control in one place.</p>
+                <div class="hero-actions">
+                    <a class="btn primary" href="Loginpage.html?signup=1">Get started</a>
+                    <a class="btn ghost" href="Loginpage.html">Log in</a>
+                </div>
+            </div>
+            <a class="scroll-indicator" href="#features">Scroll <span aria-hidden="true">&darr;</span></a>
+        </section>
 
-    <div id="logo-container">
-    <image src="Elara logo.png" id="logo"></image>
-    <h1 id="logo-name">Elara</h1>
-<nav id="nav-container">
-    <a href="Homepage.html">Home</a>
-    <a href="About.html">About </a>
-    <a href="Contactus.html">Contact </a>
-    <a href="Loginpage.html">Log In</a>
-</nav>
+        <section class="features fade-section" id="features">
+            <h2 class="background-title" aria-hidden="true">ELARA</h2>
+            <div class="section-heading">
+                <p class="dashboard-label">WHAT ELARA DOES</p>
+                <h2>Built for the whole household</h2>
+            </div>
+            <div class="feature-grid">
+            <article class="feature-card"><i class="fa-solid fa-list-check" aria-hidden="true"></i><h3>Tasks that get done</h3><p>Create chores, assign them only to people in your home, set due times and see who is behind.</p></article>
+            <article class="feature-card"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i><h3>Shopping &amp; pantry</h3><p>One shared list. Bought items move to “In the House”, and receipts and warranties are kept safe.</p></article>
+            <article class="feature-card"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i><h3>Who's free, every day</h3><p>Everyone marks busy, away or available for each day. Adding an event when someone is busy tells them.</p></article>
+            <article class="feature-card"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i><h3>Smart home control</h3><p>Switch lights and plugs (CBi / Smart Life), run Morning, Night and Away routines, and track energy.</p></article>
+            <article class="feature-card"><i class="fa-solid fa-file-lines" aria-hidden="true"></i><h3>Reports per person</h3><p>See who used how much electricity, spent what on groceries and finished which tasks.</p></article>
+            <article class="feature-card"><i class="fa-solid fa-microphone" aria-hidden="true"></i><h3>Elara AI &amp; voice</h3><p>Talk or type: “add milk”, “turn off the lights”, “what can I cook tonight?”</p></article>
+            <article class="feature-card"><i class="fa-solid fa-user-shield" aria-hidden="true"></i><h3>Strict sharing</h3><p>The owner invites people and decides exactly what each person may see or change.</p></article>
+            <article class="feature-card"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i><h3>Backups &amp; notifications</h3><p>Daily cloud backups and push notifications for the things that matter to you.</p></article>
+            </div>
+        </section>
 
-    </div>
+        <section class="dashboard-section fade-section">
+            <h2 class="background-title" aria-hidden="true">ELARA</h2>
+            <div class="dashboard-heading">
+                <p class="dashboard-label">YOUR HOME, SIMPLIFIED</p>
+                <h2>Everything in one place.</h2>
+                <p>Every person in the home sees the same dashboard, with only the parts the owner shared with them.</p>
+            </div>
+            <div class="dashboard-preview-container">
+                <img src="dashboard-preview.jpg" alt="The Elara dashboard showing tasks, shopping, devices, energy use and quick actions" class="dashboard-image" width="1600" height="973" loading="lazy">
+            </div>
+        </section>
+    </main>
 
+    <footer class="site-footer">
+        <p>&copy; <span id="year">2026</span> Elara Smart Home</p>
+        <nav aria-label="Footer"><a href="About.html">About</a><a href="Contactus.html">Contact</a><a href="Loginpage.html">Log in</a></nav>
+    </footer>
 
-    <div class="container">
-
-    <div class="body">
-        <h3>Welcome to</h3>
-        <h1>Elara Home Management System
-        </h1>
-        <p>Elara is a smart home management system designed to simplify and improve the way households manage their daily operations.
-             It focuses on efficient inventory control, allowing users to track, update, and monitor items in real time. 
-             With features such as automated alerts, reporting, and voice-enabled commands, Elara provides a modern and intelligent approach to home management. 
-             The system aims to enhance convenience, reduce manual effort, and give users better control and visibility over their household resources.</p>
-
-
-    </div>
-
-    <div class="video1">
-    
-    </div>
-
-    </div>
-    
-
-
- 
-<div id="mascot-wrap" aria-label="Elara, your home assistant mascot" role="img">
+    <div id="mascot-wrap" role="button" tabindex="0" aria-label="Elara, your home assistant. Press for a tip.">
   <svg class="mascot-svg" viewBox="0 0 108 140" xmlns="http://www.w3.org/2000/svg">
  
     <defs>
@@ -168,50 +186,11 @@
     </g>
   </svg>
 </div>
-</section>
-
-<section class="hero">
-
-    <h1 class="background-title">ELARA</h1>
-
-    ...
-</section>
-
-
-
-
-<section class="dashboard-section">
-    <h1 class="background-title">ELARA</h1>
-
-    <div class="dashboard-heading">
-        <p class="dashboard-label">YOUR HOME, SIMPLIFIED</p>
-        <h2>Everything in one place.</h2>
-        <p>Manage your household with a smarter, more connected experience.</p>
-    </div>
-
-    <div class="dashboard-preview-container">
-        <img
-            src="elara-3d.png"
-            alt="Elara home management dashboard preview"
-            class="dashboard-image"
-        >
-    </div>
-</section>
-
-
-
-
-<div class="scroll-indicator">
-
-    Scroll
-
-    <span>↓</span>
-
 </div>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.18/paper-full.min.js"></script>
-    <script src="homepage.js"></script>
-    <script src="homepage intro.js"></script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.18/paper-full.min.js"></script>
+<script src="homepage-intro.js"></script>
+<script src="homepage.js"></script>
+<script src="elara-pwa.js"></script>
 </body>
 </html>

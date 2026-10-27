@@ -2113,3 +2113,24 @@ body.light-theme .settings-nav-item:hover {
     background: rgba(124,108,255,.08);
     color: #17182b;
 }
+/* ===== additions: validation, owner-only, backups, location ===== */
+.hint{ display:block; font-size:12px; opacity:.65; margin-top:6px; }
+.field-error{ color:#FB7185; font-size:13px; min-height:18px; margin:8px 0; }
+.owner-note{ display:flex; gap:8px; align-items:center; padding:10px 14px; border-radius:12px; background:rgba(251,191,36,.12); color:#FBBF24; font-size:13px; margin-bottom:16px; }
+.link-btn{ border:none; background:none; color:#9d95ff; padding:0; margin-top:8px; cursor:pointer; font:inherit; font-size:13px; text-decoration:underline; }
+input[readonly]{ opacity:.7; cursor:not-allowed; }
+[data-owner]:disabled,.secondary-btn:disabled,.save-btn:disabled{ opacity:.5; cursor:not-allowed; }
+.setting-item .secondary-btn,.setting-item .save-btn{ flex-shrink:0; margin:0; }
+.setting-item p small{ opacity:.8; }
+.file-btn{ display:inline-flex; align-items:center; cursor:pointer; }
+.file-btn.disabled{ opacity:.5; pointer-events:none; }
+.backup-list{ display:flex; flex-direction:column; gap:8px; margin:6px 0 18px; }
+.backup-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); }
+.backup-row small{ display:block; opacity:.65; font-size:12px; margin-top:2px; }
+.backup-acts{ display:flex; gap:6px; flex-shrink:0; }
+.backup-acts .secondary-btn{ padding:8px 12px; }
+.secondary-btn.danger{ color:#FB7185; }
+.muted{ opacity:.65; font-size:14px; }
+.sec-box .eui-err{ min-height:16px; }
+body.light-theme .backup-row{ background:#fff; border-color:rgba(0,0,0,.08); }
+@media (max-width:600px){ .backup-row{ flex-direction:column; align-items:flex-start; } .setting-item{ flex-wrap:wrap; } }

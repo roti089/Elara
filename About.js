@@ -1,33 +1,19 @@
-const reveals = document.querySelectorAll(".reveal");
-
-function revealSections(){
-
-    const trigger = window.innerHeight * 0.85;
-
-    reveals.forEach(section=>{
-
-        const top = section.getBoundingClientRect().top;
-
-        if(top < trigger){
-
-            section.classList.add("active");
-
-        }
-
-    });
-
-}
-
-window.addEventListener("scroll",revealSections);
-
-window.addEventListener("load",revealSections);
+/* sections fade in as they scroll into view */
+(function () {
+    const reveals = document.querySelectorAll(".reveal");
+    if (!("IntersectionObserver" in window)) { reveals.forEach((r) => r.classList.add("active")); return; }
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("active"); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -15% 0px" });
+    reveals.forEach((r) => io.observe(r));
+})();
 
 /* ===========================================================
    ELARA MASCOT
 =========================================================== */
 
 (function () {
-
+    if (!document.getElementById("mascot-wrap")) return;
     const wrap = document.getElementById("mascot-wrap");
     const headGroup = document.getElementById("head-group");
     const antennaGroup = document.getElementById("antenna-group");
@@ -119,7 +105,6 @@ window.addEventListener("load",revealSections);
         [pupilLeft, pupilRight].forEach(p => {
 
             p.parentElement.style.transform = "scaleY(.15)";
-            p.parentElement.style.transformOrigin = "center";
 
         });
 
@@ -151,6 +136,7 @@ window.addEventListener("load",revealSections);
 
     ];
 
+    wrap.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); wrap.click(); } });
     wrap.addEventListener("click", () => {
 
         speechText.textContent =

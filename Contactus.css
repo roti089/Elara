@@ -577,3 +577,33 @@ font-size:28vw;
 }
 
 }
+/* ==========================
+   FIXES: spacing without <br>, inline errors, spam trap
+========================== */
+.brand-link{ display:flex; align-items:center; color:inherit; text-decoration:none; }
+nav a[aria-current="page"]{ color:#b49aff; }
+#contact-form{ display:flex; flex-direction:column; }
+#contact-form label{ margin-top:18px; }
+#contact-form label:first-child{ margin-top:0; }
+#contact-form textarea{ margin-top:8px; resize:vertical; }
+#contact-form button{ margin-top:22px; }
+#contact-form button:disabled{ opacity:.6; cursor:wait; }
+.field-err{ color:#ff8a9a; font-size:13px; min-height:16px; margin-top:6px; }
+.char-count{ align-self:flex-end; color:#8f93b8; font-size:12px; margin-top:4px; }
+.Contact-box input.invalid,.Contact-box textarea.invalid{ border-color:#ff6b86; }
+.form-msg{ margin-top:14px; font-size:15px; min-height:20px; }
+.form-msg.ok{ color:#4ade80; }
+.form-msg.bad{ color:#ff8a9a; }
+.hp{ position:absolute !important; left:-10000px !important; width:1px; height:1px; overflow:hidden; }
+.Contact-box2 a{ color:inherit; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,.3); }
+.Contact-box2 a:hover{ color:#b49aff; }
+@media (max-width:1100px){ .Contact-container{ grid-template-columns:minmax(0,1fr); } }
+.Contact-box,.Contact-box2{ min-width:0; }
+.Contact-box2 p{ overflow-wrap:anywhere; }
+html,body{ overflow-x:hidden; }
+@media (max-width:600px){
+    .Contact-container{ padding:0 16px; margin:24px auto; }
+    .Contact-box{ padding:26px 20px; }
+    .Contact-box2{ grid-template-columns:1fr; padding:22px; }
+    .Contact-box h1{ font-size:30px; }
+}

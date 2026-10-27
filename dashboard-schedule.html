@@ -2,1118 +2,246 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0d1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Elara">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <title>Schedule | Elara</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="dashboard-schedule.css">
     <link rel="stylesheet" href="elara-sidebar.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
+<div class="schedule">
 
-     <div class="schedule">
-
-         <!-- SIDEBAR -->
+    <!-- SIDEBAR (the menu is rebuilt by elara-common.js to hide pages a member may not see) -->
     <aside class="sidebar">
-
         <div class="logo">
-
             <img src="Elara logo.png" alt="Elara">
-
-            <div>
-                <h2>Elara</h2>
-                <span>Smart Home</span>
-            </div>
-
+            <div><h2>Elara</h2><span>Smart Home</span></div>
         </div>
-
- <ul class="menu">
-
-    <li>
-        <a href="dashboard-content.html">
-            <i class="fa-solid fa-house"></i>
-            <span>Dashboard</span>
-        </a>
-    </li>
-
-    <li>
-        <a href="dashboard-tasks.html">
-            <i class="fa-solid fa-list-check"></i>
-            <span>Tasks</span>
-        </a>
-    </li>
-
-    <li>
-        <a href="dashboard-shopping.html">
-            <i class="fa-solid fa-cart-shopping"></i>
-            <span>Shopping</span>
-        </a>
-    </li>
-
-    <li class="active">
-        <a href="dashboard-schedule.html">
-            <i class="fa-solid fa-calendar-days"></i>
-            <span>Schedule</span>
-        </a>
-    </li>
-
-    <li>
-        <a href="dashboard-smart-home.html">
-            <i class="fa-solid fa-lightbulb"></i>
-            <span>Smart Home</span>
-        </a>
-    </li>
-
-    <li>
-        <a href="dashboard-analytics.html">
-            <i class="fa-solid fa-chart-simple"></i>
-            <span>Analytics</span>
-        </a>
-    </li>
-
-    <li>
-        <a href="dashboard-members.html">
-            <i class="fa-solid fa-users"></i>
-            <span>Members</span>
-        </a>
-    </li>
-
-    <li>
-        <a href="dashboard-settings.html">
-            <i class="fa-solid fa-gear"></i>
-            <span>Settings</span>
-        </a>
-    </li>
-
-</ul>
-
+        <ul class="menu">
+            <li><a href="dashboard-content.html"><i class="fa-solid fa-house"></i><span>Dashboard</span></a></li>
+            <li><a href="dashboard-tasks.html"><i class="fa-solid fa-list-check"></i><span>Tasks</span></a></li>
+            <li><a href="dashboard-shopping.html"><i class="fa-solid fa-cart-shopping"></i><span>Shopping</span></a></li>
+            <li class="active"><a href="dashboard-schedule.html"><i class="fa-solid fa-calendar-days"></i><span>Schedule</span></a></li>
+            <li><a href="dashboard-smart-home.html"><i class="fa-solid fa-lightbulb"></i><span>Smart Home</span></a></li>
+            <li><a href="dashboard-analytics.html"><i class="fa-solid fa-chart-simple"></i><span>Analytics</span></a></li>
+            <li><a href="dashboard-reports.html"><i class="fa-solid fa-file-lines"></i><span>Reports</span></a></li>
+            <li><a href="dashboard-members.html"><i class="fa-solid fa-users"></i><span>Members</span></a></li>
+            <li><a href="dashboard-settings.html"><i class="fa-solid fa-gear"></i><span>Settings</span></a></li>
+        </ul>
         <div class="sidebar-bottom">
-
-            <button class="logout">
-
-                <i class="fa-solid fa-right-from-bracket"></i>
-
-                Logout
-
-            </button>
-
+            <button class="logout" type="button"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
         </div>
-
     </aside>
 
-       <!-- MAIN -->
-   <main class="main-content">
+    <main class="main-content">
 
-    <!-- ==========================
-            TOP BAR
-    =========================== -->
+        <header class="topbar">
+            <div class="welcome">
+                <h1 id="heading">Schedule</h1>
+                <p>Events, reminders and who is free on each day.</p>
+            </div>
+            <div class="top-actions">
+                <div class="search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchEvents" maxlength="80" placeholder="Search events..." aria-label="Search events...">
+                </div>
+                <button type="button" id="notificationBtn" aria-label="Notifications"><i class="fa-solid fa-bell"></i></button>
+                <button type="button" id="themeBtn" aria-label="Toggle theme"><i class="fa-solid fa-moon"></i></button>
+                <div class="profile">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="">
+                    <div><h4 id="userName"></h4><span></span></div>
+                </div>
+            </div>
+        </header>
 
-    <header class="topbar">
+        <!-- STATISTICS -->
+        <section class="stats">
+            <div class="card"><i class="fa-solid fa-calendar-day"></i><h3>Today's Events</h3><h2 id="todayEvents">0</h2><p>Events scheduled today</p></div>
+            <div class="card"><i class="fa-solid fa-calendar-week"></i><h3>This Week</h3><h2 id="weekEvents">0</h2><p>Events this week</p></div>
+            <div class="card"><i class="fa-solid fa-repeat"></i><h3>Recurring</h3><h2 id="recurringTasks">0</h2><p>Events &amp; tasks on 2+ days</p></div>
+            <div class="card"><i class="fa-solid fa-users"></i><h3>Free Today</h3><h2 id="availability">&mdash;</h2><p>Members available today</p></div>
+        </section>
 
-        <div class="welcome">
-            <h1>Schedule</h1>
-            <p>Manage events, reminders, routines and your family's availability.</p>
-        </div>
-
-        <div class="top-actions">
-
-            <div class="search">
+        <!-- CONTROLS -->
+        <section class="schedule-controls">
+            <button class="add-event needs-edit" id="addEventBtn" type="button"><i class="fa-solid fa-plus"></i> New Event</button>
+            <div class="schedule-search">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input
-                    type="text"
-                    id="searchEvents"
-                    placeholder="Search schedules..."
-                >
+                <input type="text" id="eventSearch" maxlength="80" placeholder="Search events..." aria-label="Search events">
             </div>
-
-            <button id="notificationBtn">
-                <i class="fa-solid fa-bell"></i>
-            </button>
-
-            <button id="themeBtn">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-
-            <div class="profile">
-
-                <img src="DSC_0156.JPG" alt="Profile">
-
-                <div>
-                    <h4 id="userName">Justin</h4>
-                    <span>Home Owner</span>
-                </div>
-
+            <select id="viewFilter" aria-label="View">
+                <option value="Day">Selected day</option><option value="Week">Week</option><option value="Upcoming">Upcoming</option>
+            </select>
+            <select id="categoryFilter" aria-label="Category">
+                <option value="">All categories</option><option>Personal</option><option>Shopping</option><option>Household</option><option>Maintenance</option><option>Smart Home</option><option>Imported</option>
+            </select>
+            <div class="schedule-actions">
+                <button class="today-btn" id="todayBtn" type="button"><i class="fa-solid fa-calendar-day"></i> Today</button>
+                <button class="sync-btn needs-edit" id="syncBtn" type="button"><i class="fa-solid fa-arrows-rotate"></i> Sync Calendar</button>
             </div>
-
-        </div>
-
-    </header>
-
-
-    <!-- ==========================
-            STATISTICS
-    =========================== -->
-
-    <section class="stats">
-
-        <div class="card">
-
-            <i class="fa-solid fa-calendar-day"></i>
-
-            <h3>Today's Events</h3>
-
-            <h2 id="todayEvents">6</h2>
-
-            <p>Events scheduled today</p>
-
-        </div>
-
-        <div class="card">
-
-            <i class="fa-solid fa-calendar-week"></i>
-
-            <h3>This Week</h3>
-
-            <h2 id="weekEvents">14</h2>
-
-            <p>Upcoming events</p>
-
-        </div>
-
-        <div class="card">
-
-            <i class="fa-solid fa-repeat"></i>
-
-            <h3>Recurring Tasks</h3>
-
-            <h2 id="recurringTasks">0</h2>
-
-            <p>Repeating events &amp; tasks</p>
-
-        </div>
-
-        <div class="card">
-
-            <i class="fa-solid fa-users"></i>
-
-            <h3>Family Availability</h3>
-
-            <h2 id="availability">—</h2>
-
-            <p>Members available now</p>
-
-        </div>
-
-    </section>
-
-
-    <!-- ==========================
-            CONTROLS
-    =========================== -->
-
-    <section class="schedule-controls">
-
-        <button class="add-event" id="addEventBtn">
-
-            <i class="fa-solid fa-plus"></i>
-
-            New Event
-
-        </button>
-
-        <div class="schedule-search">
-
-            <i class="fa-solid fa-magnifying-glass"></i>
-
-            <input
-                type="text"
-                id="eventSearch"
-                placeholder="Search events..."
-            >
-
-        </div>
-
-        <select id="viewFilter">
-
-            <option>Month</option>
-            <option>Week</option>
-            <option>Today</option>
-
-        </select>
-
-        <select id="categoryFilter">
-
-            <option>All Categories</option>
-            <option>Personal</option>
-            <option>Shopping</option>
-            <option>Household</option>
-            <option>Maintenance</option>
-            <option>Smart Home</option>
-
-        </select>
-
-        <div class="schedule-actions">
-
-            <button class="today-btn" id="todayBtn">
-
-                <i class="fa-solid fa-calendar-day"></i>
-
-                Today
-
-            </button>
-
-            <button class="sync-btn" id="syncBtn">
-
-                <i class="fa-solid fa-arrows-rotate"></i>
-
-                Sync Calendar
-
-            </button>
-
-        </div>
-
-    </section>
-
-    <!-- ==========================
-        SCHEDULE LAYOUT
-========================== -->
-
-<section class="schedule-layout">
-
-    <!-- ==========================
-            LEFT COLUMN
-    =========================== -->
-
-    <div class="schedule-left">
-
-        <!-- ==========================
-                MONTHLY CALENDAR
-        =========================== -->
-
-        <section class="panel">
-
-            <div class="panel-header">
-
-                <div>
-
-                    <h2 id="calendarMonth">
-                        July 2026
-                    </h2>
-
-                    <p class="panel-subtitle">
-                        Click a day to view scheduled events
-                    </p>
-
-                </div>
-
-                <div class="calendar-controls">
-
-                    <button id="prevMonth">
-
-                        <i class="fa-solid fa-chevron-left"></i>
-
-                    </button>
-
-                    <button id="nextMonth">
-
-                        <i class="fa-solid fa-chevron-right"></i>
-
-                    </button>
-
-                </div>
-
-            </div>
-
-            <div class="calendar">
-
-                <!-- Week Days -->
-
-                <div class="calendar-days">
-
-                    <span>Sun</span>
-                    <span>Mon</span>
-                    <span>Tue</span>
-                    <span>Wed</span>
-                    <span>Thu</span>
-                    <span>Fri</span>
-                    <span>Sat</span>
-
-                </div>
-
-                <!-- Dates generated by JavaScript -->
-
-                <div
-                    class="calendar-dates"
-                    id="calendarDates">
-
-                </div>
-
-            </div>
-
         </section>
 
-
-        <!-- ==========================
-                WEEKLY TIMELINE
-        =========================== -->
-
-        <section class="panel">
-
-            <div class="panel-header">
-
-                <div>
-
-                    <h2>
-
-                        Weekly Activity
-
-                    </h2>
-
-                    <p class="panel-subtitle">
-
-                        How busy your week is
-
-                    </p>
-
-                </div>
-
-            </div>
-
-            <div class="week-timeline">
-
-                <div class="timeline-day">
-
-                    <h4>Mon</h4>
-
-                    <div class="timeline-track">
-
-                        <div
-                            class="timeline-fill busy"
-                            style="height:80%;">
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="day">
-
-                    <h4>Tue</h4>
-
-                    <div class="timeline-track">
-
-                        <div
-                            class="timeline-fill medium"
-                            style="height:55%;">
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="day">
-
-                    <h4>Wed</h4>
-
-                    <div class="timeline-track">
-
-                        <div
-                            class="timeline-fill full"
-                            style="height:100%;">
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="day">
-
-                    <h4>Thu</h4>
-
-                    <div class="timeline-track">
-
-                        <div
-                            class="timeline-fill low"
-                            style="height:35%;">
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="timeline-day">
-
-                    <h4>Fri</h4>
-
-                    <div class="timeline-track">
-
-                        <div
-                            class="timeline-fill medium"
-                            style="height:60%;">
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="timeline-day">
-
-                    <h4>Sat</h4>
-
-                    <div class="timeline-track">
-
-                        <div
-                            class="timeline-fill full"
-                            style="height:90%;">
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="timeline-day">
-
-                    <h4>Sun</h4>
-
-                    <div class="timeline-track">
-
-                        <div
-                            class="bar busy"
-                            style="height:70%;">
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </div>
-
-
-    <!-- ==========================
-            RIGHT COLUMN
-    =========================== -->
-
-    <div class="schedule-right">
-
-                <!-- ==========================
-                TODAY'S AGENDA
-        =========================== -->
-
-        <section class="panel">
-
-            <div class="panel-header">
-
-                <div>
-
-                    <h2>Today's Agenda</h2>
-
-                    <p class="panel-subtitle">
-
-                        Your schedule for today
-
-                    </p>
-
-                </div>
-
-                <button class="view-btn">
-
-                    View All
-
-                </button>
-
-            </div>
-
-            <div id="agendaList">
-
-                <div class="agenda-item">
-
-                    <div class="agenda-left">
-
-                        <div class="agenda-icon">
-
-                            <i class="fa-solid fa-mug-hot"></i>
-
-                        </div>
-
-                        <div class="agenda-text">
-
-                            <h4>Morning Routine</h4>
-
-                            <p>Kitchen • Coffee • Breakfast</p>
-
-                        </div>
-
-                    </div>
-
-                    <span class="agenda-time">
-
-                        07:00
-
-                    </span>
-
-                </div>
-
-                <div class="agenda-item">
-
-                    <div class="agenda-left">
-
-                        <div class="agenda-icon">
-
-                            <i class="fa-solid fa-cart-shopping"></i>
-
-                        </div>
-
-                        <div class="agenda-text">
-
-                            <h4>Pick Up Groceries</h4>
-
-                            <p>Checkers Hyper</p>
-
-                        </div>
-
-                    </div>
-
-                    <span class="agenda-time">
-
-                        13:00
-
-                    </span>
-
-                </div>
-
-                <div class="agenda-item">
-
-                    <div class="agenda-left">
-
-                        <div class="agenda-icon">
-
-                            <i class="fa-solid fa-dumbbell"></i>
-
-                        </div>
-
-                        <div class="agenda-text">
-
-                            <h4>Gym Session</h4>
-
-                            <p>Virgin Active</p>
-
-                        </div>
-
-                    </div>
-
-                    <span class="agenda-time">
-
-                        18:00
-
-                    </span>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-
-        <!-- ==========================
-                REMINDERS
-        =========================== -->
-
-        <section class="panel">
-
-            <div class="panel-header">
-
-                <div>
-
-                    <h2>Upcoming Reminders</h2>
-
-                    <p class="panel-subtitle">
-
-                        Don't miss these
-
-                    </p>
-
-                </div>
-
-            </div>
-
-            <div id="reminderList">
-
-                <div class="event-card">
-
-                    <h4>🌿 Water Plants</h4>
-
-                    <p>Garden irrigation reminder</p>
-
-                    <span class="event-date">
-
-                        Tomorrow
-
-                    </span>
-
-                </div>
-
-                <div class="event-card">
-
-                    <h4>⚡ Electricity Bill</h4>
-
-                    <p>Municipal payment due</p>
-
-                    <span class="event-date">
-
-                        25 July
-
-                    </span>
-
-                </div>
-
-                <div class="event-card">
-
-                    <h4>🚗 Vehicle Service</h4>
-
-                    <p>Book maintenance appointment</p>
-
-                    <span class="event-date">
-
-                        31 July
-
-                    </span>
-
-                </div>
-
-                <div class="event-card">
-
-                    <h4>🛒 Grocery Shopping</h4>
-
-                    <p>Weekly shopping trip</p>
-
-                    <span class="event-date">
-
-                        Saturday
-
-                    </span>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-
-        <!-- ==========================
-            HOUSEHOLD AVAILABILITY
-        =========================== -->
-
-        <section class="panel">
-
-            <div class="panel-header">
-
-                <div>
-
-                    <h2>Household Availability</h2>
-
-                    <p class="panel-subtitle">
-
-                        Family members today
-
-                    </p>
-
-                </div>
-
-            </div>
-
-            <div class="family-list">
-
-                <div class="member">
-
-                    <div class="member-info">
-
-                        <img src="DSC_0156.JPG" alt="Justin">
-
+        <section class="schedule-layout">
+            <div class="schedule-left">
+                <section class="panel">
+                    <div class="panel-header">
                         <div>
-
-                            <h4>Justin</h4>
-
-                            <p>Home Owner</p>
-
+                            <h2 id="calendarMonth">Calendar</h2>
+                            <p class="panel-subtitle">Click a day to see its events and who is free. Dots show members who are busy or away.</p>
                         </div>
-
-                    </div>
-
-                    <span class="status-badge available">
-
-                        Available
-
-                    </span>
-
-                </div>
-
-                <div class="member">
-
-                    <div class="member-info">
-
-                        <img src="https://i.pravatar.cc/100?img=32" alt="Sarah">
-
-                        <div>
-
-                            <h4>Sarah</h4>
-
-                            <p>Family Member</p>
-
+                        <div class="calendar-controls">
+                            <button id="prevMonth" type="button" aria-label="Previous month"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button id="nextMonth" type="button" aria-label="Next month"><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
-
                     </div>
+                    <div class="calendar">
+                        <div class="calendar-days"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+                        <div class="calendar-dates" id="calendarDates"></div>
+                    </div>
+                </section>
 
-                    <span class="status-badge busy">
-
-                        Busy
-
-                    </span>
-
-                </div>
-
-                <div class="member">
-
-                    <div class="member-info">
-
-                        <img src="https://i.pravatar.cc/100?img=12" alt="James">
-
-                        <div>
-
-                            <h4>James</h4>
-
-                            <p>Family Member</p>
-
+                <section class="panel">
+                    <div class="panel-header">
+                        <div><h2>Who's Free This Week</h2><p class="panel-subtitle" id="weekLabel">Click a status to change it</p></div>
+                        <div class="calendar-controls">
+                            <button id="prevWeek" type="button" aria-label="Previous week"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button id="nextWeek" type="button" aria-label="Next week"><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
-
                     </div>
+                    <div class="avail-grid-wrap"><div id="availGrid" class="avail-grid"></div></div>
+                    <div class="avail-legend"><span class="available">Available</span><span class="busy">Busy</span><span class="away">Away</span></div>
+                </section>
 
-                    <span class="status-badge away">
-
-                        Away
-
-                    </span>
-
-                </div>
-
+                <section class="panel">
+                    <div class="panel-header"><div><h2>Weekly Activity</h2><p class="panel-subtitle">How busy each day is (events, tasks and people who are busy)</p></div></div>
+                    <div class="week-timeline"></div>
+                </section>
             </div>
 
+            <div class="schedule-right">
+                <section class="panel">
+                    <div class="panel-header">
+                        <div><h2>Today's Agenda</h2><p class="panel-subtitle">Your schedule for today</p></div>
+                        <button class="view-btn" type="button">View All</button>
+                    </div>
+                    <div id="agendaList"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header"><div><h2>Household Availability</h2><p class="panel-subtitle" id="availDayLabel">Today</p></div></div>
+                    <div class="family-list" id="dayAvailability"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header"><div><h2>Upcoming Reminders</h2><p class="panel-subtitle">Events, tasks and warranties that need you soon</p></div></div>
+                    <div id="reminderList"></div>
+                </section>
+            </div>
         </section>
 
-    </div>
-
-</section>
-
-<!-- ==========================================
-            RECENT ACTIVITY
-=========================================== -->
-
-<section class="panel recent-panel">
-
-    <div class="panel-header">
-
-        <div>
-
-            <h2>Recent Activity</h2>
-
-            <p class="panel-subtitle">
-
-                Latest changes to your schedule
-
-            </p>
-
-        </div>
-
-        <button class="view-btn">
-
-            View History
-
-        </button>
-
-    </div>
-
-    <div id="activityList">
-
-        <div class="activity-item">
-
-            <div class="activity-icon">
-
-                <i class="fa-solid fa-calendar-check"></i>
-
+        <section class="panel recent-panel">
+            <div class="panel-header">
+                <div><h2>Recent Activity</h2><p class="panel-subtitle">Latest changes to the schedule by anyone in the home</p></div>
+                <button class="view-btn" type="button" id="historyBtn">View History</button>
             </div>
+            <div id="activityList"></div>
+        </section>
 
-            <div class="activity-info">
+        <button class="fab needs-edit" id="fabButton" type="button" aria-label="New event"><i class="fa-solid fa-plus"></i></button>
 
-                <h4>Grocery Shopping Added</h4>
-
-                <p>Saturday • 09:00</p>
-
-            </div>
-
-            <span>5 min ago</span>
-
-        </div>
-
-        <div class="activity-item">
-
-            <div class="activity-icon">
-
-                <i class="fa-solid fa-user-check"></i>
-
-            </div>
-
-            <div class="activity-info">
-
-                <h4>Sarah accepted Family Dinner</h4>
-
-                <p>Friday • 19:00</p>
-
-            </div>
-
-            <span>22 min ago</span>
-
-        </div>
-
-        <div class="activity-item">
-
-            <div class="activity-icon">
-
-                <i class="fa-solid fa-arrows-rotate"></i>
-
-            </div>
-
-            <div class="activity-info">
-
-                <h4>Garden Watering Rescheduled</h4>
-
-                <p>Moved to Friday</p>
-
-            </div>
-
-            <span>1 hour ago</span>
-
-        </div>
-
-        <div class="activity-item">
-
-            <div class="activity-icon">
-
-                <i class="fa-solid fa-bell"></i>
-
-            </div>
-
-            <div class="activity-info">
-
-                <h4>Electricity Bill Reminder Created</h4>
-
-                <p>Monthly reminder</p>
-
-            </div>
-
-            <span>Yesterday</span>
-
-        </div>
-
-    </div>
-
-</section>
-
-<!-- ==========================================
-            FLOATING ACTION BUTTON
-=========================================== -->
-
-<button class="fab" id="fabButton">
-
-    <i class="fa-solid fa-plus"></i>
-
-</button>
-
-<!-- ==========================================
-            ADD EVENT MODAL
-=========================================== -->
-
-<div class="modal" id="eventModal">
-
+    </main>
+</div>
+<!-- ADD / EDIT EVENT -->
+<div class="modal" id="eventModal" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
     <div class="modal-content">
-
         <div class="modal-header">
+            <h2 id="eventModalTitle">Add New Event</h2>
+            <button id="closeModal" class="close-modal" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="eventForm" novalidate>
+            <div class="form-group">
+                <label for="eventTitle">Event name</label>
+                <input type="text" id="eventTitle" maxlength="80" placeholder="e.g. Plumber visit" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="eventCategory">Category</label>
+                    <select id="eventCategory"><option>Personal</option><option>Household</option><option>Shopping</option><option>Maintenance</option><option>Smart Home</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="eventRepeat">Repeats</label>
+                    <select id="eventRepeat"><option value="">Does not repeat</option><option value="daily">Every day (2 weeks)</option><option value="weekly">Every week (3 months)</option><option value="monthly">Every month (1 year)</option></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label for="eventDate">Date</label><input type="date" id="eventDate" required></div>
+                <div class="form-group"><label for="eventTime">Start time</label><input type="time" id="eventTime" required></div>
+            </div>
+            <div class="form-group">
+                <label>Who is involved? <small>(they get a notification)</small></label>
+                <div id="eventPeople" class="people-picks"></div>
+                <p id="busyWarning" class="busy-warning" hidden></p>
+            </div>
+            <div class="form-group">
+                <label for="eventDescription">Description (optional)</label>
+                <textarea id="eventDescription" rows="3" maxlength="500" placeholder="Where, what to bring..."></textarea>
+            </div>
+            <p class="field-error" id="eventError" aria-live="assertive"></p>
+            <div class="modal-buttons">
+                <button type="button" class="cancel-btn" id="cancelEvent">Cancel</button>
+                <button type="submit" class="save-btn"><i class="fa-solid fa-floppy-disk"></i> Save Event</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-            <h2>
+<!-- CALENDAR SYNC -->
+<div class="modal" id="syncModal" role="dialog" aria-modal="true" aria-labelledby="syncTitle">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="syncTitle">Sync from your calendar</h2>
+            <button id="closeSync" class="close-modal" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p class="sync-note">Elara adds the events from your phone or computer calendar and <strong>never removes</strong> any existing ones. Events already imported are skipped.</p>
 
-                Add New Event
-
-            </h2>
-
-            <button id="closeModal">
-
-                <i class="fa-solid fa-xmark"></i>
-
-            </button>
-
+        <div class="sync-option">
+            <h3><i class="fa-solid fa-file-import"></i> From a calendar file (.ics)</h3>
+            <p>Phone: open the calendar app, share or export the calendar as a file, then choose it here. Computer: Google Calendar &gt; Settings &gt; Import &amp; export &gt; Export; Outlook &gt; Save calendar.</p>
+            <label class="file-pick"><input type="file" id="icsFile" accept=".ics,text/calendar"><span><i class="fa-solid fa-folder-open"></i> Choose .ics file</span></label>
         </div>
 
-        <form id="eventForm">
-
-            <div class="form-group">
-
-                <label>
-
-                    Event Name
-
-                </label>
-
-                <input
-                    type="text"
-                    id="eventTitle"
-                    placeholder="Enter event name..."
-                    required>
-
-            </div>
-
-            <div class="form-group">
-
-                <label>
-
-                    Category
-
-                </label>
-
-                <select id="eventCategory">
-
-                    <option>Personal</option>
-                    <option>Household</option>
-                    <option>Shopping</option>
-                    <option>Maintenance</option>
-                    <option>Smart Home</option>
-
-                </select>
-
-            </div>
-
-            <div class="form-row">
-
-                <div class="form-group">
-
-                    <label>
-
-                        Date
-
-                    </label>
-
-                    <input
-                        type="date"
-                        id="eventDate"
-                        required>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label>
-
-                        Time
-
-                    </label>
-
-                    <input
-                        type="time"
-                        id="eventTime"
-                        required>
-
-                </div>
-
-            </div>
-
-            <div class="form-group">
-
-                <label>
-
-                    Description
-
-                </label>
-
-                <textarea
-                    id="eventDescription"
-                    rows="4"
-                    placeholder="Event description..."></textarea>
-
-            </div>
-
-            <div class="modal-buttons">
-
-                <button
-                    type="button"
-                    class="cancel-btn"
-                    id="cancelEvent">
-
-                    Cancel
-
-                </button>
-
-                <button
-                    type="submit"
-                    class="save-btn">
-
-                    <i class="fa-solid fa-floppy-disk"></i>
-
-                    Save Event
-
-                </button>
-
-            </div>
-
-        </form>
-
+        <div class="sync-option">
+            <h3><i class="fa-solid fa-link"></i> From your calendar's private link</h3>
+            <p>Google: Calendar settings &gt; your calendar &gt; <em>Secret address in iCal format</em>. iPhone/iCloud: share the calendar as a public link. Outlook: Settings &gt; Shared calendars &gt; Publish &gt; ICS link.</p>
+            <form id="icsLinkForm" class="link-row" novalidate>
+                <input type="url" id="icsUrl" maxlength="600" placeholder="https://calendar.google.com/calendar/ical/.../basic.ics" aria-label="Calendar link">
+                <button type="submit" class="save-btn">Import</button>
+            </form>
+            <label class="remember"><input type="checkbox" id="rememberLink" checked> Remember this link on this device and sync again each time I open the Schedule</label>
+            <div id="savedLinks"></div>
+        </div>
+        <p class="field-error" id="syncError" aria-live="assertive"></p>
+        <p class="sync-result" id="syncResult" aria-live="polite"></p>
     </div>
-
 </div>
 
-<!-- ==========================================
-        TOAST NOTIFICATIONS
-=========================================== -->
+<div id="loadingOverlay"><div class="loader"></div><p id="loadingText">Synchronising calendar...</p></div>
 
-<div id="toastContainer"></div>
-
-<!-- ==========================================
-        LOADING OVERLAY
-=========================================== -->
-
-<div id="loadingOverlay">
-
-    <div class="loader"></div>
-
-    <p>
-
-        Synchronising Calendar...
-
-    </p>
-
-</div>
 
 <script src="elara-config.js"></script>
-    <script src="elara-data.js"></script>
-    <script src="elara-theme.js"></script>
-    <script src="elara-common.js"></script>
+<script src="elara-pwa.js"></script>
+<script src="elara-data.js"></script>
+<script src="elara-theme.js"></script>
+<script src="elara-assistant.js"></script>
+<script src="elara-common.js"></script>
 <script src="dashboard-schedule.js"></script>
-
-</main>
-
-</div>
-
-
 </body>
-
 </html>
-

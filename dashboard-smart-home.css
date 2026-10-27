@@ -1994,3 +1994,52 @@ body.light-theme .cbi-box code{ background:rgba(0,0,0,.07); }
 /* three stat cards and three quick buttons now: fill the row evenly */
 .stats{ grid-template-columns:repeat(3,1fr) !important; }
 .quick-controls{ grid-template-columns:repeat(auto-fit,minmax(180px,1fr)) !important; }
+
+/* ===== additions: per-person energy, empty states ===== */
+.rooms-grid .smart-empty{ grid-column:1/-1; text-align:center; padding:40px 20px; }
+.smart-empty i{ font-size:32px; opacity:.6; display:block; margin-bottom:10px; }
+.muted{ opacity:.7; font-size:14px; }
+.person-energy{ display:grid; grid-template-columns:1fr auto; gap:6px 10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.07); }
+.person-energy small{ display:block; opacity:.65; font-size:12px; }
+.person-energy .bar{ grid-column:1/-1; height:6px; border-radius:3px; background:rgba(255,255,255,.07); overflow:hidden; }
+.person-energy .bar i{ display:block; height:100%; background:linear-gradient(90deg,#6C63FF,#6EE7F9); }
+.report-link{ display:inline-flex; gap:6px; align-items:center; margin-top:14px; color:#9d95ff; text-decoration:none; font-size:14px; }
+.report-link:hover{ text-decoration:underline; }
+.quick-controls{ flex-wrap:wrap; }
+.automation-item p{ max-width:340px; }
+.device-switch-disabled, .switch input:disabled + .slider{ opacity:.55; cursor:not-allowed; }
+body.light-theme .person-energy{ border-color:rgba(0,0,0,.07); }
+body.light-theme .person-energy .bar{ background:rgba(0,0,0,.06); }
+
+/* ===== real devices: banner, offline, edit, automations editor ===== */
+.smart-banner{ display:flex; gap:10px; align-items:center; padding:14px 18px; margin:0 0 22px; border-radius:16px; background:rgba(124,108,255,.12); border:1px solid rgba(124,108,255,.3); font-size:14px; line-height:1.5; }
+.smart-banner[hidden]{ display:none; }
+.smart-banner i{ color:#9d95ff; }
+.smart-banner code{ background:rgba(255,255,255,.08); padding:1px 6px; border-radius:6px; }
+.device.is-offline{ opacity:.6; }
+.device-edit{ width:30px; height:30px; border:none; border-radius:9px; background:rgba(255,255,255,.06); color:inherit; cursor:pointer; opacity:.7; transition:.2s; flex-shrink:0; }
+.device-edit:hover{ opacity:1; background:rgba(124,108,255,.25); }
+.device-right{ gap:10px; }
+.device-status.standby{ opacity:.8; }
+.chart-box{ position:relative; }
+.chart-empty{ position:absolute; inset:0; display:grid; place-items:center; opacity:.6; font-size:14px; text-align:center; padding:20px; }
+.chart-empty[hidden]{ display:none; }
+.ghost-btn{ border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:inherit; border-radius:10px; padding:7px 12px; font:inherit; font-size:13px; cursor:pointer; white-space:nowrap; }
+.ghost-btn:hover:not(:disabled){ background:rgba(124,108,255,.2); }
+.ghost-btn:disabled{ opacity:.45; cursor:not-allowed; }
+.panel-header:has(#addAutomation){ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.auto-actions{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.automation-item.incomplete p{ color:#FBBF24; }
+.automation-left p{ font-size:13px; }
+.quick-btn:disabled{ opacity:.4; cursor:not-allowed; }
+.auto-form{ max-height:88vh; overflow-y:auto; text-align:left; }
+.auto-form fieldset{ border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 12px; margin:10px 0 0; }
+.auto-form legend{ font-size:13px; opacity:.75; padding:0 6px; }
+.day-picks{ display:flex; flex-wrap:wrap; gap:6px; }
+.day-picks label, .dev-picks label{ display:flex !important; flex-direction:row !important; align-items:center; gap:6px; font-size:13px; margin:0 !important; }
+.day-picks label{ padding:6px 9px; border-radius:9px; background:rgba(255,255,255,.05); }
+.dev-picks{ display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; }
+.dev-picks small{ opacity:.6; }
+.day-picks input, .dev-picks input{ width:auto !important; margin:0 !important; accent-color:#7C6CFF; }
+body.light-theme .smart-banner{ background:rgba(124,108,255,.08); }
+body.light-theme .device-edit, body.light-theme .ghost-btn, body.light-theme .day-picks label{ background:rgba(0,0,0,.05); }
