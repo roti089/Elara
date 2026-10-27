@@ -1159,3 +1159,5 @@ nav a.active, nav a[aria-current="page"]{ color:#b49aff; }
 @media (max-width:768px){ .assistant-image #mascot-wrap{ width:240px; height:270px; } }
 @media (prefers-reduced-motion: reduce){ .reveal{ opacity:1 !important; transform:none !important; transition:none !important; } }
 .assistant{ overflow-x:clip; }
+/* keep the screenshot's real shape (the width/height in the HTML are only a hint while it loads) */
+.hero-right img{ height:auto; max-width:100%; object-fit:contain; }
