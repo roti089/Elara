@@ -57,14 +57,16 @@
     function shared(text, icon) { D.log(text, icon); }
 
     /* ---------- who may change whose status ---------- */
-    function canSetStatus(uid) { return uid === me().id || D.household.isOwner; }
+    /* everyone sets only their OWN status, and only for today or later */
+    function canSetStatus(uid, date) { return uid === me().id && (!date || date >= todayKey()); }
     function stateOf(date, uid) {
         var pres = D.presence.all()[uid];
         if (date === todayKey() && pres && pres.state === "away" && D.availability.on(date, uid) === "available") return "away";
         return D.availability.on(date, uid);
     }
     function setStatus(date, person, state) {
-        if (!canSetStatus(person.userId)) return UI.toast("Only the home owner can change someone else's status.", "error");
+        if (person.userId !== me().id) return UI.toast("Only " + person.name + " can change their own status.", "error");
+        if (date < todayKey()) return UI.toast("That day has already passed.", "error");
         D.availability.set(date, person.userId, state);
         shared((person.isMe ? "is now " : "marked " + person.name + " as ") + state + " on " + prettyDate(date), "fa-user-clock");
         if (!person.isMe) D.notify({ to: [person.userId], kind: "schedule", title: "Your status was changed", body: me().first + " marked you as " + state + " on " + prettyDate(date) + ".", href: "dashboard-schedule.html?date=" + date });
@@ -135,7 +137,7 @@
         var box = $("dayAvailability"), ppl = people(), roles = { owner: "Home Owner", adult: "Adult", member: "Member", guest: "Guest" };
         $("availDayLabel").textContent = (selectedKey === todayKey() ? "Today, " : "") + prettyDate(selectedKey);
         box.innerHTML = ppl.map(function (p) {
-            var st = stateOf(selectedKey, p.userId), editable = canSetStatus(p.userId);
+            var st = stateOf(selectedKey, p.userId), editable = canSetStatus(p.userId, selectedKey);
             return '<div class="member"><div class="member-info">' + avatarHTML(p) + "<div><h4>" + esc(p.name + (p.isMe ? " (you)" : "")) + "</h4><p>" + esc(roles[p.role] || p.role) + "</p></div></div>" +
                 '<div class="status-seg" role="group" aria-label="Status of ' + esc(p.name) + '">' + STATES.map(function (s) {
                     return '<button type="button" class="seg ' + s + (s === st ? " on" : "") + '" data-uid="' + esc(p.userId) + '" data-state="' + s + '" data-date="' + selectedKey + '"' +
@@ -156,7 +158,7 @@
             return '<div class="ag-row"><span class="ag-name">' + esc(p.isMe ? p.name + " (you)" : p.name) + "</span>" + days.map(function (d) {
                 var k = toKey(d), st = stateOf(k, p.userId);
                 return '<button type="button" class="ag-cell ' + st + '" data-uid="' + esc(p.userId) + '" data-date="' + k + '" data-cycle="1"' +
-                    (canSetStatus(p.userId) ? "" : " disabled") + ' title="' + esc(p.name + " • " + prettyDate(k) + ": " + st) + '" aria-label="' + esc(p.name + " " + prettyDate(k) + " " + st) + '">' + st.charAt(0).toUpperCase() + "</button>";
+                    (canSetStatus(p.userId, k) ? "" : " disabled") + ' title="' + esc(p.name + " • " + prettyDate(k) + ": " + st) + '" aria-label="' + esc(p.name + " " + prettyDate(k) + " " + st) + '">' + st.charAt(0).toUpperCase() + "</button>";
             }).join("") + "</div>";
         }).join("");
     }
@@ -285,11 +287,13 @@
         $("eventTitle").value = ev ? ev.title : "";
         $("eventCategory").value = ev ? (ev.category === "Imported" ? "Personal" : ev.category) : "Personal";
         $("eventDate").value = ev ? ev.date : (selectedKey < todayKey() ? todayKey() : selectedKey);
-        $("eventDate").min = ev ? "" : todayKey();
+        $("eventDate").min = ev && ev.date < todayKey() ? ev.date : todayKey();
+        $("eventDate").max = toKey(addDays(new Date(), 5 * 365));
         $("eventTime").value = ev ? ev.time : "09:00";
         $("eventDescription").value = ev ? ev.description || "" : "";
         $("eventRepeat").value = ""; $("eventRepeat").disabled = !!ev;
-        renderPeoplePicks(ev ? ev.involves || [] : []);
+        renderPeoplePicks(ev ? ev.involves || [] : [me().id]);
+        showErrors([]);
         $("eventModalTitle").textContent = ev ? "Edit Event" : "Add New Event";
         modal.classList.add("active"); document.body.style.overflow = "hidden";
         setTimeout(function () { $("eventTitle").focus(); }, 50);
@@ -301,25 +305,48 @@
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeModal(); closeSync(); } });
     $("eventDate").addEventListener("change", updateBusyWarning);
 
-    function validateEvent(v, isNew) {
-        if (v.title.length < 2 || v.title.length > 80) return "The event name must be 2 to 80 characters.";
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date) || isNaN(fromKey(v.date))) return "Choose a valid date.";
-        if (!/^\d{2}:\d{2}$/.test(v.time)) return "Choose a valid start time.";
-        if (isNew && (v.date + " " + v.time) < (todayKey() + " " + nowHM())) return "A new event can't start in the past.";
-        if (v.date > toKey(addDays(new Date(), 5 * 365))) return "That date is too far in the future.";
-        if (v.description.length > 500) return "The description can be at most 500 characters.";
-        var clash = events().filter(function (e) { return e.id !== editingId && e.date === v.date && e.time === v.time && e.title.toLowerCase() === v.title.toLowerCase(); });
-        if (clash.length) return "That event is already on the calendar.";
-        return null;
+    /* every field is checked; returns [{ field, msg }] */
+    function validateEvent(v, before) {
+        var errs = [], now = todayKey() + " " + nowHM();
+        function bad(field, msg) { errs.push({ field: field, msg: msg }); }
+        if (v.title.length < 2 || v.title.length > 80) bad("eventTitle", "Give the event a name of 2 to 80 characters.");
+        else if (!/[a-z0-9]/i.test(v.title) || /[<>]/.test(v.title)) bad("eventTitle", "The name needs letters or numbers, and no < or >.");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date) || isNaN(fromKey(v.date).getTime())) bad("eventDate", "Choose the date.");
+        else if (v.date < todayKey() && (!before || before.date !== v.date)) bad("eventDate", "That day has already passed. Choose today or a later day.");
+        else if (v.date > toKey(addDays(new Date(), 5 * 365))) bad("eventDate", "Choose a date within the next 5 years.");
+        if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v.time)) bad("eventTime", "Choose the start time.");
+        else if (/^\d{4}-\d{2}-\d{2}$/.test(v.date) && v.date === todayKey() && (v.date + " " + v.time) < now && (!before || before.date !== v.date || before.time !== v.time)) bad("eventTime", "That time has already passed today. Choose a later time.");
+        if (!v.involves.length) bad("eventPeople", "Tick who the event is for (at least one person).");
+        else {
+            var active = people().map(function (p) { return p.userId; });
+            if (v.involves.some(function (id) { return active.indexOf(id) < 0; })) bad("eventPeople", "Someone you ticked is no longer in the home.");
+        }
+        if (["Personal", "Household", "Shopping", "Maintenance", "Smart Home"].indexOf(v.category) < 0) bad("eventCategory", "Choose a category.");
+        if (v.description.length > 500) bad("eventDescription", "The description can be at most 500 characters.");
+        if (!errs.length) {
+            var clash = events().filter(function (e) { return e.id !== editingId && e.date === v.date && e.time === v.time && e.title.toLowerCase() === v.title.toLowerCase(); });
+            if (clash.length) bad("eventTitle", "That event is already on the calendar at that time.");
+        }
+        return errs;
     }
+    function showErrors(errs) {
+        ["eventTitle", "eventDate", "eventTime", "eventPeople", "eventCategory", "eventDescription"].forEach(function (id) { $(id).classList.remove("invalid"); $(id).removeAttribute("aria-invalid"); });
+        errs.forEach(function (e) { $(e.field).classList.add("invalid"); $(e.field).setAttribute("aria-invalid", "true"); });
+        $("eventError").innerHTML = errs.map(function (e) { return "\u2022 " + esc(e.msg); }).join("<br>");
+        if (errs.length) { var f = $(errs[0].field); (f.querySelector ? f.querySelector("input") || f : f).focus(); }
+    }
+    ["eventTitle", "eventDate", "eventTime", "eventDescription"].forEach(function (id) { $(id).addEventListener("input", function () { this.classList.remove("invalid"); }); });
+    $("eventPeople").addEventListener("change", function () { this.classList.remove("invalid"); });
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
         var v = { title: $("eventTitle").value.trim(), category: $("eventCategory").value, date: $("eventDate").value, time: $("eventTime").value,
                   description: $("eventDescription").value.trim(), repeat: $("eventRepeat").value,
                   involves: Array.prototype.map.call($("eventPeople").querySelectorAll("input:checked"), function (x) { return x.value; }) };
-        var err = validateEvent(v, editingId === null);
-        if (err) { $("eventError").textContent = err; return; }
+        var before = editingId !== null ? events().filter(function (x) { return x.id === editingId; })[0] : null;
+        var errs = validateEvent(v, before);
+        showErrors(errs);
+        if (errs.length) return;
         var list = events(), m = me();
         if (editingId !== null) {
             var before = list.filter(function (x) { return x.id === editingId; })[0];
@@ -511,7 +538,7 @@
     function importIcs(text, sourceName) {
         if (!/BEGIN:VCALENDAR/i.test(text)) throw new Error("That isn't a calendar (.ics) file.");
         var parsed = parseIcs(text).filter(function (e) { return e.start && e.summary && e.status !== "CANCELLED" && !e.recurrence; });
-        var from = addDays(new Date(), -30), to = addDays(new Date(), 365);
+        var from = new Date(), to = addDays(new Date(), 365);          // only events from now on: past events aren't added
         var list = events(), m = me(), added = 0, skipped = 0;
         var have = {};
         list.forEach(function (e) { if (e.uid) have[e.uid] = 1; have["t|" + e.title.toLowerCase() + "|" + e.date + "|" + e.time] = 1; });

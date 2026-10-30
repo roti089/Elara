@@ -36,5 +36,5 @@ window.ELARA_CONFIG = {
     icsEndpoint:    "https://shyvyrvxashetxnmosnd.supabase.co/functions/v1/elara-ics",       // calendar link import
 
     /* Public VAPID key for push notifications when Elara is closed.*/
-    vapidPublicKey: "BFTxNX8Yp0_DH1nfTklDDu4Qk_KKRPhC2yI8WNocwb-7GqE1G8p9solUi_9_YEwWTir2X5dYYesSnvFLyPP6cJo"
+    vapidPublicKey: "BCYIJWTBYmpgzkB-mX8UFomukqtoz5YWBZSAqAH3ZW6f3ukAGTowA6raEtr4SzHi8oL_TPYUXWhAZ2uHFeKh-5I"
 };

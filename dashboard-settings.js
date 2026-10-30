@@ -211,7 +211,18 @@
         var local = function () { if (C.notifySystem) C.notifySystem("Elara test", "Notifications work on this device.", "dashboard-settings.html#notifications", "elara-test"); };
         if (cfg.pushEndpoint && D.user) {
             D.callFunction(cfg.pushEndpoint, { action: "test" }).then(function (r) { toast(r && r.delivered ? "Test sent to " + r.delivered + " device(s)." : r && r.push === false ? "Saved to your bell. Pop-ups need the VAPID keys (README, step 6)." : "Test saved to your notifications.", "success"); })
-                .catch(function (e) { local(); toast("Server push isn't ready (" + e.message + "). Showed a local one instead.", "info"); })
+                .catch(function (e) {
+                    local();
+                    var missing = /failed to fetch|networkerror|load failed|404|not found/i.test(e.message || "") || e.status === 404;
+                    var noKeys = /vapid/i.test(e.message || "");
+                    UI.confirm({
+                        title: missing ? "Push isn't switched on yet" : noKeys ? "Push keys are missing" : "Push didn't work",
+                        message: (missing ? "The elara-push function isn't deployed in Supabase, so notifications only show while Elara is open. Deploy it by following README step 6 (it's free)."
+                                 : noKeys ? "The elara-push function is deployed, but its VAPID secrets aren't set. See README step 6."
+                                 : "The server said: " + e.message + ".") + " A test notification was shown on this device instead.",
+                        confirmText: "OK", cancelText: "Close", icon: "fa-bell", danger: false
+                    });
+                })
                 .then(function () { btn.disabled = false; });
         } else { local(); toast("Test shown. (Server push isn't set up, so this only works while Elara is open.)", "info"); btn.disabled = false; }
     });

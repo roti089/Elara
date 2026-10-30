@@ -186,15 +186,15 @@
                 <div class="form-group"><label for="eventTime">Start time</label><input type="time" id="eventTime" required></div>
             </div>
             <div class="form-group">
-                <label>Who is involved? <small>(they get a notification)</small></label>
-                <div id="eventPeople" class="people-picks"></div>
+                <label>Who is it for? <small>(tick at least one; they get a notification)</small></label>
+                <div id="eventPeople" class="people-picks" tabindex="-1"></div>
                 <p id="busyWarning" class="busy-warning" hidden></p>
             </div>
             <div class="form-group">
                 <label for="eventDescription">Description (optional)</label>
                 <textarea id="eventDescription" rows="3" maxlength="500" placeholder="Where, what to bring..."></textarea>
             </div>
-            <p class="field-error" id="eventError" aria-live="assertive"></p>
+            <p class="field-error" id="eventError" role="alert" aria-live="assertive"></p>
             <div class="modal-buttons">
                 <button type="button" class="cancel-btn" id="cancelEvent">Cancel</button>
                 <button type="submit" class="save-btn"><i class="fa-solid fa-floppy-disk"></i> Save Event</button>

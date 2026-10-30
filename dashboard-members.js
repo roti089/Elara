@@ -43,7 +43,7 @@
             var status = m.status === "pending" ? ["pending", "Invite sent"] : away ? ["away", "Away"] : ["online", "Home"];
             var avatar = m.avatar ? '<img src="' + esc(m.avatar) + '" alt="">' : '<div class="avatar-placeholder ' + COLORS[i % COLORS.length] + '">' + esc((m.name || "?").charAt(0).toUpperCase()) + "</div>";
             var acts = [];
-            if (m.status === "active" && (m.isMe || isOwner())) acts.push('<button type="button" class="mact" data-act="presence">' + (away ? '<i class="fa-solid fa-house"></i> Mark home' : '<i class="fa-solid fa-plane-departure"></i> Mark away') + "</button>");
+            if (m.status === "active" && m.isMe) acts.push('<button type="button" class="mact" data-act="presence">' + (away ? '<i class="fa-solid fa-house"></i> Mark home' : '<i class="fa-solid fa-plane-departure"></i> Mark away') + "</button>");
             if (isOwner() && m.role !== "owner") {
                 acts.push('<button type="button" class="mact" data-act="edit"><i class="fa-solid fa-sliders"></i> Access</button>');
                 if (m.status === "pending") acts.push('<button type="button" class="mact" data-act="resend"><i class="fa-solid fa-paper-plane"></i> Resend</button>');
@@ -89,7 +89,7 @@
         if (!m) return;
         var act = b.dataset.act;
         if (act === "presence") {
-            if (!m.isMe && !isOwner()) return;
+            if (!m.isMe) return UI.toast("Only " + m.name + " can mark themselves home or away.", "error");
             var pres = D.presence.all()[m.userId], away = pres && pres.state === "away";
             D.presence.set(m.userId, away ? "home" : "away");
             D.log((m.isMe ? "is now " : "marked " + m.name + " as ") + (away ? "home" : "away"), away ? "fa-house" : "fa-plane-departure");

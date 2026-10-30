@@ -173,28 +173,39 @@
                 { name: "assigneeId", label: "Assigned to (people in your home)", type: "select", value: defaultAssignee,
                   options: ppl.map(function (p) { return [p.userId, p.isMe ? p.name + " (you)" : p.name]; }) },
                 { name: "priority", label: "Priority", type: "select", value: t ? t.priority : "Medium", options: ["High", "Medium", "Low"] },
-                { name: "date", label: "Due date", type: "date", value: t ? t.date : todayKey(), required: true, min: t ? undefined : todayKey() },
-                { name: "time", label: "Due time", type: "time", value: t ? t.time : "17:00", required: true },
+                { name: "date", label: "Due date", type: "date", value: t ? t.date : todayKey(), required: true, min: t && t.date < todayKey() ? t.date : todayKey(), max: toKey(addDays(now(), 5 * 365)) },
+                { name: "time", label: "Due time", type: "time", value: t ? t.time : defaultTime(), required: true },
                 { name: "status", label: "Status", type: "select", value: t ? t.status : "Pending", options: ["Pending", "In Progress", "Completed"] },
                 { name: "progress", label: "Progress (%)", type: "number", value: t ? t.progress : 0, min: 0, max: 100, step: 5 }
             ],
             validate: function (v) {
-                if (v.title.length < 2 || v.title.length > 80) return "The title must be 2 to 80 characters.";
-                if (v.description.length > 500) return "Details can be at most 500 characters.";
-                if (!D.members.find(v.assigneeId) || D.members.find(v.assigneeId).status !== "active") return "Choose someone who is in your home.";
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date) || isNaN(new Date(v.date + "T00:00"))) return "Choose a valid due date.";
-                if (!/^\d{2}:\d{2}$/.test(v.time)) return "Choose a valid time.";
-                if (!t && (v.date + " " + v.time) < (todayKey() + " " + nowHM())) return "A new task can't be due in the past.";
-                if (v.date > toKey(addDays(now(), 5 * 365))) return "That due date is too far away.";
+                var nowKey = todayKey() + " " + nowHM(), moved = !t || t.date !== v.date || t.time !== v.time;
+                if (v.title.length < 2 || v.title.length > 80) return { field: "title", msg: "The title must be 2 to 80 characters." };
+                if (!/[a-z0-9]/i.test(v.title) || /[<>]/.test(v.title)) return { field: "title", msg: "The title needs letters or numbers, and no < or >." };
+                if (v.description.length > 500) return { field: "description", msg: "Details can be at most 500 characters." };
+                var who = D.members.find(v.assigneeId);
+                if (!who || who.status !== "active") return { field: "assigneeId", msg: "Choose someone who is in your home." };
+                if (["High", "Medium", "Low"].indexOf(v.priority) < 0) return { field: "priority", msg: "Choose a priority." };
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date) || isNaN(new Date(v.date + "T00:00").getTime())) return { field: "date", msg: "Choose the due date." };
+                if (moved && v.date < todayKey()) return { field: "date", msg: "That day has already passed. Choose today or a later day." };
+                if (v.date > toKey(addDays(now(), 5 * 365))) return { field: "date", msg: "Choose a due date within the next 5 years." };
+                if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v.time)) return { field: "time", msg: "Choose the due time." };
+                if (moved && (v.date + " " + v.time) <= nowKey) return { field: "time", msg: "That time has already passed today. Choose a later time." };
+                if (["Pending", "In Progress", "Completed"].indexOf(v.status) < 0) return { field: "status", msg: "Choose a status." };
+                if (!t && v.status === "Completed") return { field: "status", msg: "A new task can't start as completed." };
+                if (String(v.progress).trim() === "") return { field: "progress", msg: "Enter the progress (0 to 100)." };
                 var pr = Number(v.progress);
-                if (!isFinite(pr) || pr < 0 || pr > 100 || Math.round(pr) !== pr) return "Progress must be a whole number from 0 to 100.";
+                if (!isFinite(pr) || pr < 0 || pr > 100 || Math.round(pr) !== pr) return { field: "progress", msg: "Progress must be a whole number from 0 to 100." };
+                if (v.status === "Pending" && pr > 0) return { field: "progress", msg: "A pending task has 0% progress. Set the status to In Progress, or progress to 0." };
                 var dup = tasks().some(function (x) { return x.id !== editingId && x.status !== "Completed" && x.title.toLowerCase() === v.title.toLowerCase() && x.date === v.date; });
-                if (dup) return "There's already an open task with that title on that day.";
+                if (dup) return { field: "title", msg: "There's already an open task with that title on that day." };
                 return null;
             }
         }).then(function (v) { if (v) save(v, t); });
     }
 
+    /* new tasks default to 17:00, or the next full hour if 17:00 has passed */
+    function defaultTime() { var h = now().getHours(); return h < 17 ? "17:00" : (h >= 23 ? "23:59" : (h + 1 < 10 ? "0" : "") + (h + 1) + ":00"); }
     function save(v, t) {
         var list = tasks(), m = me(), assignee = D.members.find(v.assigneeId);
         var status = v.status, progress = status === "Completed" ? 100 : Math.max(0, Math.min(100, parseInt(v.progress, 10) || 0));

@@ -27,8 +27,8 @@
         if (/\btomorrow\b/.test(t)) return D.util.dayKey(D.util.addDays(now, 1));
         for (var i = 0; i < 7; i++) {
             if (new RegExp("\\b(on |this |next )?" + DAYS[i] + "\\b").test(t)) {
-                var diff = (i - now.getDay() + 7) % 7 || 7;
-                if (/\bnext\b/.test(t) && diff < 7) diff += 7;
+                var diff = (i - now.getDay() + 7) % 7;               // "friday" on a Friday = today
+                if (/\bnext\b/.test(t)) diff += diff === 0 ? 7 : (diff < 7 && /\bnext week\b/.test(t) ? 7 : 0);
                 return D.util.dayKey(D.util.addDays(now, diff));
             }
         }
@@ -305,7 +305,14 @@
                 if (!who) return "I couldn't find " + cap(fm[1]) + " in your home. Tasks can only go to members: " + listify(D.members.active().map(function (x) { return x.name; })) + ".";
                 assignee = who; rest = rest.replace(fm[0], "");
             }
-            var date = parseDay(rest) || today(), time = parseTime(rest) || "12:00", title = cap(stripWhen(rest));
+            var date = parseDay(rest) || today(), saidTime = parseTime(rest), time = saidTime || "12:00", title = cap(stripWhen(rest));
+            var nowD = new Date(), nowHM = (nowD.getHours() < 10 ? "0" : "") + nowD.getHours() + ":" + (nowD.getMinutes() < 10 ? "0" : "") + nowD.getMinutes();
+            if (date < today()) return "That day has already passed. Give a day from today on.";
+            if (date === today() && time <= nowHM) {
+                if (saidTime) return time + " has already passed today. Say a later time, or “tomorrow at " + time + "”.";
+                var nh = Math.min(23, nowD.getHours() + 1); time = (nh < 10 ? "0" : "") + nh + ":00";        // no time given: the next full hour
+                if (nowD.getHours() >= 23) { date = D.util.dayKey(D.util.addDays(nowD, 1)); time = "09:00"; }
+            }
             if (title.length < 2 || title.length > 80) return "Tell me the task in 2 to 80 characters, e.g. “add task clean the garage tomorrow at 10”.";
             var all = D.tasks.all(), meNow = D.me();
             all.unshift({ id: Date.now(), title: title, description: "Added by Elara AI.", priority: "Medium", assigneeId: assignee.userId, assignee: assignee.name,
@@ -363,8 +370,10 @@
             var state = m[1].toLowerCase() === "free" ? "available" : m[1].toLowerCase();
             var person = m[3] ? findPerson(m[3]) : D.members.find(D.me().id);
             if (!person) return "I couldn't find " + cap(m[3]) + " in your home.";
-            if (!person.isMe && !D.household.isOwner) return "Only the home owner can change someone else's status.";
+            if (!person.isMe) return "Only " + person.name + " can change their own status. Ask them to set it on the Schedule page.";
             var day = parseDay(m[2]) || today();
+            if (day < today()) return "That day has already passed.";
+            if (!D.can("schedule")) return "You don't have access to the schedule.";
             D.availability.set(day, person.userId, state);
             D.log((person.isMe ? "is" : "marked " + person.name + " as") + " " + state + " on " + day, "fa-user-clock");
             return (person.isMe ? "You're" : person.name + " is") + " now " + state + " on " + (day === today() ? "today" : day) + ".";

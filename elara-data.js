@@ -730,12 +730,17 @@
 
     /* ----- presence (home / away) and day-by-day availability ----- */
     function presence() { return load("elaraPresence", {}); }
+    /* people set their OWN home/away and busy/away/available, never someone else's */
     function setPresence(uid, state) {
-        var p = presence(); p[uid] = { state: state, t: Date.now(), by: me().id }; save("elaraPresence", p);
+        if (uid !== me().id) return false;
+        var p = presence(); p[uid] = { state: state === "away" ? "away" : "home", t: Date.now(), by: me().id }; save("elaraPresence", p);
+        return true;
     }
     function availability() { return load("elaraAvailability", {}); }
     function availabilityOn(date, uid) { var a = availability(); return (a[date] && a[date][uid]) || "available"; }
     function setAvailability(date, uid, state) {
+        if (uid !== me().id || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date < dayKey()) return false;
+        if (["available", "busy", "away"].indexOf(state) < 0) return false;
         var a = availability(), cutoff = dayKey(addDays(new Date(), -60));
         Object.keys(a).forEach(function (d) { if (d < cutoff) delete a[d]; });
         a[date] = a[date] || {};

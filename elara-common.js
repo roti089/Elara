@@ -222,7 +222,13 @@
                 var values = {};
                 opts.fields.forEach(function (f) { var el = form.elements[f.name]; values[f.name] = el ? String(el.value).trim() : ""; });
                 var err = opts.validate ? opts.validate(values) : null;
-                if (err) { form.querySelector(".eui-err").textContent = err; return; }
+                Array.prototype.forEach.call(form.querySelectorAll(".invalid"), function (el) { el.classList.remove("invalid"); el.removeAttribute("aria-invalid"); });
+                if (err) {
+                    var msg = typeof err === "string" ? err : err.msg, el = typeof err === "object" && err.field ? form.elements[err.field] : null;
+                    form.querySelector(".eui-err").textContent = msg;
+                    if (el) { el.classList.add("invalid"); el.setAttribute("aria-invalid", "true"); el.focus(); }
+                    return;
+                }
                 close(values);
             });
         });

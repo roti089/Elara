@@ -3337,3 +3337,9 @@ body.light-theme .link-row input{ background:#fff; color:#17182b; border-color:r
 .view-btn{ border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--text); border-radius:12px; padding:8px 14px; font:inherit; font-size:13px; cursor:pointer; transition:var(--transition); }
 .view-btn:hover{ background:rgba(124,108,255,.2); }
 body.light-theme .view-btn{ background:#fff; color:#17182b; border-color:rgba(0,0,0,.1); }
+/* the bell's red dot is drawn by elara-common.js only when there is something unread */
+.top-actions button:first-of-type::after{ content:none !important; display:none !important; }
+.modal input.invalid, .modal select.invalid, .modal textarea.invalid{ border-color:var(--red) !important; box-shadow:0 0 0 3px rgba(251,113,133,.15); }
+.people-picks.invalid{ outline:2px solid var(--red); outline-offset:4px; border-radius:12px; }
+.field-error{ line-height:1.6; }
+.ag-cell:disabled{ opacity:.45; }
