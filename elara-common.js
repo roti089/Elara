@@ -458,7 +458,14 @@
         document.body.appendChild(panel);
         var r = anchor.getBoundingClientRect();
         panel.style.top = (r.bottom + 10) + "px";
-        panel.style.right = Math.max(12, window.innerWidth - r.right) + "px";
+        if (window.innerWidth <= 600) {                       // phones: use the full width so nothing is cut off
+            panel.style.left = "12px"; panel.style.right = "12px"; panel.style.width = "auto";
+        } else {
+            var w = panel.offsetWidth || 340;
+            var right = Math.max(12, window.innerWidth - r.right);
+            if (window.innerWidth - right - w < 12) right = Math.max(12, window.innerWidth - w - 12);
+            panel.style.right = right + "px";
+        }
         // opening the panel marks everything as read
         var sids = items.filter(function (n) { return n.sid && n.unread; }).map(function (n) { return n.sid; });
         if (sids.length && D) D.notifications.markRead(sids);

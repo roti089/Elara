@@ -421,3 +421,11 @@ body{ overflow-x:hidden; }
     body .quick-controls{ grid-template-columns:repeat(2, 1fr) !important; }
     .elara-mobile-nav span{ font-size:10px; }
 }
+
+/* notifications panel on phones: full width, list fits above the bottom bar */
+@media (max-width:600px){
+    #elaraNotifPanel{ left:12px !important; right:12px !important; width:auto !important; max-width:none; }
+    #elaraNotifPanel .enp-list{ max-height:calc(100vh - 260px); max-height:calc(100dvh - 260px); -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+    #elaraNotifPanel .enp-text{ min-width:0; }
+    #elaraNotifPanel .enp-text small{ overflow-wrap:anywhere; }
+}

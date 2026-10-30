@@ -7,7 +7,7 @@
    Pages: network first (always the newest version when online), cached copy when offline.
    Scripts, styles, icons: also network first, cached copy when offline.
    Supabase, weather and other websites are never cached (your data always comes live). */
-var CACHE = "elara-v5";   // change this number after updating files so phones fetch the new version
+var CACHE = "elara-v6";   // change this number after updating files so phones fetch the new version
 var SHELL = [
     "dashboard-content.html", "dashboard-tasks.html", "dashboard-shopping.html", "dashboard-schedule.html",
     "dashboard-smart-home.html", "dashboard-analytics.html", "dashboard-reports.html", "dashboard-members.html",
