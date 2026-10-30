@@ -130,9 +130,51 @@
     function buildMenu() {
         var menu = document.querySelector(".sidebar .menu");
         if (!menu) return;
-        menu.innerHTML = PAGES.filter(function (p) { return canSee(p[3]); }).map(function (p) {
+        var pages = PAGES.filter(function (p) { return canSee(p[3]); });
+        menu.innerHTML = pages.map(function (p) {
             return '<li' + (p[1] === PAGE ? ' class="active"' : "") + '><a href="' + p[1] + '"><i class="fa-solid ' + p[2] + '"></i><span>' + p[0] + "</span></a></li>";
         }).join("");
+        buildMobileNav(pages);
+    }
+    /* phones: a bottom bar with 4 main tabs + "More" (a sheet with the rest), so nothing is hidden off the edge */
+    function buildMobileNav(pages) {
+        var nav = document.getElementById("elaraMobileNav");
+        if (!nav) {
+            nav = document.createElement("nav");
+            nav.id = "elaraMobileNav"; nav.className = "elara-mobile-nav"; nav.setAttribute("aria-label", "Main");
+            document.body.appendChild(nav);
+            var sheet = document.createElement("div");
+            sheet.id = "elaraMoreSheet"; sheet.className = "elara-more-sheet"; sheet.hidden = true;
+            document.body.appendChild(sheet);
+            sheet.addEventListener("click", function (e) {
+                if (e.target === sheet || e.target.closest("[data-close-more]")) closeMore();
+                if (e.target.closest("[data-more-logout]")) { closeMore(); var l = document.querySelector(".sidebar .logout"); if (l) l.click(); }
+            });
+            document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMore(); });
+        }
+        var order = ["dashboard-content.html", "dashboard-tasks.html", "dashboard-shopping.html", "dashboard-schedule.html", "dashboard-smart-home.html"];
+        var main = order.map(function (f) { return pages.filter(function (p) { return p[1] === f; })[0]; }).filter(Boolean).slice(0, 4);
+        var rest = pages.filter(function (p) { return main.indexOf(p) < 0; });
+        var inRest = rest.some(function (p) { return p[1] === PAGE; });
+        nav.innerHTML = main.map(function (p) {
+            return '<a href="' + p[1] + '"' + (p[1] === PAGE ? ' class="active" aria-current="page"' : "") + '><i class="fa-solid ' + p[2] + '"></i><span>' + (p[0] === "Dashboard" ? "Home" : p[0]) + "</span></a>";
+        }).join("") + '<button type="button" id="elaraMoreBtn"' + (inRest ? ' class="active"' : "") + ' aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-grip"></i><span>More</span></button>';
+        document.getElementById("elaraMoreSheet").innerHTML = '<div class="ems-box" role="dialog" aria-modal="true" aria-label="More pages"><div class="ems-grab"></div><div class="ems-grid">' +
+            rest.map(function (p) { return '<a href="' + p[1] + '"' + (p[1] === PAGE ? ' class="active"' : "") + '><i class="fa-solid ' + p[2] + '"></i><span>' + p[0] + "</span></a>"; }).join("") +
+            '<button type="button" data-more-logout><i class="fa-solid fa-right-from-bracket"></i><span>Log out</span></button></div>' +
+            '<button type="button" class="ems-close" data-close-more>Close</button></div>';
+        document.getElementById("elaraMoreBtn").addEventListener("click", openMore);
+    }
+    function openMore() {
+        var s = document.getElementById("elaraMoreSheet"); if (!s) return;
+        s.hidden = false; requestAnimationFrame(function () { s.classList.add("open"); });
+        document.getElementById("elaraMoreBtn").setAttribute("aria-expanded", "true");
+        var first = s.querySelector("a,button"); if (first) first.focus();
+    }
+    function closeMore() {
+        var s = document.getElementById("elaraMoreSheet"); if (!s || s.hidden) return;
+        s.classList.remove("open"); setTimeout(function () { s.hidden = true; }, 200);
+        var b = document.getElementById("elaraMoreBtn"); if (b) b.setAttribute("aria-expanded", "false");
     }
     function applyAccess() {
         var area = pageArea(PAGE);

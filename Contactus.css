@@ -607,3 +607,8 @@ html,body{ overflow-x:hidden; }
     .Contact-box2{ grid-template-columns:1fr; padding:22px; }
     .Contact-box h1{ font-size:30px; }
 }
+@media (max-width:600px){
+    .Contact-box2{ grid-template-columns:minmax(0,1fr) !important; padding:18px; }
+    .Contact-box2 > div{ grid-column:1 !important; min-width:0; max-width:100%; box-sizing:border-box; }
+    .Contact-container{ max-width:100%; box-sizing:border-box; }
+}
