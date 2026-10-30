@@ -78,8 +78,9 @@
     function rowHTML(i) {
         var nm = esc(i.name), edit = canEdit();
         return '<div class="shopping-item" data-id="' + esc(i.id) + '"><div class="item-info"><i class="fa-solid ' + esc(i.icon || iconFor(i.category)) + '"></i>' +
-            "<div><h3>" + nm + (i.qty > 1 ? ' <small>×' + esc(i.qty) + "</small>" : "") + "</h3><p>" + esc(i.details || i.category) + (i.byName ? " • added by " + esc(i.byName) : "") + "</p></div></div>" +
-            '<div class="item-right"><span class="price">' + money(i.price * (i.qty || 1)) + "</span>" +
+            "<div><h3>" + nm + (i.qty > 1 ? ' <small>×' + esc(i.qty) + "</small>" : "") + "</h3><p>" + esc([i.details, i.category].filter(Boolean).join(" • ")) + (i.byName ? " • added by " + esc(i.byName) : "") + "</p></div></div>" +
+            '<div class="item-right"><span class="price' + (i.price ? "" : " no-price") + '"' + (i.price ? "" : ' title="No price yet: press the pencil to add one"') + ">" +
+            (i.price ? money(i.price * (i.qty || 1)) + (i.qty > 1 ? "<small>" + money(i.price) + " each</small>" : "") : "No price") + "</span>" +
             (edit ? '<button type="button" class="buy-btn" data-act="buy">Bought</button><div class="item-actions">' +
                 '<button type="button" class="icon-act" data-act="edit" title="Edit" aria-label="Edit ' + nm + '"><i class="fa-solid fa-pen"></i></button>' +
                 '<button type="button" class="icon-act danger" data-act="delete" title="Delete" aria-label="Delete ' + nm + '"><i class="fa-solid fa-trash"></i></button></div>' : "") +

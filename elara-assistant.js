@@ -170,23 +170,125 @@
         }
         return t;
     }
+    /* ---------------- shopping: understand quantity, size, price, category and shop ----------------
+       "add 2 litres of milk for R25", "add 3 bread at R18 each", "washing powder 2kg, cleaning, R89",
+       "add 6 eggs and toothpaste from Clicks" */
+    var SHOP_CATS = ["Groceries", "Cleaning", "Household", "Electronics", "Personal Care"];
+    var CAT_WORDS = [
+        ["Cleaning", /\b(clean(?:er|ing)?|detergent|washing (?:powder|liquid)|dish(?:washing)?|bleach|jik|handy andy|sunlight|domestos|mr muscle|sponge|scourer|mop|fabric softener|sta-?soft|surface spray|toilet cleaner|vim|ariel|omo|skip)\b/i],
+        ["Personal Care", /\b(toothpaste|toothbrush|shampoo|conditioner|deodorant|roll-?on|body ?wash|lotion|vaseline|razor|shav(?:er|ing)|sanitary|pads|tampons|soap bar|bath soap|lip ?balm|face wash|sunscreen|plasters|medicine|panado|vitamins?)\b/i],
+        ["Electronics", /\b(batter(?:y|ies)|charger|cable|adapter|earphones|headphones|extension (?:cord|lead)|multi-?plug|usb|power ?bank|remote)\b/i],
+        ["Household", /\b(toilet (?:paper|roll)|tissues?|serviettes?|paper towels?|light ?bulbs?|bulbs?|candles?|matches|foil|cling ?wrap|bin bags?|refuse bags?|black bags?|plastic bags?|plates|cups|batteries for|gas refill|firelighters|charcoal|wood)\b/i]
+    ];
+    var NUM_WORDS = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, dozen: 12, "a dozen": 12, "half a dozen": 6, couple: 2, "a couple of": 2, "a few": 3 };
+    var SIZE_UNIT = /(\d+(?:[.,]\d+)?)\s*(kg|kilos?|kilograms?|g|grams?|l|lt|litres?|liters?|ml|millilitres?)\b/i;
+    var PACKS = /\b(bottles?|packs?|packets?|bags?|boxes?|loa(?:f|ves)|cartons?|cans?|tins?|tubs?|jars?|rolls?|bunch(?:es)?|trays?|dozen)\b/i;
+    var SHOPS = /\b(?:from|at)\s+(checkers(?: hyper)?|woolworths|woolies|pick ?n ?pay|pnp|spar|shoprite|makro|game|clicks|dis-?chem|food lover'?s(?: market)?|ok foods|boxer|usave|u-save)\b/i;
+    function money(v) { return "R" + v.toFixed(2); }
+    function singular(w) {
+        w = w.toLowerCase();
+        if (/ves$/.test(w)) return w.replace(/ves$/, "f");                 // loaves -> loaf
+        if (/(ches|shes|xes|sses)$/.test(w)) return w.replace(/es$/, "");  // bunches, boxes
+        return w.replace(/s$/, "");                                         // bottles, cans, rolls
+    }
+    function unitLabel(u) {
+        u = u.toLowerCase();
+        return /^k/.test(u) ? "kg" : /^g/.test(u) ? "g" : /^m/.test(u) ? "ml" : "L";
+    }
+    function guessCategory(name) {
+        for (var i = 0; i < CAT_WORDS.length; i++) if (CAT_WORDS[i][1].test(name)) return CAT_WORDS[i][0];
+        return "Groceries";
+    }
+    function parseItem(seg) {
+        var s = " " + String(seg).trim() + " ", it = { qty: null, price: null, each: false, total: false, category: null, size: "", pack: "", shop: "" };
+        // price: "R25", "R 25,50", "25 rand", "for R50", "at R18 each", "R18 a piece"
+        var pm = s.match(/(?:\b(?:for|at|@|costs?|costing|price(?:d)?(?: at)?|about|around)\s+)?\bR\s?(\d{1,6}(?:[.,]\d{1,2})?)\b(\s*(?:each|ea|a piece|per (?:item|one|piece|unit)|apiece))?(\s*(?:in total|total|altogether|for (?:all|both|the lot)))?/i) ||
+                 s.match(/(?:\b(?:for|at|costs?|about|around)\s+)?\b(\d{1,6}(?:[.,]\d{1,2})?)\s*rand\b(\s*(?:each|a piece|apiece))?(\s*(?:in total|total|altogether))?/i);
+        if (pm) { it.price = Number(pm[1].replace(",", ".")); it.each = !!pm[2]; it.total = !!pm[3] || /\bfor\s/i.test(pm[0]) && !pm[2]; s = s.replace(pm[0], " "); }
+        // category: "in cleaning", "under personal care", "category household", or the word on its own
+        var cm = s.match(/\b(?:in|under|as|into|category|for)\s+(?:the\s+)?(groceries|grocery|cleaning|household|electronics|personal care)(?:\s+(?:category|section))?\b/i) ||
+                 s.match(/(?:^|[\s,])(groceries|cleaning|household|electronics|personal care)\s*$/i);
+        if (cm) { var c = cm[1].toLowerCase(); it.category = SHOP_CATS.filter(function (x) { return x.toLowerCase() === c || (c === "grocery" && x === "Groceries"); })[0]; s = s.replace(cm[0], " "); }
+        var sh = s.match(SHOPS); if (sh) { it.shop = cap(sh[1].replace(/^woolies$/i, "Woolworths").replace(/^pnp$/i, "Pick n Pay")); s = s.replace(sh[0], " "); }
+        s = s.replace(/^\s*(?:some|more|another|the)\s+/i, " ").trim();
+        // quantity at the start: "3 bread", "2 x milk", "three cans of beans", "a dozen eggs"
+        var qm = s.match(/^(\d{1,2})\s*(?:x|×)\s*/i) || s.match(/^(half a dozen|a dozen|a couple of|a few|a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|dozen|\d{1,2})\s+(?![a-z]*\s*(?:kg|g|l|ml)\b)/i);
+        if (qm && !/^\d+(?:[.,]\d+)?\s*(?:kg|kilos?|g|grams?|l|lt|litres?|liters?|ml)\b/i.test(s)) {
+            var w = qm[1].toLowerCase(); it.qty = NUM_WORDS[w] || Number(w); s = s.slice(qm[0].length);
+        }
+        var tail = s.match(/\s+(?:x|×)\s*(\d{1,2})$/i) || s.match(/,?\s+(?:qty|quantity)\s*(\d{1,2})$/i) || s.match(/\s+(\d{1,2})\s+(?:of them|pieces|items)$/i);
+        if (tail) { it.qty = Number(tail[1]); s = s.slice(0, tail.index); }
+        // size: "2 litres of milk", "milk 2L", "1kg sugar"
+        var sm = s.match(SIZE_UNIT);
+        if (sm) { it.size = sm[1].replace(",", ".") + " " + unitLabel(sm[2]); s = s.replace(sm[0], " "); }
+        // containers: "3 bottles of juice" -> qty 3, "bottle"
+        var pk = s.match(new RegExp("^\\s*(?:of\\s+)?" + PACKS.source + "\\s+of\\s+", "i")) || s.match(new RegExp("^\\s*" + PACKS.source + "\\s+", "i"));
+        if (pk) { it.pack = singular(pk[1]); if (it.pack === "dozen") { it.qty = (it.qty || 1) * 12; it.pack = ""; } s = s.slice(pk[0].length); }
+        // a count inside one pack: "toilet paper 18 rolls", "nappies 60 pack", "teabags 100s"
+        var inPack = s.match(/\s+(\d{1,3})\s*(rolls?|pack|pk|pieces|pcs|bags|sachets|tablets|s)\b\s*$/i);
+        if (inPack) { it.size = (it.size ? it.size + " \u2022 " : "") + inPack[1] + " " + (/^(pk|pack)$/i.test(inPack[2]) ? "pack" : /^s$/i.test(inPack[2]) ? "pack" : inPack[2].toLowerCase().replace(/^pcs$/, "pieces")); s = s.slice(0, inPack.index); }
+        s = s.replace(/^\s*of\s+/i, "").replace(/\s+(?:please|for me)$/i, "").replace(/[,.;:]+$/g, "").replace(/\s+/g, " ").trim();
+        it.name = cap(s).slice(0, 60);
+        if (!it.qty) it.qty = 1;
+        it.qty = Math.max(1, Math.min(99, Math.round(it.qty)));
+        if (it.price != null) {
+            if (!isFinite(it.price) || it.price < 0 || it.price > 100000) it.price = null;
+            else if (it.total && !it.each && it.qty > 1) it.price = Math.round(it.price / it.qty * 100) / 100;
+        }
+        if (!it.category) it.category = guessCategory(it.name + " " + it.pack);
+        return it;
+    }
+    /* "milk 2L, R25" is one item with extra details, "milk, bread and eggs" is three items */
+    function splitItems(text) {
+        var parts = String(text).split(/\s*,\s*|\s+and\s+|\s*&\s*|\s+plus\s+/i).filter(Boolean), out = [];
+        parts.forEach(function (p) {
+            var onlyExtra = /^(?:(?:for|at|@|costs?|about)\s+)?(?:R\s?\d|\d+(?:[.,]\d+)?\s*rand)/i.test(p) ||
+                            /^(?:in\s+|under\s+|category\s+)?(?:groceries|grocery|cleaning|household|electronics|personal care)(?:\s+category)?$/i.test(p) ||
+                            /^\d+(?:[.,]\d+)?\s*(?:kg|g|l|ml|litres?|liters?)$/i.test(p) || /^(?:x|×)\s*\d+$/i.test(p) || /^(?:from|at)\s+[a-z]/i.test(p) && SHOPS.test(p) ||
+                            /^(?:each|a piece|in total|total)$/i.test(p);
+            if (onlyExtra && out.length) out[out.length - 1] += " " + p; else out.push(p);
+        });
+        return out.slice(0, 10);
+    }
     function addShopping(text) {
         if (!D.can("shopping", "edit")) return noEdit("Shopping");
-        var names = String(text).split(/\s*,\s*|\s+and\s+|\s*&\s*/i).map(function (x) {
-            return cap(x.replace(/^(?:some|a|an|the|more|another)\s+/i, "").replace(/^(?:\d+\s+)?(?:bottles?|packs?|bags?|boxes?|loaves?|cartons?)\s+of\s+/i, "").trim()).slice(0, 60);
-        }).filter(function (x) { return x.length >= 2 && /[a-z]/i.test(x); }).slice(0, 10);
-        if (!names.length) return "What should I add to the shopping list?";
-        var items = D.util.load("elaraShoppingItems", []), added = [], already = [];
-        names.forEach(function (name, i) {
-            if (items.some(function (x) { return norm(x.name) === norm(name); })) { already.push(name); return; }
-            items.push({ id: Date.now() + i, name: name, details: "Added by voice / Elara", price: 0, qty: 1, category: "Groceries", status: "Pending", icon: "fa-cart-shopping", by: D.me().id, byName: D.me().first, addedAt: Date.now() });
-            added.push(name);
+        var parsed = splitItems(text).map(parseItem).filter(function (x) { return x.name.length >= 2 && /[a-z]/i.test(x.name); });
+        if (!parsed.length) return "What should I add to the shopping list?";
+        var items = D.util.load("elaraShoppingItems", []), done = [], updated = [], already = [], m = D.me();
+        parsed.forEach(function (p, i) {
+            var details = [p.size, p.pack && !p.size ? p.pack : "", p.shop].filter(Boolean).join(" • ");
+            var ex = items.filter(function (x) { return norm(x.name) === norm(p.name); })[0];
+            if (ex) {                                   // already on the list: fill in what was said
+                var said = p.qty > 1 || p.price != null || !!details || /\b(groceries|cleaning|household|electronics|personal care)\b/i.test(text);
+                if (!said) { already.push(ex.name); return; }
+                if (p.qty > 1 || /^(1|one|a|an)\b/i.test(text)) ex.qty = p.qty;
+                if (p.price != null) ex.price = p.price;
+                if (details) ex.details = details;
+                if (p.category) { ex.category = p.category; ex.icon = iconForCat(p.category); }
+                ex.updatedAt = Date.now(); ex.updatedBy = m.id;
+                updated.push(describe(ex));
+                return;
+            }
+            var item = { id: Date.now() + i, name: p.name, details: details, price: p.price != null ? p.price : 0, qty: p.qty, category: p.category,
+                         status: "Pending", icon: iconForCat(p.category), by: m.id, byName: m.first, addedAt: Date.now(), priceUnknown: p.price == null || undefined };
+            items.push(item); done.push(describe(item));
         });
-        if (added.length) {
-            D.util.save("elaraShoppingItems", items); D.log("added " + listify(added) + " to the shopping list", "fa-cart-shopping");
-            D.notify({ to: "household", kind: "shopping", title: "Added to the shopping list", body: D.me().first + " added " + listify(added) + ".", href: "dashboard-shopping.html" });
+        D.util.save("elaraShoppingItems", items);
+        if (done.length) {
+            D.log("added " + listify(parsed.filter(function (p) { return done.some(function (d) { return d.indexOf(p.name) === 0; }); }).map(function (p) { return p.name; })) + " to the shopping list", "fa-cart-shopping");
+            D.notify({ to: "household", kind: "shopping", title: "Added to the shopping list", body: m.first + " added " + listify(done) + ".", href: "dashboard-shopping.html" });
         }
-        return (added.length ? "Added " + listify(added) + " to the shopping list." : "") + (already.length ? (added.length ? " " : "") + listify(already) + (already.length === 1 ? " is" : " are") + " already on the shopping list." : "");
+        var missingPrice = parsed.some(function (p) { return p.price == null; });
+        return (done.length ? "Added " + listify(done) + "." : "") + (updated.length ? (done.length ? " " : "") + "Updated " + listify(updated) + "." : "") +
+               (already.length ? ((done.length || updated.length) ? " " : "") + listify(already) + (already.length === 1 ? " is" : " are") + " already on the shopping list." : "") +
+               (missingPrice && done.length ? " Say the price any time, e.g. “" + parsed.filter(function (p) { return p.price == null; })[0].name.toLowerCase() + " R25”." : "");
+    }
+    function iconForCat(c) { return c === "Cleaning" ? "fa-bottle-water" : c === "Electronics" ? "fa-plug" : c === "Personal Care" ? "fa-pump-soap" : c === "Household" ? "fa-house" : "fa-cart-shopping"; }
+    function describe(x) {
+        var bits = [];
+        if (x.details) bits.push(x.details);
+        if (x.price) bits.push(money(x.price) + (x.qty > 1 ? " each" : ""));
+        return (x.qty > 1 ? x.qty + " × " : "") + x.name + (bits.length ? " (" + bits.join(", ") + ")" : "") + " in " + x.category;
     }
 
     function local(raw) {
@@ -239,6 +341,12 @@
             if (!d) return "I couldn't find a device called “" + target + "”.";
             return D.devices.switch(d.id, on).then(function () { return d.name + " (" + d.room + ") is now " + (on ? "on" : "off") + "."; },
                 function (e) { return "I couldn't switch " + d.name + ": " + e.message; });
+        }
+        // change an item already on the list: "set the price of bread to R18", "milk is R25 each", "eggs costs R60"
+        if ((m = raw.match(/^(?:set|change|update)\s+(?:the\s+)?(?:price|cost)\s+(?:of|for)\s+(?:the\s+)?(.+?)\s+(?:to|at|=)\s+(.+)$/i)) ||
+            (m = raw.match(/^(?:the\s+)?(.+?)\s+(?:is|are|costs?|was|were)\s+(R\s?\d.*|\d+(?:[.,]\d{1,2})?\s*rand.*)$/i))) {
+            var onList = D.util.load("elaraShoppingItems", []).some(function (x) { return norm(x.name) === norm(m[1]); });
+            if (onList) return addShopping(m[1] + " " + m[2]);
         }
         // shopping list: "add juice", "add bread and milk to the list", "we need eggs", "buy sugar", "we're out of coffee"
         if ((m = raw.match(/^(?:add|put)\s+(.+?)\s+(?:to|on|onto)\s+(?:my\s+|the\s+|our\s+)?(?:shopping|grocery|groceries)?\s*(?:list|basket|cart)$/i)) ||

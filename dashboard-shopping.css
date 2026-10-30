@@ -1835,3 +1835,5 @@ body.light-theme .icon-act { background: rgba(0,0,0,.06); color: #17182b; }
 .meal-ideas { padding: 14px 16px; border-radius: 14px; background: rgba(108,99,255,.08); border: 1px solid rgba(108,99,255,.22); font-size: 14px; }
 .meal-ideas ul { margin: 8px 0 0 18px; display: flex; flex-direction: column; gap: 8px; }
 .meal-ideas small { color: var(--text2); }
+.shopping-item .price small{ display:block; font-size:11px; opacity:.6; font-weight:400; text-align:right; }
+.shopping-item .price.no-price{ opacity:.55; font-size:13px; font-weight:500; }
