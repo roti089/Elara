@@ -73,6 +73,7 @@
                 <button type="button" class="settings-nav-item" data-section="smart-home"><i class="fa-solid fa-house-signal"></i><span>Smart Home</span></button>
                 <button type="button" class="settings-nav-item" data-section="security"><i class="fa-solid fa-shield-halved"></i><span>Security</span></button>
                 <button type="button" class="settings-nav-item" data-section="backup"><i class="fa-solid fa-cloud-arrow-up"></i><span>Backup &amp; Restore</span></button>
+                <button type="button" class="settings-nav-item" data-section="export"><i class="fa-solid fa-file-csv"></i><span>Export Data</span></button>
                 <button type="button" class="settings-nav-item" data-section="appearance"><i class="fa-solid fa-palette"></i><span>Appearance</span></button>
             </aside>
             <div class="settings-content">
@@ -149,11 +150,12 @@
                         <div class="panel-header"><div><h2>Notifications</h2><p class="panel-subtitle">Choose what Elara tells you about. These settings are just for you.</p></div></div>
                             <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-mobile-screen"></i></div><div><h4>Push notifications</h4><p>Pop-up notifications on this device, even when Elara is closed.<br><small id="pushState"></small></p></div></div><label class="switch"><input type="checkbox" id="pushNotifications" aria-label="pushNotifications"><span class="slider"></span></label></div>
                             <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-paper-plane"></i></div><div><h4>Send a test</h4><p>Check that notifications reach this device.</p></div></div><button type="button" class="secondary-btn" id="testPush">Send test</button></div>
+                            <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-mug-hot"></i></div><div><h4>Morning summary</h4><p>One message a day: your tasks and events today, yesterday's electricity and who's away.</p><div class="inline-field"><label for="dailyAt">Send at</label><input type="time" id="dailyAt" value="07:00"></div></div></div><label class="switch"><input type="checkbox" id="n_daily" aria-label="Morning summary"><span class="slider"></span></label></div>
                             <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-list-check"></i></div><div><h4>Tasks</h4><p>When a task is assigned to you, due soon, overdue or completed.</p></div></div><label class="switch"><input type="checkbox" id="n_tasks" aria-label="n_tasks"><span class="slider"></span></label></div>
                             <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-calendar-days"></i></div><div><h4>Schedule</h4><p>New events, and events on days you're busy or away.</p></div></div><label class="switch"><input type="checkbox" id="n_schedule" aria-label="n_schedule"><span class="slider"></span></label></div>
-                            <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-cart-shopping"></i></div><div><h4>Shopping</h4><p>Items added or bought, warranty reminders.</p></div></div><label class="switch"><input type="checkbox" id="n_shopping" aria-label="n_shopping"><span class="slider"></span></label></div>
-                            <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-lightbulb"></i></div><div><h4>Smart Home</h4><p>Devices switched by others, new devices.</p></div></div><label class="switch"><input type="checkbox" id="n_smartHome" aria-label="n_smartHome"><span class="slider"></span></label></div>
-                            <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-bolt"></i></div><div><h4>Energy</h4><p>Unusually high energy use.</p></div></div><label class="switch"><input type="checkbox" id="n_energy" aria-label="n_energy"><span class="slider"></span></label></div>
+                            <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-cart-shopping"></i></div><div><h4>Shopping</h4><p>Items added or bought, food about to expire, warranty reminders.</p></div></div><label class="switch"><input type="checkbox" id="n_shopping" aria-label="n_shopping"><span class="slider"></span></label></div>
+                            <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-lightbulb"></i></div><div><h4>Smart Home</h4><p>Devices switched by others, switches left on, load-shedding.</p></div></div><label class="switch"><input type="checkbox" id="n_smartHome" aria-label="n_smartHome"><span class="slider"></span></label></div>
+                            <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-bolt"></i></div><div><h4>Energy</h4><p>Unusually high energy use, prepaid electricity running low.</p></div></div><label class="switch"><input type="checkbox" id="n_energy" aria-label="n_energy"><span class="slider"></span></label></div>
                             <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-users"></i></div><div><h4>Members</h4><p>People joining, leaving or access changes.</p></div></div><label class="switch"><input type="checkbox" id="n_members" aria-label="n_members"><span class="slider"></span></label></div>
                             <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-shield-halved"></i></div><div><h4>Security</h4><p>Doors left open, Away Mode, new sign-ins.</p></div></div><label class="switch"><input type="checkbox" id="n_security" aria-label="n_security"><span class="slider"></span></label></div>
                     </div>
@@ -189,6 +191,21 @@
                         <div class="backup-list" id="backupList"></div>
                             <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-file-arrow-down"></i></div><div><h4>Download a backup file</h4><p>Keep a copy on your computer or phone.</p></div></div><button type="button" class="secondary-btn" id="downloadBackup">Download</button></div>
                             <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-file-arrow-up"></i></div><div><h4>Restore from a file</h4><p>Replaces the home's data with a backup file. Everyone in the home sees the restored data.</p></div></div><label class="secondary-btn file-btn">Choose file<input type="file" id="restoreFile" accept="application/json,.json" hidden></label></div>
+                    </div>
+                </section>
+                <section class="settings-section" id="export">
+                    <div class="panel">
+                        <div class="panel-header"><div><h2>Export Data</h2><p class="panel-subtitle">Download your records as CSV files that open in Excel, Google Sheets or Numbers. You only get the parts of the home you're allowed to see.</p></div></div>
+                        <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-bolt"></i></div><div><h4>Energy history</h4><p>Every hour each switch measured: kWh, highest power and cost.</p>
+                            <div class="inline-field"><label for="exportRange">Period</label><select id="exportRange"><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option></select>
+                            <label for="exportGroup">Rows</label><select id="exportGroup"><option value="hour">One per hour</option><option value="day">One per day</option></select></div></div></div>
+                            <button type="button" class="secondary-btn" data-export="energy">Download</button></div>
+                        <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-cart-shopping"></i></div><div><h4>Shopping</h4><p>The list, everything bought (who, when, price) and what's in the house.</p></div></div><button type="button" class="secondary-btn" data-export="shopping">Download</button></div>
+                        <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-utensils"></i></div><div><h4>Meal plan</h4><p>Planned meals and their ingredients.</p></div></div><button type="button" class="secondary-btn" data-export="meals">Download</button></div>
+                        <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-list-check"></i></div><div><h4>Tasks and chores</h4><p>All tasks with who they're for, due dates, status and chore points.</p></div></div><button type="button" class="secondary-btn" data-export="tasks">Download</button></div>
+                        <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-calendar-days"></i></div><div><h4>Events</h4><p>Everything on the schedule.</p></div></div><button type="button" class="secondary-btn" data-export="events">Download</button></div>
+                        <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-gauge"></i></div><div><h4>Prepaid electricity</h4><p>Units bought, amounts and meter readings.</p></div></div><button type="button" class="secondary-btn" data-export="prepaid">Download</button></div>
+                        <div class="setting-item"><div class="setting-info"><div class="setting-icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div><h4>Activity log</h4><p>Who did what, with dates and times.</p></div></div><button type="button" class="secondary-btn" data-export="activity">Download</button></div>
                     </div>
                 </section>
                 <section class="settings-section" id="appearance">
@@ -233,6 +250,7 @@
 <script src="elara-theme.js"></script>
 <script src="elara-assistant.js"></script>
 <script src="elara-common.js"></script>
+<script src="elara-features.js"></script>
 <script src="dashboard-settings.js"></script>
 </body>
 </html>

@@ -108,14 +108,19 @@
         });
         return p;
     }
-    function localMeals(items) {
+    /* does the house have this ingredient? ("boerewors|wors|sausage" = any of these words) */
+    function haveFn(items) {
         var have = items.map(function (x) { return norm(x.name); });
-        function has(need) { return need.split("|").some(function (alt) { return have.some(function (h) { return h.indexOf(alt) > -1 || alt.indexOf(h) > -1 && h.length > 3; }); }); }
-        return RECIPES.map(function (r) {
-            var got = r.needs.filter(has), missing = r.needs.filter(function (n) { return !has(n); });
-            return { name: r.name, time: r.time, score: got.length / r.needs.length, uses: got.map(function (g) { return g.split("|")[0]; }), missing: missing.map(function (m) { return m.split("|")[0]; }) };
-        }).filter(function (r) { return r.score >= 0.5; }).sort(function (a, b) { return b.score - a.score || a.time - b.time; }).slice(0, 3);
+        return function (need) { return String(need).toLowerCase().split("|").some(function (alt) { alt = alt.trim(); return alt && have.some(function (h) { return h.indexOf(alt) > -1 || alt.indexOf(h) > -1 && h.length > 3; }); }); };
     }
+    function rankMeals(items, n, minScore) {
+        var has = haveFn(items);
+        return RECIPES.map(function (r) {
+            var got = r.needs.filter(has), missing = r.needs.filter(function (x) { return !has(x); });
+            return { name: r.name, time: r.time, score: got.length / r.needs.length, needs: r.needs.slice(), uses: got.map(function (g) { return g.split("|")[0]; }), missing: missing.map(function (m) { return m.split("|")[0]; }) };
+        }).filter(function (r) { return r.score >= (minScore == null ? 0.5 : minScore); }).sort(function (a, b) { return b.score - a.score || a.time - b.time; }).slice(0, n || 3);
+    }
+    function localMeals(items) { return rankMeals(items, 3, 0.5); }
     function mealReply(items) {
         if (!items.length) return "I don't know what's in the house yet. Mark shopping items as bought, or add them under “In the House” on the Shopping page, and I'll suggest meals.";
         var m = localMeals(items);
@@ -458,5 +463,5 @@
         }).then(function (answer) { history.push({ role: "assistant", text: answer }); history = history.slice(-12); return answer; });
     }
 
-    window.ElaraAssistant = { handle: handle, context: context, pantry: pantry, meals: localMeals, mealReply: mealReply, parseDay: parseDay, parseTime: parseTime };
+    window.ElaraAssistant = { handle: handle, context: context, pantry: pantry, meals: localMeals, rankMeals: rankMeals, has: haveFn, recipes: RECIPES, mealReply: mealReply, parseDay: parseDay, parseTime: parseTime };
 })();

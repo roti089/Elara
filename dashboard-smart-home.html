@@ -111,6 +111,30 @@
             </div>
         </section>
 
+        <section class="feature-grid three">
+            <div class="panel" id="prepaidPanel">
+                <div class="panel-header">
+                    <div><h2><i class="fa-solid fa-bolt"></i> Prepaid Electricity</h2><p class="panel-subtitle" id="prepaidNote">Units left and how long they'll last</p></div>
+                </div>
+                <div id="prepaidBody"></div>
+                <div class="feature-actions needs-edit">
+                    <button type="button" class="ghost-btn" id="prepaidReading"><i class="fa-solid fa-gauge"></i> Meter reading</button>
+                    <button type="button" class="ghost-btn primary-ghost" id="prepaidBuy"><i class="fa-solid fa-plus"></i> Bought units</button>
+                </div>
+            </div>
+            <div class="panel" id="geyserPanel">
+                <div class="panel-header"><div><h2><i class="fa-solid fa-fire"></i> Geyser Savings</h2><p class="panel-subtitle">A heating schedule worked out from your geyser's own meter</p></div></div>
+                <div id="geyserBody"></div>
+            </div>
+            <div class="panel" id="lsPanel">
+                <div class="panel-header">
+                    <div><h2><i class="fa-solid fa-plug-circle-xmark"></i> Load-shedding</h2><p class="panel-subtitle" id="lsNote">Your area's schedule from EskomSePush</p></div>
+                    <button type="button" class="ghost-btn needs-edit" id="lsSetup"><i class="fa-solid fa-gear"></i> Set up</button>
+                </div>
+                <div id="lsBody"></div>
+            </div>
+        </section>
+
         <section class="panel">
             <div class="panel-header"><div><h2>Recent Activity</h2><p class="panel-subtitle">Switches turned on and off, by people, automations or the CBi app</p></div></div>
             <div class="activity-list" id="deviceActivity"></div>
@@ -128,6 +152,7 @@
 <script src="elara-theme.js"></script>
 <script src="elara-assistant.js"></script>
 <script src="elara-common.js"></script>
+<script src="elara-features.js"></script>
 <script src="dashboard-smart-home.js"></script>
 </body>
 </html>

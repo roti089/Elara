@@ -40,7 +40,8 @@
 
     /* phones: a one-time, dismissible "install" banner on the dashboard pages */
     var KEY = "pwa-install-dismissed";       // not an "elara..." key, so it stays on this device only
-    function dismissed() { try { return !!localStorage.getItem(KEY); } catch (e) { return true; } }
+    // closing the banner hides it for 14 days on this device
+    function dismissed() { try { var t = Number(localStorage.getItem(KEY) || 0); return t > 1 && Date.now() - t < 14 * 86400000; } catch (e) { return true; } }
     function banner(text, withButton) {
         if (standalone || dismissed() || !/dashboard-/.test(location.pathname) || window.innerWidth > 900 || document.getElementById("elaraInstallBar")) return;
         var bar = document.createElement("div");
@@ -51,7 +52,7 @@
         bar.addEventListener("click", function (e) {
             var b = e.target.closest("[data-i]"); if (!b) return;
             if (b.dataset.i === "go") window.ElaraInstall.prompt();
-            try { localStorage.setItem(KEY, "1"); } catch (x) { /* ignore */ }
+            try { localStorage.setItem(KEY, String(Date.now())); } catch (x) { /* ignore */ }
             bar.remove();
         });
     }

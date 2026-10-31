@@ -82,10 +82,10 @@
 
     /* which part of the home a key belongs to (mirror of elara_key_area() in SQL) */
     function keyArea(k) {
-        if (k === "elaraTasks") return "tasks";
-        if (/^elara(ShoppingItems|CartItems|Receipts|Warranties|ShoppingActivities|Pantry)$/.test(k)) return "shopping";
+        if (/^elara(Tasks|Chores)$/.test(k)) return "tasks";
+        if (/^elara(ShoppingItems|CartItems|Receipts|Warranties|ShoppingActivities|Pantry|Meals)$/.test(k)) return "shopping";
         if (/^elara(Schedules|ScheduleLog|CalendarSources)$/.test(k)) return "schedule";
-        if (/^elara(Devices|EnergyLog|MeterState|MeterKwh|Automations|AutomationRuns|CbiLinked|EnergySample|IncludeEstimates|Tariff)$/.test(k)) return "smartHome";
+        if (/^elara(Devices|EnergyLog|MeterState|MeterKwh|Automations|AutomationRuns|CbiLinked|EnergySample|IncludeEstimates|Tariff|Prepaid|Loadshedding|LoadsheddingArea)$/.test(k)) return "smartHome";
         if (/^elara(Activity|Presence|Availability)$/.test(k)) return "common";
         return "home";
     }
@@ -146,8 +146,14 @@
     /* ---------------------------------------------------------
        5. Transparent per-user localStorage + change queue
     --------------------------------------------------------- */
-    var dirty = {}, flushTimer = null;
-    function markDirty(uid, k) { dirty[uid + "|" + k] = 1; clearTimeout(flushTimer); flushTimer = setTimeout(flush, 800); }
+    /* changes still to upload. Kept on the device too, so things added with no signal
+       survive closing the app and are sent the next time Elara is open and online. */
+    var PENDING_KEY = user ? "elaraPendingLocal:" + user.id : "";
+    var dirty = safeParse(PENDING_KEY ? lsGet(PENDING_KEY) : null, {}) || {};
+    function keepPending() { if (PENDING_KEY) { if (Object.keys(dirty).length) lsSet(PENDING_KEY, JSON.stringify(dirty)); else lsDel(PENDING_KEY); } }
+    var flushTimer = null;
+    function markDirty(uid, k) { dirty[uid + "|" + k] = 1; keepPending(); clearTimeout(flushTimer); flushTimer = setTimeout(flush, 800); }
+    function pendingCount() { return Object.keys(dirty).length; }
 
     Storage.prototype.getItem = function (k) { return realGet.call(this, this === localStorage ? mapKey(k) : k); };
     Storage.prototype.setItem = function (k, v) {
@@ -256,7 +262,7 @@
             var s = document.createElement("script");
             s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
             s.onload = make;
-            s.onerror = function () { reject(new Error("Could not load supabase-js")); };
+            s.onerror = function () { clientPromise = null; s.remove(); reject(new Error("Could not load supabase-js")); };
             document.head.appendChild(s);
         });
         return clientPromise;
@@ -331,6 +337,7 @@
     function doFlush() {
         var keys = Object.keys(dirty);
         if (!keys.length || !user) return Promise.resolve();
+        if (navigator.onLine === false) return Promise.resolve();          // no signal: keep everything queued
         dirty = {};
         return getClient().then(function (c) {
             return keys.reduce(function (p, qk) {
@@ -340,7 +347,8 @@
                     if (!/permission|42501|row-level/i.test(String(e.message || e.code))) dirty[qk] = 1;   // retry later
                 });
             }, Promise.resolve());
-        }).catch(function (e) { keys.forEach(function (k) { dirty[k] = 1; }); console.warn("[Elara] sync failed:", e.message); });
+        }).catch(function (e) { keys.forEach(function (k) { dirty[k] = 1; }); console.warn("[Elara] sync failed:", e.message); })
+          .then(function () { keepPending(); emit(["sync"]); });
     }
     function flush() {
         if (flushing) return flushing.then(flush);
@@ -351,6 +359,7 @@
     document.addEventListener("visibilitychange", function () { if (document.hidden && Object.keys(dirty).length) flush(); });
     // offline (e.g. a phone with no signal): changes stay on the device and are sent when the connection is back
     window.addEventListener("online", function () { if (Object.keys(dirty).length) flush(); });
+    if (Object.keys(dirty).length) setTimeout(flush, 1500);              // left over from last time (e.g. added offline)
     setInterval(function () { if (navigator.onLine !== false && Object.keys(dirty).length) flush(); }, 30000);
 
     /* ---------------------------------------------------------
@@ -393,6 +402,7 @@
             if (target === user.id) lsDel(HOME_KEY); else lsSet(HOME_KEY, target);
             // changes queued for the old household must not be uploaded; keep only personal ones
             Object.keys(dirty).forEach(function (qk) { if (!PERSONAL.test(qk.slice(qk.indexOf("|") + 1))) delete dirty[qk]; });
+            keepPending();
             return doFlush().then(function () { location.reload(); return new Promise(function () {}); });
         }).catch(function (e) {
             var msg = String(e && (e.message || e.code) || e);
@@ -403,6 +413,11 @@
             }
         });
     }
+
+    /* "this screen has the latest cloud data" (things that create shared data automatically wait for it) */
+    var isHydrated = !user || !cfg.supabaseUrl, hydratedWaiters = [];
+    function markHydrated() { isHydrated = true; hydratedWaiters.splice(0).forEach(function (fn) { try { fn(); } catch (e) { /* ignore */ } }); emit(["hydrated"]); }
+    function whenHydrated() { return new Promise(function (res) { if (isHydrated) res(); else hydratedWaiters.push(res); }); }
 
     /* pull everything this person may see, then keep it live */
     function hydrate() {
@@ -441,6 +456,7 @@
             if (first && changed.length) { location.reload(); return; }   // first visit on this device: start clean
             if (changed.length) emit(changed);
             subscribeLive();
+            markHydrated();
         }).catch(function (e) { console.warn("[Elara] could not load cloud data:", e.message); });
     }
 
@@ -583,7 +599,7 @@
         if (!can("common", "edit")) return;
         var list = load("elaraActivity", []), m = me();
         list.unshift({ k: rid(), t: Date.now(), who: who || m.first, by: m.id, text: String(text).slice(0, 200), icon: icon || "fa-bolt" });
-        save("elaraActivity", list.slice(0, 120));
+        save("elaraActivity", list.slice(0, 300));
     }
     function activity(n) {
         return load("elaraActivity", []).slice().sort(function (a, b) { return b.t - a.t; }).slice(0, n || 10);
@@ -801,6 +817,7 @@
         var all = devices(), d = all.filter(function (x) { return x.id === id; })[0];
         if (!d) return null;
         ["name", "room", "type", "hidden"].forEach(function (k) { if (k in changes) d[k] = changes[k]; });
+        if ("leftOnHours" in changes) { var h = Number(changes.leftOnHours); if (changes.leftOnHours != null && h >= 0 && h <= 48) d.leftOnHours = h; else delete d.leftOnHours; }
         if (changes.type) d.icon = DEVICE_TYPES[changes.type] || d.icon;
         saveDevices(all);
         return d;
@@ -884,11 +901,12 @@
                         return (r.data || []).length === 1000 && from < 60000 ? page(from + 1000) : null;
                     });
             }
-            return page(0).then(function () { return c.from("elara_device_state").select("device,last_at,watts,is_on,online").eq("owner_id", dataId); })
+            return page(0).then(function () { return c.from("elara_device_state").select("device,last_at,watts,is_on,online,on_since").eq("owner_id", dataId)
+                .then(function (r) { return r.error && /on_since/.test(r.error.message || "") ? c.from("elara_device_state").select("device,last_at,watts,is_on,online").eq("owner_id", dataId) : r; }); })
                 .then(function (r) {
                     if (r.error) throw r.error;
                     var st = {};
-                    (r.data || []).forEach(function (x) { st[x.device] = { watts: x.watts, on: x.is_on, online: x.online, at: new Date(x.last_at).getTime() }; });
+                    (r.data || []).forEach(function (x) { st[x.device] = { watts: x.watts, on: x.is_on, online: x.online, at: new Date(x.last_at).getTime(), since: x.on_since ? new Date(x.on_since).getTime() : null }; });
                     energyStore = { rows: rows.map(function (x) { return { d: x.device, h: new Date(x.hour).getTime(), k: Number(x.kwh) || 0, p: Number(x.peak_w) || 0 }; }), state: st, at: Date.now() };
                     lsSet(EN_KEY, JSON.stringify(energyStore));
                     emit(["energy"]);
@@ -908,7 +926,8 @@
         polling = callFunction(cfg.tuyaEndpoint, { action: "poll" }).then(function (j) {
             var all = devices(), changed = false;
             (j.devices || []).forEach(function (t) {
-                energyStore.state[t.id] = { watts: t.watts, on: t.on, online: t.online, at: Date.now() };
+                var prev = energyStore.state[t.id] || {};
+                energyStore.state[t.id] = { watts: t.watts, on: t.on, online: t.online, at: Date.now(), since: t.on ? (prev.on && prev.since ? prev.since : Date.now()) : null };
                 var d = all.filter(function (x) { return x.tuyaId === t.id; })[0];
                 if (!d) return;
                 if (d.hasMeter !== !!t.hasMeter && can("smartHome", "edit")) { d.hasMeter = !!t.hasMeter; changed = true; }
@@ -995,14 +1014,15 @@
         return defaultAutomations();      // shown until the owner saves a change
     }
     function saveAutomations(list) {
-        var clean = (list || []).slice(0, 20).map(function (a) {
+        var clean = (list || []).slice(0, 30).map(function (a) {
             var kind = ["time", "sunset", "sunrise", "manual"].indexOf(a.kind) > -1 ? a.kind : "time";
             return { id: String(a.id || rid()).replace(/[^\w-]/g, "").slice(0, 40), name: String(a.name || "Automation").replace(/[<>]/g, "").slice(0, 40),
                      icon: /^fa-[a-z-]+$/.test(a.icon || "") ? a.icon : "fa-robot", kind: kind,
                      at: kind === "time" && /^([01]\d|2[0-3]):[0-5]\d$/.test(a.at || "") ? a.at : undefined,
                      offset: kind === "sunset" || kind === "sunrise" ? Math.max(-120, Math.min(120, Math.round(Number(a.offset) || 0))) : undefined,
                      days: (a.days || []).filter(function (d) { return d >= 0 && d <= 6; }), action: a.action === "on" ? "on" : "off", on: !!a.on,
-                     devices: (a.devices || []).map(String).slice(0, 50) };
+                     devices: (a.devices || []).map(String).slice(0, 50),
+                     plan: /^[\w-]{1,40}$/.test(a.plan || "") ? a.plan : undefined, since: Number(a.since) > 0 ? Number(a.since) : undefined };
         });
         save("elaraAutomations", clean);
         return clean;
@@ -1193,8 +1213,8 @@
 
     window.ElaraData = {
         user: user, info: info, prefix: user ? fullKey(dataId, "") : "", shared: shared, config: cfg, demo: DEMO,
-        me: me, signOut: signOut, flush: flush, getClient: getClient, callFunction: callFunction, resetData: resetData,
-        ready: function () { return homeReady; },
+        me: me, signOut: signOut, flush: flush, pending: pendingCount, getClient: getClient, callFunction: callFunction, resetData: resetData,
+        ready: function () { return homeReady; }, whenHydrated: whenHydrated, get hydrated() { return isHydrated; },
         onChange: onChange, emit: emit,
         get setupIssue() { return setupIssue; },
         access: { can: can, level: levelOf, get role() { return isOwner() ? "owner" : access.role; }, get perms() { return isOwner() ? null : access.perms; }, AREAS: AREAS, keyArea: keyArea },
@@ -1207,7 +1227,7 @@
         availability: { all: availability, on: availabilityOn, set: setAvailability },
         devices: { all: visibleDevices, everything: devices, save: saveDevices, find: findDevice, update: updateDevice, import: importDevices, set: setDevice, switch: switchDevice,
                    remove: removeDevice, id: devId, live: liveState, poll: pollDevices, TYPES: DEVICE_TYPES },
-        energy: { compute: energy, integrate: integrate, tariff: tariff, load: loadEnergy },
+        energy: { compute: energy, integrate: integrate, tariff: tariff, load: loadEnergy, rows: function () { return energyStore.rows; }, get loadedAt() { return energyStore.at; } },
         automations: { all: automations, save: saveAutomations, defaults: defaultAutomations },
         notify: notify, notifications: notifications,
         backup: backup,

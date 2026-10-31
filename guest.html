@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <meta name="theme-color" content="#0c0d1a">
+    <title>Guest view | Elara</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root{ --bg:#0c0d1a; --card:#141833; --line:rgba(255,255,255,.08); --text:#eef0ff; --muted:#a8afcf; --accent:#7c6cff; --green:#34d399; --red:#fb7185; }
+        @media (prefers-color-scheme: light){ :root{ --bg:#f4f5fb; --card:#fff; --line:rgba(0,0,0,.08); --text:#17182b; --muted:#5d6380; } }
+        *{ box-sizing:border-box; }
+        body{ margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.45;
+              padding:max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
+        main{ max-width:720px; margin:0 auto; }
+        header{ display:flex; align-items:center; gap:12px; margin:8px 0 18px; }
+        header img{ width:46px; height:46px; border-radius:12px; background:linear-gradient(#6c63ff,#1c1640); padding:6px; }
+        h1{ font-size:22px; margin:0; }
+        header p{ margin:2px 0 0; color:var(--muted); font-size:14px; }
+        .badge{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 12px; margin-bottom:14px; }
+        section{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px 18px; margin-bottom:14px; }
+        h2{ font-size:16px; margin:0 0 10px; display:flex; align-items:center; gap:8px; }
+        h2 i{ color:var(--accent); }
+        .note{ white-space:pre-wrap; overflow-wrap:anywhere; }
+        .row{ display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid var(--line); }
+        .row:first-of-type{ border-top:none; }
+        .row strong{ display:block; overflow-wrap:anywhere; }
+        .row small{ color:var(--muted); }
+        .when{ color:var(--muted); font-size:13px; white-space:nowrap; text-align:right; }
+        .day{ font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:12px 0 2px; }
+        .on{ color:var(--green); font-weight:600; } .off{ color:var(--muted); } .offline{ color:var(--red); }
+        .empty{ color:var(--muted); margin:0; }
+        .msg{ text-align:center; padding:48px 18px; }
+        .msg i{ font-size:40px; color:var(--accent); margin-bottom:12px; display:block; }
+        footer{ color:var(--muted); font-size:12px; text-align:center; margin-top:18px; }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <img src="Elara logo.png" alt="">
+        <div><h1 id="title">Elara</h1><p id="sub">Guest view</p></div>
+    </header>
+    <div id="app"><section class="msg"><i class="fa-solid fa-spinner fa-spin"></i><p>Opening...</p></section></div>
+    <footer>View only. Nothing here can be changed. <span id="exp"></span></footer>
+</main>
+<script src="elara-config.js"></script>
+<script>
+(function () {
+    "use strict";
+    var cfg = window.ELARA_CONFIG || {}, app = document.getElementById("app");
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function show(icon, text) { app.innerHTML = '<section class="msg"><i class="fa-solid ' + icon + '"></i><p>' + esc(text) + "</p></section>"; }
+    var token = (location.hash.match(/[#&]t=([A-Za-z0-9_-]{32,80})/) || [])[1];
+    if (!token) return show("fa-link-slash", "This link is incomplete. Ask the home owner to send it again.");
+    if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return show("fa-triangle-exclamation", "This Elara site isn't set up yet.");
+    function dayName(k, today) {
+        if (k === today) return "Today";
+        var d = new Date(k + "T00:00:00"), t = new Date(today + "T00:00:00"); t.setDate(t.getDate() + 1);
+        if (d.getTime() === t.getTime()) return "Tomorrow";
+        return d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+    }
+    function grouped(list, today, line) {
+        var out = "", last = "";
+        list.forEach(function (x) { if (x.date !== last) { out += '<div class="day">' + esc(dayName(x.date, today)) + "</div>"; last = x.date; } out += line(x); });
+        return out;
+    }
+    fetch(cfg.supabaseUrl.replace(/\/$/, "") + "/rest/v1/rpc/elara_guest_view", {
+        method: "POST", headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: "Bearer " + cfg.supabaseAnonKey },
+        body: JSON.stringify({ p_token: token }), referrerPolicy: "no-referrer"
+    }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j && j.message || "HTTP " + r.status); return j; }); })
+      .then(function (g) {
+        if (!g || g.error) return show("fa-lock", (g && g.error) || "This link doesn't work.");
+        document.getElementById("title").textContent = g.home || "The home";
+        document.getElementById("sub").textContent = "Guest view for " + (g.label || "you");
+        document.getElementById("exp").textContent = "This link works until " + new Date(g.expires).toLocaleString([], { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) + ".";
+        var html = "", areas = g.areas || [];
+        if (g.note) html += '<section><h2><i class="fa-solid fa-note-sticky"></i> Notes from the owner</h2><div class="note">' + esc(g.note) + "</div></section>";
+        if (areas.indexOf("tasks") > -1) html += '<section><h2><i class="fa-solid fa-list-check"></i> Tasks</h2>' + ((g.tasks || []).length ? grouped(g.tasks, g.today, function (t) {
+            return '<div class="row"><div><strong>' + esc(t.title) + "</strong>" + (t.who ? "<small>" + esc(t.who) + "</small>" : "") + '</div><div class="when">' + esc(t.time || "") + "</div></div>";
+        }) : '<p class="empty">Nothing due in the next two weeks.</p>') + "</section>";
+        if (areas.indexOf("schedule") > -1) html += '<section><h2><i class="fa-solid fa-calendar-days"></i> Events</h2>' + ((g.events || []).length ? grouped(g.events, g.today, function (e) {
+            return '<div class="row"><div><strong>' + esc(e.title) + "</strong>" + (e.category ? "<small>" + esc(e.category) + "</small>" : "") + '</div><div class="when">' + esc(e.time || "") + "</div></div>";
+        }) : '<p class="empty">Nothing on in the next two weeks.</p>') + "</section>";
+        if (areas.indexOf("shopping") > -1) html += '<section><h2><i class="fa-solid fa-cart-shopping"></i> Shopping list</h2>' + ((g.shopping || []).length ? g.shopping.map(function (i) {
+            return '<div class="row"><div><strong>' + esc(i.name) + "</strong>" + (i.details ? "<small>" + esc(i.details) + "</small>" : "") + '</div><div class="when">' + (Number(i.qty) > 1 ? "×" + esc(i.qty) : "") + "</div></div>";
+        }).join("") : '<p class="empty">The list is empty.</p>') + "</section>";
+        if (areas.indexOf("smartHome") > -1) html += '<section><h2><i class="fa-solid fa-lightbulb"></i> Switches</h2>' + ((g.devices || []).length ? g.devices.map(function (d) {
+            var st = d.online === false ? '<span class="offline">Offline</span>' : d.on ? '<span class="on">ON</span>' : '<span class="off">OFF</span>';
+            return '<div class="row"><div><strong>' + esc(d.name) + "</strong><small>" + esc(d.room || "") + '</small></div><div class="when">' + st + "</div></div>";
+        }).join("") : '<p class="empty">No switches to show.</p>') + "</section>";
+        app.innerHTML = html || '<section class="msg"><i class="fa-solid fa-house"></i><p>Nothing has been shared on this link.</p></section>';
+    }).catch(function () { show("fa-wifi", "Couldn't open the guest view. Check your connection and try again."); });
+})();
+</script>
+</body>
+</html>

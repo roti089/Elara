@@ -6,7 +6,7 @@
 ========================================================== */
 (function () {
     "use strict";
-    var D = window.ElaraData, UI = window.ElaraUI, C = window.ElaraCommon || {}, cfg = window.ELARA_CONFIG || {};
+    var D = window.ElaraData, UI = window.ElaraUI, C = window.ElaraCommon || {}, cfg = window.ELARA_CONFIG || {}, F = window.ElaraFeatures;
     if (!D) return;
     window.ElaraPageLive = true;
 
@@ -48,7 +48,9 @@
         var st = D.devices.live(d) || {}, offline = st.online === false, by = d.changedBy ? D.members.find(d.changedBy) : null;
         var power = d.tuyaId ? (offline ? "Offline" : d.hasMeter || st.watts != null ? watts(d.on ? st.watts : 0) + " now" : "No power meter") : "Demo device";
         var who = d.changedAt ? (d.on ? "on" : "off") + " " + (by ? "by " + (by.isMe ? "you" : by.name) + " " : "") + D.ago(d.changedAt) : "";
-        return '<div class="device' + (offline ? " is-offline" : "") + '" data-id="' + esc(d.id) + '"><div class="device-left"><i class="fa-solid ' + esc(d.icon || "fa-plug") + '"></i><div class="device-info"><h4>' + esc(d.name) + "</h4><p>" +
+        var lim = F ? F.leftOn.hours(d) : 0, onFor = d.on && st.since ? (Date.now() - st.since) / 3600000 : 0;
+        if (lim && onFor >= lim) who = "on for " + Math.floor(onFor) + " h" + (who ? " • " + who : "");
+        return '<div class="device' + (offline ? " is-offline" : "") + (lim && onFor >= lim ? " left-on" : "") + '" data-id="' + esc(d.id) + '"><div class="device-left"><i class="fa-solid ' + esc(d.icon || "fa-plug") + '"></i><div class="device-info"><h4>' + esc(d.name) + "</h4><p>" +
             esc(power + (who ? " • " + who : "")) + "</p></div></div>" +
             '<div class="device-right"><span class="device-status ' + (offline ? "offline" : d.on ? "online" : "standby") + '">' + (offline ? "Offline" : d.on ? "ON" : "OFF") + "</span>" +
             '<label class="switch"><input type="checkbox"' + (d.on ? " checked" : "") + (canEdit() && !offline ? "" : " disabled") + ' aria-label="' + esc(d.name + " in " + d.room) + '"><span class="slider"></span></label>' +
@@ -75,6 +77,8 @@
                 { name: "room", label: "Room", type: "select", value: d.room, options: rooms.concat(["New room..."]) },
                 { name: "newRoom", label: "New room name (if you chose New room)", value: "", maxlength: 30 },
                 { name: "type", label: "Type", type: "select", value: d.type || "Plug", options: Object.keys(D.devices.TYPES) },
+                { name: "leftOnHours", label: "Warn me if it's left on for", type: "select", value: String(F ? F.leftOn.hours(d) : 0),
+                  options: [["0", "Never"], ["1", "1 hour"], ["2", "2 hours"], ["3", "3 hours"], ["4", "4 hours"], ["6", "6 hours"], ["8", "8 hours"], ["12", "12 hours"], ["24", "24 hours"]] },
                 { name: "hidden", label: "Show in Elara", type: "select", value: "no", options: [["no", "Yes"], ["yes", "No, hide this device"]] }
             ],
             validate: function (v) {
@@ -85,7 +89,7 @@
         }).then(function (v) {
             if (!v) return;
             var room = v.room === "New room..." ? v.newRoom : v.room;
-            D.devices.update(d.id, { name: v.name, room: room, type: v.type, hidden: v.hidden === "yes" });
+            D.devices.update(d.id, { name: v.name, room: room, type: v.type, hidden: v.hidden === "yes", leftOnHours: v.type !== d.type && d.leftOnHours == null && F && Number(v.leftOnHours) === F.leftOn.hours(d) ? null : Number(v.leftOnHours) });
             D.log("updated device " + v.name, "fa-pen");
             UI.toast(v.hidden === "yes" ? v.name + " is hidden. Show it again from CBi Home." : "Saved."); render();
         });
@@ -261,6 +265,279 @@
         });
     }
 
+
+    /* =========================================================
+       PREPAID ELECTRICITY
+       Meter readings make it accurate (the meter counts the whole house). Without two readings,
+       Elara uses what your smart switches measured, and says so.
+    ========================================================= */
+    function money(n) { return "R" + Number(n || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function units(n) { return (n >= 100 ? Math.round(n) : Math.round(n * 10) / 10) + " units"; }
+    function renderPrepaid() {
+        if (!F || !$("prepaidBody")) return;
+        var st = F.prepaid.status(), box = $("prepaidBody");
+        if (!st.setUp) {
+            $("prepaidNote").textContent = "Units left and how long they'll last";
+            box.innerHTML = '<div class="feature-empty"><i class="fa-solid fa-gauge"></i><p>Type in what your prepaid meter shows now, and the units each time you buy electricity. ' +
+                "After two readings Elara knows how fast your home uses units and warns you about 3 days before they run out.</p></div>";
+            return;
+        }
+        var days = st.daysLeft, warn = days != null && days <= st.warnDays;
+        var buys = st.entries.filter(function (e) { return e.kind === "buy" && e.amount > 0 && e.units > 0; });
+        var perUnit = buys.length ? buys.reduce(function (a, b) { return a + b.amount; }, 0) / buys.reduce(function (a, b) { return a + b.units; }, 0) : null;
+        $("prepaidNote").textContent = st.basis === "meter" ? "From your meter readings" : st.basis === "switches" ? "Estimated from your smart switches only" : "Add another meter reading to see how long it lasts";
+        box.innerHTML = '<div class="pp-main' + (warn ? " warn" : "") + '"><div><small>Units left (about)</small><strong>' + (st.balance == null ? "—" : units(st.balance)) + "</strong></div>" +
+            "<div><small>Lasts about</small><strong>" + (days == null ? "—" : days < 1 ? "less than a day" : Math.floor(days) + " day" + (Math.floor(days) === 1 ? "" : "s")) + "</strong></div></div>" +
+            (warn ? '<p class="pp-warn"><i class="fa-solid fa-triangle-exclamation"></i> Time to buy electricity.</p>' : "") +
+            '<div class="pp-facts">' +
+            (st.perDay ? "<span>Uses about <b>" + (Math.round(st.perDay * 10) / 10) + " units a day</b>" + (st.basis === "switches" ? " (switches only: the whole house uses more)" : "") + "</span>" : "") +
+            (st.lastReading ? "<span>Last reading " + esc(units(st.lastReading.units)) + ", " + esc(D.ago(st.lastReading.t).toLowerCase()) + (st.lastReading.byName ? " by " + esc(st.lastReading.byName) : "") + "</span>" : "<span>No meter reading yet: add one so Elara knows the balance.</span>") +
+            (st.spent30 ? "<span>Bought in the last 30 days: <b>" + money(st.spent30) + "</b> for " + units(st.units30) + "</span>" : "") +
+            (perUnit ? "<span>You pay about " + money(perUnit) + " a unit</span>" : "") +
+            '<label class="pp-warnset">Warn me at <select id="ppWarn"' + (canEdit() ? "" : " disabled") + ">" + [1, 2, 3, 4, 5, 7].map(function (n) { return '<option value="' + n + '"' + (n === st.warnDays ? " selected" : "") + ">" + n + " day" + (n === 1 ? "" : "s") + "</option>"; }).join("") + "</select> left</label>" +
+            "</div>" +
+            '<div class="pp-history">' + st.entries.slice(-5).reverse().map(function (e) {
+                return '<div class="pp-row" data-id="' + esc(e.id) + '"><i class="fa-solid ' + (e.kind === "buy" ? "fa-cart-plus" : "fa-gauge") + '"></i><span>' + (e.kind === "buy" ? "Bought " + units(e.units) + (e.amount ? " for " + money(e.amount) : "") : "Meter showed " + units(e.units)) +
+                    "<small>" + esc(new Date(e.t).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })) + (e.byName ? " • " + esc(e.byName) : "") + "</small></span>" +
+                    (canEdit() ? '<button type="button" class="icon-act" data-pp-del aria-label="Delete this entry"><i class="fa-solid fa-trash"></i></button>' : "") + "</div>";
+            }).join("") + "</div>";
+    }
+    function addPrepaid(kind) {
+        if (!canEdit()) return UI.toast("You can view Smart Home but not change it.", "error");
+        var buy = kind === "buy";
+        UI.form({
+            title: buy ? "Bought electricity" : "Meter reading", icon: buy ? "fa-bolt" : "fa-gauge", submitText: "Save",
+            text: buy ? "Type the units on the token slip. If you've already loaded it, also type what the meter shows now: that keeps Elara accurate."
+                      : "Type the number of units your prepaid meter shows right now.",
+            fields: buy ? [
+                { name: "units", label: "Units bought (kWh)", type: "number", min: 1, max: 5000, step: "0.1", required: true },
+                { name: "amount", label: "Amount paid (R, optional)", type: "number", min: 0, max: 50000, step: "0.01" },
+                { name: "meter", label: "Meter shows now, after loading (optional)", type: "number", min: 0, max: 20000, step: "0.1" }
+            ] : [ { name: "units", label: "Units on the meter now", type: "number", min: 0, max: 20000, step: "0.1", required: true } ],
+            validate: function (v) {
+                var u = Number(v.units);
+                if (v.units === "" || !isFinite(u) || u < (buy ? 1 : 0) || u > (buy ? 5000 : 20000)) return { field: "units", msg: buy ? "Enter the units bought (1 to 5000)." : "Enter the units the meter shows (0 to 20000)." };
+                if (buy && v.amount !== "" && (!(Number(v.amount) >= 0) || Number(v.amount) > 50000)) return { field: "amount", msg: "Enter the amount from R0 to R50 000, or leave it empty." };
+                if (buy && v.meter !== "" && (!(Number(v.meter) >= 0) || Number(v.meter) > 20000)) return { field: "meter", msg: "Enter what the meter shows (0 to 20000), or leave it empty." };
+                if (buy && v.meter !== "" && Number(v.meter) < u * 0.5) return { field: "meter", msg: "That's less than you just loaded. Check the number on the meter." };
+                return null;
+            }
+        }).then(function (v) {
+            if (!v) return;
+            var p = F.prepaid.get(), m = D.me(), t = Date.now();
+            if (buy) {
+                p.entries.push({ id: "b" + t.toString(36), t: t, kind: "buy", units: Number(v.units), amount: v.amount === "" ? 0 : Number(v.amount), by: m.id, byName: m.first });
+                if (v.meter !== "") p.entries.push({ id: "r" + (t + 1).toString(36), t: t + 1, kind: "reading", units: Number(v.meter), by: m.id, byName: m.first });
+            } else p.entries.push({ id: "r" + t.toString(36), t: t, kind: "reading", units: Number(v.units), by: m.id, byName: m.first });
+            F.prepaid.save(p);
+            D.log(buy ? "bought " + v.units + " units of electricity" + (v.amount ? " (R" + Number(v.amount).toFixed(2) + ")" : "") : "read the prepaid meter (" + v.units + " units)", buy ? "fa-bolt" : "fa-gauge");
+            UI.toast("Saved."); renderPrepaid();
+        });
+    }
+    $("prepaidBuy").addEventListener("click", function () { addPrepaid("buy"); });
+    $("prepaidReading").addEventListener("click", function () { addPrepaid("reading"); });
+    $("prepaidBody").addEventListener("change", function (e) {
+        if (e.target.id !== "ppWarn" || !canEdit()) return;
+        var p = F.prepaid.get(); p.warnDays = Number(e.target.value) || 3; F.prepaid.save(p); renderPrepaid();
+    });
+    $("prepaidBody").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-pp-del]"); if (!b || !canEdit()) return;
+        var id = b.closest("[data-id]").dataset.id;
+        UI.confirm({ title: "Delete this entry?", message: "Use this if it was typed wrong.", confirmText: "Delete" }).then(function (ok) {
+            if (!ok) return;
+            var p = F.prepaid.get(); p.entries = p.entries.filter(function (x) { return x.id !== id; }); F.prepaid.save(p); renderPrepaid();
+        });
+    });
+
+    /* =========================================================
+       GEYSER SAVINGS: worked out from the geyser's own measured energy (last 14 days)
+       - night-time use (01:00-05:00, when nobody runs hot water) = what it costs to keep the water hot
+       - heat only before the morning and evening hot-water times, off the rest of the day
+       - saving: about half of that keep-warm energy for the hours it's off (water cools more slowly
+         than it's topped up), never more than a third of what the geyser uses
+    ========================================================= */
+    function hash(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+    function hhmm(h) { h = ((h % 24) + 24) % 24; return (h < 10 ? "0" : "") + h + ":00"; }
+    function geyserPlanId(d) { return "geyser-" + hash(d.id).slice(0, 8); }
+    function analyseGeyser(d) {
+        var sod = D.util.startOfDay(new Date()).getTime(), from = sod - 14 * 86400000, rows = D.energy.rows().filter(function (r) { return r.d === d.tuyaId && r.h >= from && r.h < sod; });
+        var days = {}, byHour = new Array(24).fill(0), total = 0, peak = 0;
+        rows.forEach(function (r) { var dt = new Date(r.h); days[D.util.dayKey(dt)] = 1; byHour[dt.getHours()] += r.k; total += r.k; if (r.p > peak) peak = r.p; });
+        var n = Object.keys(days).length;
+        if (n < 3 || total < 0.3) return { ready: false, days: n };
+        var perDay = total / n, avg = byHour.map(function (k) { return k / n; });
+        var kw = peak > 500 ? peak / 1000 : 3, assumedKw = !(peak > 500);
+        var night = (avg[1] + avg[2] + avg[3] + avg[4]) / 4;
+        function peakIn(a, b, dflt) { var best = -1, bh = dflt; for (var h = a; h <= b; h++) if (avg[h] > best) { best = avg[h]; bh = h; } return best > night * 1.5 ? bh : dflt; }
+        var len = Math.max(2, Math.min(4, Math.ceil(perDay / kw / 2 + 0.5)));
+        var mEnd = peakIn(5, 10, 6), eEnd = peakIn(15, 22, 18);
+        var mStart = Math.max(2, mEnd - len), eStart = Math.max(mEnd + 1, eEnd - len);
+        var onHours = (mEnd - mStart) + (eEnd - eStart), offHours = 24 - onHours;
+        var saveKwh = Math.min(night * offHours * 0.5, perDay * 0.33);
+        return { ready: true, days: n, perDay: perDay, night: night, kw: kw, assumedKw: assumedKw, windows: [[mStart, mEnd], [eStart, eEnd]], offHours: offHours,
+                 saveKwh: saveKwh, saveMonth: saveKwh * 30 * D.energy.tariff(), costMonth: perDay * 30 * D.energy.tariff() };
+    }
+    function planAutomations(d) { var id = geyserPlanId(d); return D.automations.all().filter(function (a) { return a.plan === id; }); }
+    function renderGeyser() {
+        if (!$("geyserBody")) return;
+        var gs = D.devices.all().filter(function (d) { return d.type === "Geyser" && d.tuyaId; }), box = $("geyserBody");
+        if (!gs.length) { box.innerHTML = '<div class="feature-empty"><i class="fa-solid fa-fire"></i><p>No geyser switch yet. Set your geyser switch\'s type to <b>Geyser</b> with its pencil button. It needs a power meter (most CBi geyser switches have one).</p></div>'; return; }
+        box.innerHTML = gs.map(function (d) {
+            var a = analyseGeyser(d), plan = planAutomations(d), on = plan.length && plan.every(function (x) { return x.on; });
+            var others = D.automations.all().filter(function (x) { return !x.plan && x.on && x.kind !== "manual" && (x.devices || []).indexOf(d.id) > -1; });
+            var head = '<div class="gs-head"><strong>' + esc(d.name) + "</strong>" + (on ? '<span class="gs-badge">Schedule on</span>' : "") + "</div>";
+            if (!a.ready) return '<div class="gs-card">' + head + "<p>Elara needs at least 3 days of readings from this geyser to work out a schedule (it has " + a.days + "). Keep the switch connected and check back.</p></div>";
+            var w = a.windows, times = hhmm(w[0][0]) + "–" + hhmm(w[0][1]) + " and " + hhmm(w[1][0]) + "–" + hhmm(w[1][1]);
+            var since = on ? Math.min.apply(null, plan.map(function (x) { return x.since || Date.now(); })) : 0, effect = "";
+            if (on && Date.now() - since > 2 * 86400000) {
+                var rows = D.energy.rows().filter(function (r) { return r.d === d.tuyaId; }), before = 0, after = 0, bd = {}, ad = {};
+                var sod = D.util.startOfDay(new Date()).getTime();
+                rows.forEach(function (r) { var k = D.util.dayKey(new Date(r.h)); if (r.h < since && r.h >= since - 14 * 86400000) { before += r.k; bd[k] = 1; } else if (r.h >= since && r.h < sod) { after += r.k; ad[k] = 1; } });
+                var nb = Object.keys(bd).length, na = Object.keys(ad).length;
+                if (nb >= 3 && na >= 2) {
+                    var pb = before / nb, pa = after / na, diff = pb - pa;
+                    effect = '<p class="gs-effect ' + (diff > 0 ? "good" : "") + '"><i class="fa-solid fa-chart-line"></i> Since the schedule started: ' + pa.toFixed(1) + " kWh a day (was " + pb.toFixed(1) + "). " +
+                        (diff > 0.05 ? "That's about <b>R" + Math.round(diff * 30 * D.energy.tariff()) + " a month</b> saved, measured." : "No measured saving yet.") + "</p>";
+                }
+            }
+            return '<div class="gs-card" data-id="' + esc(d.id) + '">' + head +
+                '<div class="gs-stats"><span><small>Uses</small><b>' + a.perDay.toFixed(1) + " kWh/day</b><small>about R" + Math.round(a.costMonth) + "/month</small></span>" +
+                "<span><small>Keeping water hot</small><b>" + (a.night * 24).toFixed(1) + " kWh/day</b><small>measured at night</small></span></div>" +
+                '<p class="gs-plan"><i class="fa-solid fa-clock"></i> Heat only <b>' + times + "</b>, off the other " + a.offHours + " hours.</p>" +
+                (a.saveKwh >= 0.1 ? '<p class="gs-save">You\'d save about <b>R' + Math.round(a.saveMonth) + " a month</b> (" + a.saveKwh.toFixed(1) + " kWh a day).</p>"
+                                  : '<p class="gs-save">Your geyser uses very little keeping water hot (good insulation, or it\'s already on a timer), so a schedule would save little.</p>') +
+                effect +
+                '<p class="gs-how">Worked out from ' + a.days + " days of this geyser's readings" + (a.assumedKw ? ", assuming a 3 kW element" : ", " + a.kw.toFixed(1) + " kW element") + ". The water may run out sooner if lots of hot water is used between the heating times.</p>" +
+                (others.length ? '<p class="gs-warn"><i class="fa-solid fa-triangle-exclamation"></i> ' + others.length + " other automation" + (others.length === 1 ? " also switches" : "s also switch") + " this geyser: " + esc(others.map(function (x) { return x.name; }).join(", ")) + ".</p>" : "") +
+                (canEdit() ? '<div class="feature-actions">' + (plan.length ? '<button type="button" class="ghost-btn" data-gs="off">Remove schedule</button>' : "") +
+                    '<button type="button" class="ghost-btn primary-ghost" data-gs="on">' + (plan.length ? "Update schedule" : "Use this schedule") + "</button></div>" : "") + "</div>";
+        }).join("");
+    }
+    $("geyserBody").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-gs]"); if (!b || !canEdit()) return;
+        var d = D.devices.find(b.closest("[data-id]").dataset.id); if (!d) return;
+        var id = geyserPlanId(d), rest = D.automations.all().filter(function (a) { return a.plan !== id; });
+        if (b.dataset.gs === "off") {
+            D.automations.save(rest); D.log("removed the heating schedule for " + d.name, "fa-fire"); UI.toast("Schedule removed. " + d.name + " stays as it is now.", "info"); return render();
+        }
+        var a = analyseGeyser(d); if (!a.ready) return;
+        var w = a.windows, now = Date.now(), old = planAutomations(d), since = old.length ? Math.min.apply(null, old.map(function (x) { return x.since || now; })) : now;
+        var mk = function (suffix, name, at, action) { return { id: id + "-" + suffix, name: name, icon: action === "on" ? "fa-fire" : "fa-power-off", kind: "time", at: at, days: [], action: action, on: true, devices: [d.id], plan: id, since: since }; };
+        var plan = [mk("m1", d.name + " on (morning)", hhmm(w[0][0]), "on"), mk("m0", d.name + " off (morning)", hhmm(w[0][1]), "off"),
+                    mk("e1", d.name + " on (evening)", hhmm(w[1][0]), "on"), mk("e0", d.name + " off (evening)", hhmm(w[1][1]), "off")];
+        if (rest.length + plan.length > 30) return UI.toast("You have too many automations. Delete a few first.", "error");
+        UI.confirm({ title: "Heat " + d.name + " on a schedule?", message: "Elara adds 4 automations: on at " + hhmm(w[0][0]) + ", off at " + hhmm(w[0][1]) + ", on at " + hhmm(w[1][0]) + ", off at " + hhmm(w[1][1]) + ", every day. You can change or remove them any time.",
+                     confirmText: "Use schedule", danger: false, icon: "fa-fire" }).then(function (ok) {
+            if (!ok) return;
+            D.automations.save(rest.concat(plan));
+            D.log("put " + d.name + " on a heating schedule (" + hhmm(w[0][0]) + "–" + hhmm(w[0][1]) + ", " + hhmm(w[1][0]) + "–" + hhmm(w[1][1]) + ")", "fa-fire");
+            UI.toast("Schedule saved." + (cfg.serverAutomations ? "" : " It runs while Elara is open on a device; see README step 8 to run it all the time."));
+            render();
+        });
+    });
+
+    /* =========================================================
+       LOAD-SHEDDING (EskomSePush, through the elara-tuya function: the API key stays on the server)
+       elaraLoadsheddingArea: { id, name, region, devices:[], before:minutes, after:minutes|0, on }
+       elaraLoadshedding:     { at, areaId, events:[{start,end,note}], days:[...], error }   (written by the server)
+    ========================================================= */
+    var lsLive = null;
+    function lsArea() { return D.util.load("elaraLoadsheddingArea", null); }
+    function lsData() { var a = D.util.load("elaraLoadshedding", null); return lsLive && (!a || lsLive.at > a.at) ? lsLive : a; }
+    function fmtSlot(ev) {
+        var s = new Date(ev.start), e = new Date(ev.end), today = D.util.dayKey(), k = D.util.dayKey(s);
+        var day = k === today ? "Today" : k === D.util.dayKey(D.util.addDays(new Date(), 1)) ? "Tomorrow" : s.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+        var t = function (x) { return x.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }); };
+        return day + " " + t(s) + "–" + t(e);
+    }
+    function renderLs() {
+        if (!$("lsBody")) return;
+        var a = lsArea(), data = lsData(), box = $("lsBody");
+        if (!a || !a.id) {
+            $("lsNote").textContent = "Your area's schedule from EskomSePush";
+            box.innerHTML = '<div class="feature-empty"><i class="fa-solid fa-plug-circle-xmark"></i><p>Choose your area and Elara shows when the power goes off, and can switch your geyser off just before so it doesn\'t surge when the power comes back. ' +
+                (cfg.tuyaEndpoint ? "Needs a free EskomSePush API key on the server (README, step 8)." : "Needs the elara-tuya function and a free EskomSePush API key (README, step 8).") + "</p></div>";
+            return;
+        }
+        $("lsNote").textContent = a.name + (a.region ? ", " + a.region : "");
+        if (!/_/.test(a.id)) { box.innerHTML = '<p class="gs-warn"><i class="fa-solid fa-triangle-exclamation"></i> EskomSePush changed its area codes. Press <b>Set up</b> and choose your area again.</p>'; return; }
+        var now = Date.now(), evs = ((data && data.areaId === a.id && data.events) || []).filter(function (ev) { return new Date(ev.end).getTime() > now; }).slice(0, 5);
+        var cur = evs.filter(function (ev) { return new Date(ev.start).getTime() <= now; })[0];
+        var devs = (a.devices || []).map(function (id) { var d = D.devices.find(id); return d ? d.name : null; }).filter(Boolean);
+        box.innerHTML = (data && data.error && data.areaId === a.id ? '<p class="gs-warn"><i class="fa-solid fa-triangle-exclamation"></i> ' + esc(data.error) + "</p>" : "") +
+            (cur ? '<div class="ls-now"><i class="fa-solid fa-power-off"></i> Load-shedding now (' + esc(cur.note || "") + "), until " + esc(new Date(cur.end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })) + "</div>" : "") +
+            (evs.length ? '<div class="ls-list">' + evs.map(function (ev) { return '<div class="ls-slot' + (ev === cur ? " now" : "") + '"><strong>' + esc(fmtSlot(ev)) + "</strong><span>" + esc(ev.note || "") + "</span></div>"; }).join("") + "</div>"
+                        : data && data.areaId === a.id ? '<p class="ls-clear"><i class="fa-solid fa-circle-check"></i> No load-shedding scheduled for your area.</p>' : "<p>Waiting for the first update from EskomSePush...</p>") +
+            '<p class="ls-auto">' + (a.on && devs.length && a.before ? '<i class="fa-solid fa-robot"></i> Elara switches off <b>' + esc(devs.join(", ")) + "</b> " + a.before + " minutes before" + (a.after ? " and back on " + a.after + " minutes after the power returns" : "") + "."
+                : "Elara isn't switching anything off for load-shedding.") + "</p>" +
+            (data && data.at ? '<p class="gs-how">Updated ' + esc(D.ago(data.at).toLowerCase()) + ". Elara checks every 2 hours" +
+                (data.allowance ? " (" + esc(data.allowance.count) + " of today's " + esc(data.allowance.limit) + " EskomSePush checks used)." : " (the free EskomSePush plan allows 50 checks a day).") + "</p>" : "");
+    }
+    function lsSetup() {
+        if (!canEdit()) return UI.toast("You can view Smart Home but not change it.", "error");
+        if (!cfg.tuyaEndpoint || !D.user) return UI.toast("Load-shedding needs the elara-tuya function deployed and you logged in (README, step 8).", "error");
+        var a = lsArea() || { devices: D.devices.all().filter(function (d) { return d.type === "Geyser"; }).map(function (d) { return d.id; }), before: 10, after: 30, on: true };
+        var devs = D.devices.all(), picked = a.id && /_/.test(a.id) ? { id: a.id, name: a.name, region: a.region, scheduleId: a.scheduleId } : null;   // old (v2) area codes must be chosen again
+        var ov = document.createElement("div");
+        ov.className = "eui-overlay";
+        ov.innerHTML = '<form class="eui-box eui-form auto-form" novalidate><div class="eui-icon info"><i class="fa-solid fa-plug-circle-xmark"></i></div><h3>Load-shedding</h3>' +
+            '<label>Your suburb or area<div class="ls-search"><input name="q" maxlength="60" placeholder="e.g. Fourways" value=""><button type="button" class="eui-btn ghost" data-find>Search</button></div></label>' +
+            '<div class="ls-results">' + (picked ? '<p class="ls-picked">Area: <b>' + esc(picked.name) + "</b>" + (picked.region ? ", " + esc(picked.region) : "") + "</p>" : "") + "</div>" +
+            '<fieldset><legend>Switch these off before load-shedding</legend><div class="dev-picks">' + (devs.length ? devs.map(function (d) {
+                return '<label><input type="checkbox" name="dev" value="' + esc(d.id) + '"' + ((a.devices || []).indexOf(d.id) > -1 ? " checked" : "") + "> " + esc(d.name) + " <small>" + esc(d.room) + "</small></label>";
+            }).join("") : "<p>No switches yet.</p>") + "</div></fieldset>" +
+            '<label>How long before<select name="before"><option value="0">Don\'t switch anything off</option><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option></select></label>' +
+            '<label>Switch them back on<select name="after"><option value="0">No, leave them off</option><option value="15">15 minutes after the power is back</option><option value="30">30 minutes after</option><option value="60">1 hour after</option></select></label>' +
+            '<p class="eui-err" aria-live="assertive"></p><div class="eui-actions">' + (a.id ? '<button type="button" class="eui-btn danger" data-del>Turn off</button>' : "") +
+            '<button type="button" class="eui-btn ghost" data-close>Cancel</button><button type="submit" class="eui-btn primary">Save</button></div></form>';
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add("show"); });
+        var f = ov.querySelector("form"), res = ov.querySelector(".ls-results");
+        f.before.value = String(a.before == null ? 10 : a.before); f.after.value = String(a.after == null ? 30 : a.after);
+        function shut() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
+        function find() {
+            var q = f.q.value.trim();
+            if (q.length < 3) { f.querySelector(".eui-err").textContent = "Type at least 3 letters of your suburb."; return; }
+            f.querySelector(".eui-err").textContent = ""; res.innerHTML = "<p>Searching...</p>";
+            D.callFunction(cfg.tuyaEndpoint, { action: "lsSearch", text: q }).then(function (j) {
+                var list = (j.areas || []).slice(0, 12);
+                res.innerHTML = list.length ? '<div class="dev-picks">' + list.map(function (x, i) {
+                    return '<label><input type="radio" name="area" value="' + i + '"' + (picked && picked.id === x.id ? " checked" : "") + "> " + esc(x.name) + " <small>" + esc(x.region || "") + "</small></label>";
+                }).join("") + "</div>" : "<p>No areas found. Try a nearby suburb or your municipality.</p>";
+                res.querySelectorAll('[name="area"]').forEach(function (r) { r.addEventListener("change", function () { picked = list[Number(r.value)]; }); });
+                if (j.allowance) res.insertAdjacentHTML("beforeend", '<p class="gs-how">EskomSePush checks used today: ' + esc(j.allowance.count) + " of " + esc(j.allowance.limit) + ".</p>");
+            }).catch(function (e) { res.innerHTML = '<p class="gs-warn">' + esc(e.message) + "</p>"; });
+        }
+        ov.querySelector("[data-find]").addEventListener("click", find);
+        f.q.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); find(); } });
+        ov.addEventListener("click", function (e) {
+            if (e.target === ov || e.target.closest("[data-close]")) return shut();
+            if (e.target.closest("[data-del]")) { D.util.save("elaraLoadsheddingArea", null); D.log("turned off load-shedding updates", "fa-plug-circle-xmark"); shut(); renderLs(); }
+        });
+        f.addEventListener("submit", function (e) {
+            e.preventDefault();
+            if (!picked) { f.querySelector(".eui-err").textContent = "Search for your area and choose it."; return; }
+            var chosen = Array.prototype.map.call(f.querySelectorAll('[name="dev"]:checked'), function (x) { return x.value; });
+            var before = Number(f.before.value), after = Number(f.after.value);
+            if (before && !chosen.length) { f.querySelector(".eui-err").textContent = "Tick the devices to switch off, or choose “Don't switch anything off”."; return; }
+            var btn = f.querySelector('[type="submit"]'); btn.disabled = true; btn.textContent = "Saving...";
+            // EskomSePush gives each area a separate schedule id: look it up once and keep it with the area
+            (picked.scheduleId ? Promise.resolve(picked) : D.callFunction(cfg.tuyaEndpoint, { action: "lsArea", id: picked.id })).then(function (info) {
+                D.util.save("elaraLoadsheddingArea", { id: String(picked.id).slice(0, 100), scheduleId: String(info.scheduleId || "").slice(0, 80), name: String(info.name || picked.name).slice(0, 80),
+                    region: String(info.region || picked.region || "").slice(0, 80), devices: chosen, before: before, after: before ? after : 0, on: true, by: D.me().id, at: Date.now() });
+                D.log("set the load-shedding area to " + (info.name || picked.name), "fa-plug-circle-xmark");
+                shut(); renderLs();
+                return D.flush().then(function () { return D.callFunction(cfg.tuyaEndpoint, { action: "lsRefresh" }); })
+                    .then(function (j) { if (j && j.data) { lsLive = j.data; renderLs(); } UI.toast(j && j.data && j.data.error ? j.data.error : "Load-shedding schedule updated.", j && j.data && j.data.error ? "error" : "success"); })
+                    .catch(function (err) { UI.toast("Saved, but couldn't get the schedule yet: " + err.message, "error"); });
+            }).catch(function (err) {
+                btn.disabled = false; btn.textContent = "Save";
+                f.querySelector(".eui-err").textContent = err.message;
+            });
+        });
+    }
+    $("lsSetup").addEventListener("click", lsSetup);
+
     /* ---------------- quick controls (by device type) ---------------- */
     function group(kind) {
         var all = D.devices.all().filter(function (d) { var st = D.devices.live(d); return !st || st.online !== false; });
@@ -342,7 +619,7 @@
         }).join("") : '<p class="muted" style="padding:16px">No activity yet.</p>';
     }
 
-    function render() { renderBanner(); renderRooms(); renderStats(); renderEnergy(); renderByPerson(); renderAutomations(); renderActivity(); }
+    function render() { renderBanner(); renderRooms(); renderStats(); renderEnergy(); renderByPerson(); renderAutomations(); renderPrepaid(); renderGeyser(); renderLs(); renderActivity(); }
     D.onChange(render);
     document.addEventListener("elara:refresh", render);
     setInterval(render, 60000);

@@ -75,12 +75,159 @@
                 }).join("") + "</tr>";
             }).join("") + "</tbody>";
     }
-    function renderActivity() {
-        var items = D.activity(8);
-        $("memberActivity").innerHTML = items.length ? items.map(function (a) {
-            return '<div class="activity-item"><div class="activity-left"><div class="activity-icon"><i class="fa-solid ' + esc(a.icon) + '"></i></div><div class="activity-info"><h4>' + esc(a.who + " " + a.text) + "</h4><p>" + esc(D.ago(a.t)) + "</p></div></div></div>";
-        }).join("") : '<p class="perm-empty">No activity yet.</p>';
+    /* ---------------- activity log: everything, filterable, exportable ---------------- */
+    var logShown = 15;
+    function logArea(a) {
+        var t = (a.icon || "") + " " + a.text;
+        if (/task|chore|fa-list-check|fa-rotate\b|fa-broom|fa-circle-check/i.test(t)) return "tasks";
+        if (/shopping|bought|receipt|warranty|meal|pantry|house stock|used up|ingredient|fa-cart|fa-bag|fa-receipt|fa-utensils|fa-box/i.test(t)) return "shopping";
+        if (/event|schedule|calendar|busy|available|away for|fa-calendar/i.test(t)) return "schedule";
+        if (/turned|switch|device|geyser|light|automation|load-shedding|electricity|meter|cbi|energy|fa-bolt|fa-fire|fa-robot|fa-plug|fa-gauge/i.test(t)) return "smartHome";
+        if (/member|invite|joined|left the|access|role|guest link|fa-user|fa-key/i.test(t)) return "members";
+        return "";
     }
+    function logEntries() {
+        var who = $("logWho").value, area = $("logArea").value, q = $("logSearch").value.toLowerCase().trim();
+        return D.activity(300).filter(function (a) {
+            if (who && (who === "elara" ? a.who !== "Elara" || a.by : a.by !== who)) return false;
+            if (area && logArea(a) !== area) return false;
+            if (q && (a.who + " " + a.text).toLowerCase().indexOf(q) < 0) return false;
+            return true;
+        });
+    }
+    function renderLogWho() {
+        var sel = $("logWho"), cur = sel.value;
+        sel.innerHTML = '<option value="">Everyone</option>' + D.members.active().map(function (m) { return '<option value="' + esc(m.userId) + '">' + esc(m.isMe ? m.name + " (you)" : m.name) + "</option>"; }).join("") +
+            '<option value="elara">Elara (automatic)</option>';
+        sel.value = cur;
+    }
+    function renderActivity() {
+        renderLogWho();
+        var items = logEntries(), shown = items.slice(0, logShown), lastDay = "";
+        $("memberActivity").innerHTML = shown.length ? shown.map(function (a) {
+            var d = new Date(a.t), day = d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }), head = "";
+            if (day !== lastDay) { head = '<div class="log-day">' + esc(D.util.dayKey(d) === D.util.dayKey() ? "Today" : day) + "</div>"; lastDay = day; }
+            return head + '<div class="activity-item' + (a.who === "Elara" && !a.by ? " by-elara" : "") + '"><div class="activity-left"><div class="activity-icon"><i class="fa-solid ' + esc(a.icon) + '"></i></div><div class="activity-info"><h4>' + esc(a.who + " " + a.text) + "</h4><p>" +
+                esc(d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })) + " • " + esc(D.ago(a.t)) + "</p></div></div></div>";
+        }).join("") : '<p class="perm-empty">' + (D.activity(1).length ? "Nothing matches." : "No activity yet.") + "</p>";
+        $("logMore").hidden = items.length <= logShown;
+        $("logMore").textContent = "Show more (" + (items.length - logShown) + " older)";
+    }
+    ["logWho", "logArea"].forEach(function (id) { $(id).addEventListener("change", function () { logShown = 15; renderActivity(); }); });
+    $("logSearch").addEventListener("input", function () { logShown = 15; renderActivity(); });
+    $("logMore").addEventListener("click", function () { logShown += 30; renderActivity(); });
+    $("logExport").addEventListener("click", function () {
+        var F = window.ElaraFeatures, items = logEntries();
+        if (!F || !items.length) return UI.toast("Nothing to export.", "info");
+        F.csv("elara-activity-" + D.util.dayKey() + ".csv", ["Date", "Time", "Who", "What", "Area"], items.map(function (a) {
+            var d = new Date(a.t);
+            return [D.util.dayKey(d), d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }), a.who, a.text, logArea(a) || "other"];
+        }));
+        UI.toast(items.length + " entr" + (items.length === 1 ? "y" : "ies") + " downloaded.");
+    });
+
+    /* ---------------- guest links (owner only): a view-only page that expires ---------------- */
+    var GUEST_AREAS = [["tasks", "Tasks for the next 2 weeks"], ["schedule", "Events for the next 2 weeks"], ["shopping", "Shopping list"], ["smartHome", "Which switches are on (view only)"]];
+    function guestBase() {
+        var cfg = window.ELARA_CONFIG || {};
+        var base = (cfg.siteUrl || (location.origin + location.pathname.replace(/[^/]*$/, ""))).replace(/\/?$/, "/");
+        return base + "guest.html#t=";
+    }
+    function newToken() {
+        var b = new Uint8Array(32); crypto.getRandomValues(b);
+        return btoa(String.fromCharCode.apply(null, b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+    var guestCache = [];
+    function loadGuests() {
+        if (!isOwner() || !D.user || !(window.ELARA_CONFIG || {}).supabaseUrl) {
+            $("guestList").innerHTML = '<p class="perm-empty">' + (D.user ? "Only the home owner can make guest links." : "Log in to make guest links.") + "</p>";
+            return Promise.resolve();
+        }
+        return D.getClient().then(function (c) { return c.from("elara_guest_links").select("id,token,label,areas,note,expires_at,revoked,created_at,last_viewed,views").eq("owner_id", D.user.id).order("created_at", { ascending: false }).limit(30); })
+            .then(function (r) {
+                if (r.error) throw r.error;
+                guestCache = r.data || []; renderGuests();
+            }).catch(function (e) {
+                $("guestList").innerHTML = '<p class="perm-empty">' + (/elara_guest_links|relation|schema cache/i.test(e.message || "") ? "Guest links need the latest elara-setup.sql (README, step 2)." : "Couldn't load guest links: " + esc(e.message)) + "</p>";
+            });
+    }
+    function renderGuests() {
+        var now = Date.now();
+        $("guestList").innerHTML = guestCache.length ? guestCache.map(function (g) {
+            var exp = new Date(g.expires_at).getTime(), live = !g.revoked && exp > now;
+            var areas = (g.areas || []).map(function (a) { var x = GUEST_AREAS.filter(function (y) { return y[0] === a; })[0]; return x ? x[1].split(" (")[0].replace(/ for the next 2 weeks/, "") : a; });
+            return '<div class="guest-row' + (live ? "" : " ended") + '" data-id="' + esc(g.id) + '"><div class="guest-ic"><i class="fa-solid ' + (live ? "fa-key" : "fa-lock") + '"></i></div><div class="guest-main"><strong>' + esc(g.label) + "</strong>" +
+                "<small>" + (g.revoked ? "Turned off" : live ? "Works until " + esc(new Date(exp).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })) : "Expired " + esc(D.ago(exp).toLowerCase())) +
+                " • " + esc(areas.join(", ") || "Notes only") + "</small><small>" + (g.views ? "Opened " + g.views + " time" + (g.views === 1 ? "" : "s") + ", last " + esc(D.ago(new Date(g.last_viewed).getTime()).toLowerCase()) : "Not opened yet") + "</small></div>" +
+                '<div class="guest-acts">' + (live ? '<button type="button" class="ghost-btn" data-g="copy"><i class="fa-solid fa-copy"></i> Copy link</button><button type="button" class="ghost-btn danger-ghost" data-g="off">Turn off</button>'
+                                                   : '<button type="button" class="ghost-btn" data-g="del" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>') + "</div></div>";
+        }).join("") : '<p class="perm-empty">No guest links yet. Make one for a house-sitter: they see only what you tick, and the link stops working when you say.</p>';
+    }
+    function copyText(t) {
+        if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+        var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch (e) { /* ignore */ } ta.remove(); return Promise.resolve();
+    }
+    function shareLink(g) {
+        var url = guestBase() + g.token;
+        if (navigator.share) return navigator.share({ title: "Elara: " + g.label, text: "View-only access to the home until " + new Date(g.expires_at).toLocaleDateString() + ".", url: url }).catch(function () { return copyText(url).then(function () { UI.toast("Link copied."); }); });
+        return copyText(url).then(function () { UI.toast("Link copied. Send it to your guest."); });
+    }
+    $("guestNew").addEventListener("click", function () {
+        if (!isOwner() || !D.user) return UI.toast("Only the home owner can make guest links.", "error");
+        var ov = document.createElement("div");
+        ov.className = "eui-overlay";
+        ov.innerHTML = '<form class="eui-box eui-form auto-form" novalidate><div class="eui-icon info"><i class="fa-solid fa-key"></i></div><h3>New guest link</h3>' +
+            "<p>Anyone with this link can <b>look</b> (never change anything) until it expires.</p>" +
+            '<label>Who is it for?<input name="label" maxlength="60" placeholder="e.g. Lerato (house-sitting)"></label>' +
+            '<label>Works for<select name="days"><option value="1">1 day</option><option value="2">2 days</option><option value="3">3 days</option><option value="7" selected>1 week</option><option value="14">2 weeks</option><option value="30">30 days</option></select></label>' +
+            '<fieldset><legend>What they can see</legend><div class="dev-picks">' + GUEST_AREAS.map(function (a) {
+                return '<label><input type="checkbox" name="area" value="' + a[0] + '"' + (a[0] === "tasks" || a[0] === "shopping" ? " checked" : "") + "> " + esc(a[1]) + "</label>";
+            }).join("") + "</div></fieldset>" +
+            '<label>Notes for them (optional)<textarea name="note" rows="3" maxlength="1000" placeholder="e.g. Feed the dog at 7. Wi-Fi password is on the fridge. Call Thabo on 082 000 0000 if anything goes wrong."></textarea></label>' +
+            '<p class="eui-err" aria-live="assertive"></p><div class="eui-actions"><button type="button" class="eui-btn ghost" data-close>Cancel</button><button type="submit" class="eui-btn primary">Make link</button></div></form>';
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add("show"); });
+        var f = ov.querySelector("form");
+        f.label.focus();
+        function shut() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
+        ov.addEventListener("click", function (e) { if (e.target === ov || e.target.closest("[data-close]")) shut(); });
+        f.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var label = f.label.value.trim().replace(/\s+/g, " "), days = Number(f.days.value), note = f.note.value.trim(),
+                areas = Array.prototype.map.call(f.querySelectorAll('[name="area"]:checked'), function (x) { return x.value; });
+            f.querySelectorAll(".invalid").forEach(function (x) { x.classList.remove("invalid"); });
+            var err = label.length < 2 || label.length > 60 || /[<>]/.test(label) ? ["label", "Say who it's for (2 to 60 characters)."]
+                : [1, 2, 3, 7, 14, 30].indexOf(days) < 0 ? ["days", "Choose how long it works."]
+                : !areas.length && !note ? [null, "Tick at least one thing they can see, or write a note."]
+                : note.length > 1000 ? ["note", "Keep the notes under 1000 characters."] : null;
+            if (err) { f.querySelector(".eui-err").textContent = err[1]; if (err[0]) { f[err[0]].classList.add("invalid"); f[err[0]].focus(); } return; }
+            var btn = f.querySelector('[type="submit"]'); btn.disabled = true;
+            var row = { owner_id: D.user.id, token: newToken(), label: label, areas: areas, note: note || null, expires_at: new Date(Date.now() + days * 86400000).toISOString() };
+            D.getClient().then(function (c) { return c.from("elara_guest_links").insert(row).select("id,token,label,areas,note,expires_at,revoked,created_at,last_viewed,views").single(); })
+                .then(function (r) {
+                    if (r.error) throw r.error;
+                    guestCache.unshift(r.data); renderGuests(); shut();
+                    D.log("made a guest link for " + label + " (" + days + " day" + (days === 1 ? "" : "s") + ")", "fa-key");
+                    shareLink(r.data);
+                }).catch(function (e2) { btn.disabled = false; f.querySelector(".eui-err").textContent = /elara_guest_links|relation/i.test(e2.message || "") ? "Run the latest elara-setup.sql first (README, step 2)." : "Couldn't make the link: " + e2.message; });
+        });
+    });
+    $("guestList").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-g]"); if (!b) return;
+        var g = guestCache.filter(function (x) { return x.id === b.closest("[data-id]").dataset.id; })[0]; if (!g) return;
+        if (b.dataset.g === "copy") return shareLink(g);
+        if (b.dataset.g === "off") return UI.confirm({ title: "Turn off " + g.label + "'s link?", message: "It stops working straight away.", confirmText: "Turn off" }).then(function (ok) {
+            if (!ok) return;
+            D.getClient().then(function (c) { return c.from("elara_guest_links").update({ revoked: true }).eq("id", g.id); }).then(function (r) {
+                if (r.error) throw r.error; g.revoked = true; renderGuests(); D.log("turned off the guest link for " + g.label, "fa-key"); UI.toast("Link turned off.");
+            }).catch(function (e2) { UI.toast("Couldn't turn it off: " + e2.message, "error"); });
+        });
+        if (b.dataset.g === "del") D.getClient().then(function (c) { return c.from("elara_guest_links").delete().eq("id", g.id); }).then(function (r) {
+            if (r.error) throw r.error; guestCache = guestCache.filter(function (x) { return x.id !== g.id; }); renderGuests();
+        }).catch(function (e2) { UI.toast("Couldn't delete it: " + e2.message, "error"); });
+    });
+    loadGuests();
 
     /* ---------------- actions on a member ---------------- */
     $("membersList").addEventListener("click", function (e) {

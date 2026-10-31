@@ -1837,3 +1837,10 @@ body.light-theme .icon-act { background: rgba(0,0,0,.06); color: #17182b; }
 .meal-ideas small { color: var(--text2); }
 .shopping-item .price small{ display:block; font-size:11px; opacity:.6; font-weight:400; text-align:right; }
 .shopping-item .price.no-price{ opacity:.55; font-size:13px; font-weight:500; }
+/* pantry cards: name on top, buttons in a row underneath (4 buttons don't fit beside the name) */
+.meal-ideas[hidden], .use-soon[hidden] { display: none !important; }
+.pantry-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.pantry-item { flex-direction: column; align-items: stretch; justify-content: space-between; }
+.pantry-item > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+.pantry-acts { flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pantry-acts .icon-act { width: 30px; height: 30px; }

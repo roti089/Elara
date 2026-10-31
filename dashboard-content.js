@@ -60,6 +60,12 @@
             var e = D.energy.compute("today");
             $("energyCount").textContent = e.total < 1 ? e.total.toFixed(2) : e.total.toFixed(1);
             $("energyNote").textContent = "kWh today • about R" + e.cost.toFixed(2);
+            var pp = window.ElaraFeatures ? ElaraFeatures.prepaid.status() : null;
+            if (pp && pp.daysLeft != null) {
+                var dl = Math.floor(pp.daysLeft);
+                $("energyNote").textContent = "kWh today • prepaid lasts " + (dl < 1 ? "under a day" : "~" + dl + " day" + (dl === 1 ? "" : "s"));
+                $("energyNote").classList.toggle("warn-text", pp.daysLeft <= pp.warnDays);
+            }
         }
     }
 

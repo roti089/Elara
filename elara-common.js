@@ -248,14 +248,16 @@
                     var input = f.type === "select"
                         ? "<select" + attrs + ">" + f.options.map(function (o) { var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(v) === String(f.value) ? " selected" : "") + ">" + esc(l) + "</option>"; }).join("") + "</select>"
                         : f.type === "textarea" ? "<textarea rows=\"3\"" + attrs + ">" + esc(f.value || "") + "</textarea>"
-                        : '<input type="' + esc(f.type || "text") + '"' + attrs + ' value="' + esc(f.value == null ? "" : f.value) + '">';
-                    return "<label>" + esc(f.label) + input + "</label>";
+                        : '<input type="' + esc(f.type || "text") + '"' + attrs + (f.suggestions ? ' list="eui-dl-' + esc(f.name) + '" autocomplete="off"' : "") + ' value="' + esc(f.value == null ? "" : f.value) + '">' +
+                          (f.suggestions ? '<datalist id="eui-dl-' + esc(f.name) + '">' + f.suggestions.map(function (o) { return '<option value="' + esc(o) + '">'; }).join("") + "</datalist>" : "");
+                    return "<label>" + esc(f.label) + input + (f.hint ? '<small class="eui-hint">' + esc(f.hint) + "</small>" : "") + "</label>";
                 }).join("") +
                 '<p class="eui-err" aria-live="assertive"></p><div class="eui-actions"><button type="button" class="eui-btn ghost" data-r="0">Cancel</button><button type="submit" class="eui-btn primary">' + esc(opts.submitText || "Save") + "</button></div></form>";
             document.body.appendChild(ov);
             requestAnimationFrame(function () { ov.classList.add("show"); });
             var form = ov.querySelector("form"), first = form.querySelector("input,select,textarea");
             if (first) first.focus();
+            if (opts.onChange) form.addEventListener("input", function (e) { if (e.target.name) opts.onChange(form, e.target.name); });
             function close(v) { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); resolve(v); }
             ov.addEventListener("click", function (e) { if (e.target === ov || e.target.closest("[data-r]")) close(null); });
             ov.addEventListener("keydown", function (e) { if (e.key === "Escape") close(null); });
@@ -282,11 +284,11 @@
     var KINDS = ["tasks", "schedule", "shopping", "smartHome", "members", "energy", "security"];
     function prefs() {
         var p = json(NP_KEY, null) || {};
-        var out = { push: !!p.push };
+        var out = { push: !!p.push, daily: p.daily !== false, dailyAt: /^([01]\d|2[0-3]):[0-5]\d$/.test(p.dailyAt || "") ? p.dailyAt : "07:00" };
         KINDS.forEach(function (k) { out[k] = p[k] !== false; });
         return out;
     }
-    function setPref(key, value) { var p = prefs(); p[key] = !!value; set(NP_KEY, JSON.stringify(p)); updateBellDot(); }
+    function setPref(key, value) { var p = prefs(); p[key] = key === "dailyAt" ? String(value) : !!value; set(NP_KEY, JSON.stringify(p)); updateBellDot(); }
 
     /* ---------------- BROWSER / PUSH NOTIFICATIONS ---------------- */
     var swReg = null, pushSubscribed = false;

@@ -94,6 +94,7 @@
             <button type="button" data-tab="Upcoming">Upcoming</button>
             <button type="button" data-tab="Completed">Completed</button>
             <button type="button" data-tab="Overdue">Overdue</button>
+            <button type="button" data-tab="Chores">Chores</button>
         </section>
 
         <section class="tasks-layout">
@@ -122,6 +123,21 @@
             </div>
         </section>
 
+        <!-- CHORE ROTATION -->
+        <section class="feature-grid" id="choreSection">
+            <div class="panel">
+                <div class="panel-header">
+                    <div><h2><i class="fa-solid fa-rotate"></i> Chore Rotation</h2><p class="panel-subtitle">Chores that move to the next person every week. They show up as tasks.</p></div>
+                    <button type="button" class="ghost-btn needs-edit" id="addChoreBtn"><i class="fa-solid fa-plus"></i> Add chore</button>
+                </div>
+                <div id="choreList"></div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><div><h2><i class="fa-solid fa-trophy"></i> Chore Points</h2><p class="panel-subtitle">Points for chores done. A streak is weeks in a row with every chore done.</p></div></div>
+                <div id="choreBoard"></div>
+            </div>
+        </section>
+
         <section class="panel recent-panel">
             <div class="panel-header"><h2>Recent Activity</h2></div>
             <div id="taskActivity"></div>
@@ -137,6 +153,7 @@
 <script src="elara-theme.js"></script>
 <script src="elara-assistant.js"></script>
 <script src="elara-common.js"></script>
+<script src="elara-features.js"></script>
 <script src="dashboard-tasks.js"></script>
 </body>
 </html>

@@ -88,13 +88,30 @@
                 <p class="perm-legend"><span class="lvl edit">Edit</span> can see and change <span class="lvl view">View</span> can only look <span class="lvl none">Hidden</span> can't see it</p>
             </div>
             <div class="panel">
-                <div class="panel-header"><div><h2><i class="fa-solid fa-clock-rotate-left"></i> Household Activity</h2><p class="panel-subtitle">What people did recently</p></div></div>
+                <div class="panel-header">
+                    <div><h2><i class="fa-solid fa-clock-rotate-left"></i> Activity Log</h2><p class="panel-subtitle">Who did what in the home, including what Elara did by itself</p></div>
+                    <button type="button" class="ghost-btn" id="logExport" title="Download as a spreadsheet (CSV)"><i class="fa-solid fa-file-csv"></i> Export</button>
+                </div>
+                <div class="log-filters">
+                    <select id="logWho" aria-label="Who"><option value="">Everyone</option></select>
+                    <select id="logArea" aria-label="Area"><option value="">Everything</option><option value="tasks">Tasks &amp; chores</option><option value="shopping">Shopping &amp; meals</option><option value="schedule">Schedule</option><option value="smartHome">Smart Home &amp; energy</option><option value="members">Members</option></select>
+                    <input type="search" id="logSearch" maxlength="60" placeholder="Search the log..." aria-label="Search the log">
+                </div>
                 <div class="activity-list" id="memberActivity"></div>
+                <button type="button" class="ghost-btn log-more" id="logMore" hidden>Show more</button>
                 <div class="leave-box member-only" hidden>
                     <p>You joined this home through an invitation.</p>
                     <button type="button" class="leave-btn" id="leaveBtn"><i class="fa-solid fa-door-open"></i> Leave this household</button>
                 </div>
             </div>
+        </section>
+
+        <section class="panel owner-only" id="guestPanel">
+            <div class="panel-header">
+                <div><h2><i class="fa-solid fa-key"></i> Guest Access</h2><p class="panel-subtitle">A view-only link for a house-sitter or visitor. It stops working on the date you choose.</p></div>
+                <button type="button" class="ghost-btn primary-ghost" id="guestNew"><i class="fa-solid fa-link"></i> New guest link</button>
+            </div>
+            <div id="guestList"></div>
         </section>
 
         <button class="fab owner-only" id="addMemberFab" type="button" aria-label="Invite member"><i class="fa-solid fa-user-plus"></i></button>
@@ -136,6 +153,7 @@
 <script src="elara-theme.js"></script>
 <script src="elara-assistant.js"></script>
 <script src="elara-common.js"></script>
+<script src="elara-features.js"></script>
 <script src="dashboard-members.js"></script>
 </body>
 </html>

@@ -25,6 +25,8 @@ elara-config.js     settings (Supabase URL + publishable key, function URLs, VAP
 elara-data.js       data layer: sync, household sharing, permissions, backups, energy, notifications
 elara-common.js     sidebar, theme, bell, voice control, location consent, automations
 elara-assistant.js  Elara assistant: commands, meal ideas from what's in the house, AI fallback
+elara-features.js   chore rotation, food expiry, prepaid electricity, "left on" alerts, offline, shortcuts, receipt reading, CSV
+guest.html          the view-only page a guest link opens (Members > Guest Access)
 elara-sw.js         service worker: push notifications + offline copy of the app (must stay in the root folder)
 elara-pwa.js        makes Elara installable on phones (with manifest.webmanifest, icons/, offline.html)
 elara-setup.sql     the whole database setup (step 2)
@@ -43,6 +45,9 @@ It creates or updates:
 * `elara_profiles`: names and photos that members of the same home can see.
 * `elara_notifications`, `elara_push_subscriptions`, `elara_reminders_sent`: notifications.
 * `elara_backups`: cloud backups (owner only, 14 kept).
+* `elara_guest_links` + `elara_guest_view()`: time-limited, view-only guest links (Members > Guest Access).
+* `elara_server_log()`: lets the scheduled jobs write to the activity log ("Elara switched off the Geyser before load-shedding").
+* `on_since` on `elara_device_state`: when each switch was turned on (for "left on" alerts).
 * A safe policy on your existing `contacts` table: visitors can **send** a message but can't read any.
 
 > If the dashboard shows "Household sharing isn't set up in Supabase yet", this step hasn't been run.
@@ -93,7 +98,8 @@ supabase functions deploy elara-push --no-verify-jwt
 supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com CRON_SECRET=pick-a-long-random-text
 ```
    (`--no-verify-jwt` lets the scheduled job below call it; the function checks every signed-in caller itself.)
-4. Reminders (tasks due and overdue, events in the next 30 minutes, warranties ending): in the SQL Editor run
+4. Reminders (tasks due and overdue, events in the next 30 minutes, warranties ending, food about to expire, switches
+   left on, prepaid electricity running low, and each person's **morning summary**): in the SQL Editor run
 ```sql
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
@@ -106,6 +112,10 @@ $$);
 ```
 5. Each person turns on **Settings > Notifications > Push notifications** on each device and presses **Send a test**.
    On iPhone, push only works after adding Elara to the Home Screen (Safari > Share > Add to Home Screen).
+
+**Morning summary:** one message a day per person (default 07:00, on by default): their tasks today, today's events,
+yesterday's electricity, prepaid days left and who's away. Each person sets the time or turns it off in
+**Settings > Notifications**.
 
 Who gets what: assigned/completed tasks, new events (with a special warning to anyone **busy or away** that day),
 items added to or bought from the shopping list, devices switched by someone else, Away Mode, access changes,
@@ -161,6 +171,12 @@ select cron.schedule('elara-switches', '*/5 * * * *', $$
 $$);
 ```
 6. In `elara-config.js` set `serverAutomations: true` (so open screens don't also run the automations).
+7. **Load-shedding (optional, free):** get a personal API key from EskomSePush (https://eskomsepush.gumroad.com/l/api ,
+   the free plan allows 50 checks a day), then `supabase secrets set ESKOMSEPUSH_TOKEN=your-key` and redeploy `elara-tuya`.
+   Smart Home > Load-shedding > **Set up**: search your suburb, tick the devices to switch off before a slot (your geyser),
+   and whether to switch them back on afterwards. The schedule refreshes every 2 hours through the job in point 5
+   (about 12 to 20 checks a day). Elara uses EskomSePush API **v3.1** (v2.0 was retired). If EskomSePush changes its API
+   again, the panel shows the error it returns.
 
 **How energy is measured:** each reading of a switch's power (watts) is stored with the time. Energy between two readings
 = average power x time, added to the right hour. Readings come from the scheduled job (every 5 minutes) and from any open
@@ -172,6 +188,18 @@ switch is counted for the person who last switched it on in Elara; switching in 
 **Automations** (Smart Home page): pick the switches, on or off, and when: at a time (with days), at sunset or at sunrise
 (with an offset, needs the home location in Settings), or **Run now** scenes such as Away Mode. Settings > Smart Home
 pauses all of them at once.
+
+**Geyser savings** (Smart Home): after 3 days of readings from a switch whose type is Geyser, Elara works out a heating
+schedule (heat only before the morning and evening hot-water times) and what it saves. The saving is an estimate: Elara
+measures how much the geyser uses at night just keeping the water hot, and counts about half of that for the hours it's
+off. **Use this schedule** adds 4 normal automations; after a few days the panel shows the measured before/after.
+
+**Prepaid electricity** (Smart Home): type what the meter shows now and each token you buy. From two readings Elara knows
+your daily use and warns you (in the app and by push) when about 3 days are left. Without readings it can only use what the
+smart switches measured, and says so.
+
+**Left on alerts:** each switch's pencil button > "Warn me if it's left on for". Defaults: geyser 4 h, heater 3 h,
+aircon 8 h, pool pump 10 h, everything else off.
 
 ## 9. Calendar link import (`elara-ics`)
 ```
@@ -190,6 +218,29 @@ A website can't read the calendar app on a phone directly; the file or link is h
 The first time someone opens a dashboard, Elara **asks** before using their location. It's used for the weather,
 sunrise and sunset (adaptive lighting) and the home's time zone. Change it any time in **Settings > Location**.
 The owner can also type the home address under **Settings > Home**.
+
+## New in this version (no setup needed beyond step 2)
+* **Chore rotation** (Tasks): chores that move to the next person every week. Each chore day becomes a normal task (with
+  reminders). Points for done chores, and a streak for weeks in a row with every chore done. Deleting one chore task
+  skips only that day.
+* **Meal planner** (Shopping): plan breakfast/lunch/dinner per day; pick a known dish and the ingredients fill in.
+  **Suggest dinners** uses Elara AI when it's on (else the built-in recipes that best match what's in the house).
+  **Add missing to list** puts every ingredient that isn't in the house or already on the list onto the shopping list.
+* **Food expiry** (Shopping > In the House): "Best before" is suggested when you mark food as bought (milk 7 days, meat 3...).
+  Things to use soon are shown first, and you get a reminder the day before.
+* **Receipt scanning**: Scan Receipt reads the till slip on the phone itself (Tesseract.js, free, nothing is sent to a
+  server). You check what it found, then it updates prices, marks list items as bought and fills "In the House". The first
+  scan downloads the reader (about 15 MB); after that it's cached. Clear, flat, well-lit photos read best.
+* **Activity log** (Members): everything, filterable by person and area, including what Elara did by itself; export to CSV.
+* **Guest access** (Members, owner only): a view-only link for a house-sitter that expires after 1 to 30 days. Choose what
+  they see (tasks, events, shopping list, which switches are on) and add notes. Turn it off any time.
+* **Export data** (Settings): CSV files of energy (hourly or daily), shopping, meals, tasks, events, prepaid and the log.
+* **Offline**: with no signal you can still open Elara and add things; they're kept on the phone and sync when you're
+  back online (a bar at the bottom says you're offline).
+* **App-icon shortcuts**: long-press the Elara icon on your phone for Add to shopping, Add a task, Geyser on/off and Talk
+  to Elara. (Real home-screen *widgets* aren't possible for web apps on Android or iPhone; shortcuts are the closest.)
+  Android picks the shortcuts up by itself within a day or so (reinstall to get them straight away); iPhone doesn't
+  support app shortcuts for web apps.
 
 ## Backups
 * Automatic: once a day when the owner opens Elara, a backup is saved in Supabase (the last 14 are kept).

@@ -8,7 +8,7 @@
    ============================================================ */
 (function () {
     "use strict";
-    var D = window.ElaraData, UI = window.ElaraUI;
+    var D = window.ElaraData, UI = window.ElaraUI, F = window.ElaraFeatures, A = window.ElaraAssistant, cfg = window.ELARA_CONFIG || {};
     if (!D) return;
     window.ElaraPageLive = true;
 
@@ -141,26 +141,33 @@
             text: "Check what you paid. It counts towards your spending and goes into “In the House”.",
             fields: [
                 { name: "price", label: "Price paid each (R)", type: "number", value: item.price, min: 0, max: 100000, step: "0.01", required: true },
-                { name: "qty", label: "Quantity", type: "number", value: item.qty || 1, min: 1, max: 99, step: 1, required: true }
+                { name: "qty", label: "Quantity", type: "number", value: item.qty || 1, min: 1, max: 99, step: 1, required: true },
+                { name: "expires", label: "Best before (optional, Elara reminds you)", type: "date", value: F ? F.expiry.suggest(item.name, item.category) : "", min: D.util.dayKey() }
             ],
-            validate: function (v) { return validateItem({ name: item.name, details: "", price: v.price, qty: v.qty, category: item.category || "Groceries" }); }
+            validate: function (v) {
+                if (v.expires && (!/^\d{4}-\d{2}-\d{2}$/.test(v.expires) || v.expires < D.util.dayKey())) return { field: "expires", msg: "The best-before date can't be in the past. Leave it empty if there isn't one." };
+                return validateItem({ name: item.name, details: "", price: v.price, qty: v.qty, category: item.category || "Groceries" });
+            }
         }).then(function (v) {
             if (!v) return;
             var m = me(), price = Math.round(Number(v.price) * 100) / 100, qty = Number(v.qty);
             var cart = bought();
             cart.push({ id: item.id, name: item.name, price: price, qty: qty, category: item.category, addedAt: Date.now(), by: m.id, byName: m.first });
             save("elaraCartItems", cart);
-            addToPantry(item.name, qty, item.category);
+            addToPantry(item.name, qty, item.category, v.expires);
             D.log("bought " + item.name + " (" + money(price * qty) + ")", "fa-bag-shopping");
             D.notify({ to: "household", kind: "shopping", title: "Shopping done", body: m.first + " bought " + item.name + " for " + money(price * qty) + ".", href: "dashboard-shopping.html" });
             UI.toast(item.name + " marked as bought.");
             renderAll();
         });
     }
-    function addToPantry(name, qty, category) {
+    function addToPantry(name, qty, category, expires) {
         var p = pantry(), m = me(), ex = p.filter(function (x) { return !x.usedUp && norm(x.name) === norm(name); })[0];
-        if (ex) { ex.qty = Math.min(999, (Number(ex.qty) || 0) + qty); ex.updatedAt = Date.now(); }
-        else p.push({ id: Date.now() + Math.floor(Math.random() * 1000), name: name, qty: qty, unit: "items", category: category || "Groceries", addedAt: Date.now(), by: m.id, byName: m.first });
+        if (ex) {
+            ex.qty = Math.min(999, (Number(ex.qty) || 0) + qty); ex.updatedAt = Date.now();
+            if (expires && (!ex.expires || expires < ex.expires)) ex.expires = expires;      // the older stock goes off first
+        }
+        else p.push({ id: Date.now() + Math.floor(Math.random() * 1000), name: name, qty: qty, unit: "items", category: category || "Groceries", addedAt: Date.now(), by: m.id, byName: m.first, expires: expires || undefined });
         save("elaraPantry", p);
     }
 
@@ -196,14 +203,25 @@
     $("#sortBy").addEventListener("change", function () { sortBy = this.value; renderList(); });
 
     /* ---------------- in the house (pantry) ---------------- */
+    function expiryOf(x) { return F ? F.expiry.info(x) : null; }
     function renderPantry() {
-        var p = pantry().filter(function (x) { return !x.usedUp; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+        var p = pantry().filter(function (x) { return !x.usedUp; }).sort(function (a, b) {
+            var ea = a.expires || "9999", eb = b.expires || "9999";
+            return ea.localeCompare(eb) || a.name.localeCompare(b.name);
+        });
         $("#inHouseCount").textContent = p.length;
+        var soon = p.filter(function (x) { var e = expiryOf(x); return e && e.days <= 3; });
+        $("#inHouseNote").textContent = soon.length ? soon.length + " to use soon" : "Food and supplies at home";
+        var us = $("#useSoon");
+        us.hidden = !soon.length;
+        if (soon.length) {
+            us.innerHTML = '<strong><i class="fa-solid fa-hourglass-half"></i> Use these first</strong><p>' + soon.map(function (x) { var e = expiryOf(x); return '<span class="exp ' + e.cls + '">' + esc(x.name) + " • " + esc(e.label.toLowerCase()) + "</span>"; }).join("") + "</p>";
+        }
         $("#pantryList").innerHTML = p.length ? '<div class="pantry-grid">' + p.map(function (x) {
-            var age = Math.floor((Date.now() - (x.addedAt || Date.now())) / DAY);
-            return '<div class="pantry-item" data-id="' + esc(x.id) + '"><div><strong>' + esc(x.name) + "</strong><small>" + esc(x.qty) + " " + esc(x.unit || "") +
-                (age ? " • " + age + "d" : "") + "</small></div>" +
-                (canEdit() ? '<div class="pantry-acts"><button type="button" class="icon-act" data-act="use" title="Use one" aria-label="Use one ' + esc(x.name) + '"><i class="fa-solid fa-minus"></i></button>' +
+            var age = Math.floor((Date.now() - (x.addedAt || Date.now())) / DAY), e = expiryOf(x);
+            return '<div class="pantry-item' + (e && e.cls ? " exp-" + e.cls : "") + '" data-id="' + esc(x.id) + '"><div><strong>' + esc(x.name) + "</strong><small>" + esc(x.qty) + " " + esc(x.unit === "items" && Number(x.qty) === 1 ? "item" : x.unit || "") +
+                (e ? " • " + esc(e.label) : age ? " • " + age + "d" : "") + "</small></div>" +
+                (canEdit() ? '<div class="pantry-acts"><button type="button" class="icon-act" data-act="date" title="Best-before date" aria-label="Best-before date for ' + esc(x.name) + '"><i class="fa-regular fa-calendar"></i></button><button type="button" class="icon-act" data-act="use" title="Use one" aria-label="Use one ' + esc(x.name) + '"><i class="fa-solid fa-minus"></i></button>' +
                  '<button type="button" class="icon-act" data-act="add" title="Add one" aria-label="Add one ' + esc(x.name) + '"><i class="fa-solid fa-plus"></i></button>' +
                  '<button type="button" class="icon-act danger" data-act="gone" title="Used up" aria-label="' + esc(x.name) + ' used up"><i class="fa-solid fa-check"></i></button></div>' : "") + "</div>";
         }).join("") + "</div>" : '<p class="muted">Nothing recorded yet. Items you mark as bought appear here, or press Add.</p>';
@@ -212,6 +230,19 @@
         var b = e.target.closest("[data-act]"); if (!b || !canEdit()) return;
         var id = Number(b.closest("[data-id]").dataset.id), p = pantry(), x = p.filter(function (y) { return y.id === id; })[0];
         if (!x) return;
+        if (b.dataset.act === "date") {
+            return UI.form({
+                title: "Best before: " + x.name, icon: "fa-hourglass-half", submitText: "Save",
+                text: "Elara reminds you the day before. Leave it empty if it doesn't go off.",
+                fields: [{ name: "expires", label: "Best before", type: "date", value: x.expires || (F ? F.expiry.suggest(x.name, x.category) : ""), min: D.util.dayKey() }],
+                validate: function (v) { return v.expires && v.expires < D.util.dayKey() ? { field: "expires", msg: "Choose today or a later day, or leave it empty." } : null; }
+            }).then(function (v) {
+                if (!v) return;
+                var list = pantry(), y = list.filter(function (z) { return z.id === id; })[0]; if (!y) return;
+                if (v.expires) y.expires = v.expires; else delete y.expires;
+                y.updatedAt = Date.now(); save("elaraPantry", list); renderAll();
+            });
+        }
         if (b.dataset.act === "add") x.qty = Math.min(999, (Number(x.qty) || 0) + 1);
         else if (b.dataset.act === "use") { x.qty = Math.max(0, (Number(x.qty) || 1) - 1); if (!x.qty) { x.usedUp = true; x.usedAt = Date.now(); } }
         else { x.usedUp = true; x.usedAt = Date.now(); D.log(x.name + " is used up", "fa-box-open"); }
@@ -235,18 +266,20 @@
                 { name: "name", label: "Item", required: true, maxlength: 60, placeholder: "e.g. Maize meal" },
                 { name: "qty", label: "Quantity", type: "number", value: 1, min: 0.1, max: 999, step: "0.1", required: true },
                 { name: "unit", label: "Unit", type: "select", value: "items", options: UNITS.filter(Boolean) },
-                { name: "category", label: "Category", type: "select", value: "Groceries", options: CATEGORIES }
+                { name: "category", label: "Category", type: "select", value: "Groceries", options: CATEGORIES },
+                { name: "expires", label: "Best before (optional)", type: "date", value: "", min: D.util.dayKey() }
             ],
             validate: function (v) {
                 if (v.name.length < 2 || v.name.length > 60 || !/[a-z]/i.test(v.name)) return "The item name must be 2 to 60 characters with at least one letter.";
                 var q = Number(v.qty); if (!isFinite(q) || q <= 0 || q > 999) return "Quantity must be more than 0 and at most 999.";
+                if (v.expires && v.expires < D.util.dayKey()) return { field: "expires", msg: "The best-before date can't be in the past." };
                 return null;
             }
         }).then(function (v) {
             if (!v) return;
             var p = pantry(), m = me(), ex = p.filter(function (x) { return !x.usedUp && norm(x.name) === norm(v.name); })[0];
-            if (ex) { ex.qty = Math.min(999, Number(ex.qty) + Number(v.qty)); ex.unit = v.unit; }
-            else p.push({ id: Date.now(), name: v.name, qty: Number(v.qty), unit: v.unit, category: v.category, addedAt: Date.now(), by: m.id, byName: m.first });
+            if (ex) { ex.qty = Math.min(999, Number(ex.qty) + Number(v.qty)); ex.unit = v.unit; if (v.expires && (!ex.expires || v.expires < ex.expires)) ex.expires = v.expires; }
+            else p.push({ id: Date.now(), name: v.name, qty: Number(v.qty), unit: v.unit, category: v.category, addedAt: Date.now(), by: m.id, byName: m.first, expires: v.expires || undefined });
             save("elaraPantry", p); D.log("added " + v.name + " to the house stock", "fa-box-open"); renderAll();
         });
     });
@@ -266,6 +299,178 @@
                 box.insertAdjacentHTML("beforeend", '<div class="ai-reply"><strong><i class="fa-solid fa-robot"></i> Elara AI</strong><p>' + esc(reply).replace(/\n/g, "<br>") + "</p></div>");
             }).then(function () { btn.disabled = false; }, function () { btn.disabled = false; });
         }
+    });
+
+    /* ---------------- meal planner ----------------
+       elaraMeals: [{ id, date, slot, name, ingredients:["onion", "rice|basmati", ...], by, byName }]
+       "Add missing to list" puts every ingredient of this week's meals that isn't in the house
+       (and isn't already on the list) onto the shopping list in one go. */
+    var SLOTS = ["Breakfast", "Lunch", "Dinner"];
+    var mealWeek = 0;                                      // 0 = this week, 1 = next week ...
+    function meals() { return load("elaraMeals"); }
+    function weekDays() {
+        var start = F ? F.util.mondayOf(D.util.dayKey()) : D.util.dayKey(), out = [];
+        for (var i = 0; i < 7; i++) out.push(F.util.addDaysKey(start, i + mealWeek * 7));
+        return out;
+    }
+    function ingName(n) { return String(n).split("|")[0].trim(); }
+    function inHouseFn() { return A && A.has ? A.has(A.pantry()) : function () { return false; }; }
+    function recipeByName(n) { return (A && A.recipes || []).filter(function (r) { return norm(r.name) === norm(n); })[0]; }
+    function dayLabel(k) { var d = new Date(k + "T00:00:00"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()] + " " + d.getDate(); }
+    function renderMeals() {
+        if (!F || !$("#mealWeek")) return;
+        var days = weekDays(), today = D.util.dayKey(), all = meals(), has = inHouseFn(), edit = canEdit();
+        $("#mealWeekLabel").textContent = mealWeek === 0 ? "This week" : mealWeek === 1 ? "Next week" : "Week of " + dayLabel(days[0]);
+        $("#mealPrev").disabled = mealWeek <= 0;
+        $("#mealNext").disabled = mealWeek >= 3;
+        $("#mealWeek").innerHTML = days.map(function (k) {
+            var list = all.filter(function (m) { return m.date === k; }).sort(function (a, b) { return SLOTS.indexOf(a.slot) - SLOTS.indexOf(b.slot); }), past = k < today;
+            return '<div class="meal-day' + (k === today ? " today" : "") + (past ? " past" : "") + '" data-date="' + k + '"><div class="meal-date">' + esc(k === today ? "Today" : dayLabel(k)) + "</div><div class=\"meal-items\">" +
+                (list.length ? list.map(function (m) {
+                    var miss = (m.ingredients || []).filter(function (n) { return !has(n); });
+                    return '<button type="button" class="meal-chip" data-meal="' + esc(m.id) + '"><small>' + esc(m.slot) + "</small>" + esc(m.name) +
+                        (m.ingredients && m.ingredients.length ? '<em class="' + (miss.length ? "need" : "ok") + '">' + (miss.length ? "Need " + esc(miss.slice(0, 3).map(ingName).join(", ")) + (miss.length > 3 ? " +" + (miss.length - 3) : "") : "All in the house") + "</em>" : "") + "</button>";
+                }).join("") : '<span class="meal-none">' + (past ? "—" : "Nothing planned") + "</span>") +
+                "</div>" + (edit && !past ? '<button type="button" class="icon-act meal-add" data-add="' + k + '" aria-label="Plan a meal for ' + esc(dayLabel(k)) + '"><i class="fa-solid fa-plus"></i></button>' : "") + "</div>";
+        }).join("");
+    }
+    function openMeal(m, date) {
+        if (!canEdit()) return UI.toast("You can view Shopping but not change it.", "error");
+        var today = D.util.dayKey(), days = weekDays().filter(function (k) { return k >= today; });
+        if (m && days.indexOf(m.date) < 0) days.unshift(m.date);
+        var recipes = (A && A.recipes || []).map(function (r) { return r.name; });
+        UI.form({
+            title: m ? "Edit meal" : "Plan a meal", icon: "fa-utensils", submitText: m ? "Save" : "Add to the plan",
+            fields: [
+                { name: "date", label: "Day", type: "select", value: m ? m.date : (date || days[0]), options: days.map(function (k) { return [k, k === today ? "Today" : dayLabel(k)]; }) },
+                { name: "slot", label: "Meal", type: "select", value: m ? m.slot : "Dinner", options: SLOTS },
+                { name: "name", label: "What are you making?", value: m ? m.name : "", maxlength: 60, required: true, placeholder: "e.g. Chicken curry with rice", suggestions: recipes },
+                { name: "ingredients", label: "Ingredients (comma separated)", type: "textarea", value: m ? (m.ingredients || []).map(ingName).join(", ") : "", maxlength: 400,
+                  hint: "Pick a dish from the list and Elara fills these in. Anything not in the house can go on the shopping list." }
+            ],
+            onChange: function (form, field) {
+                if (field !== "name") return;
+                var r = recipeByName(form.elements.name.value);
+                if (r && !form.elements.ingredients.value.trim()) form.elements.ingredients.value = r.needs.map(ingName).join(", ");
+            },
+            validate: function (v) {
+                if (v.name.length < 2 || v.name.length > 60 || !/[a-z]/i.test(v.name) || /[<>]/.test(v.name)) return { field: "name", msg: "Name the meal (2 to 60 characters)." };
+                if (!v.date || v.date < today) return { field: "date", msg: "Choose today or a later day." };
+                if (SLOTS.indexOf(v.slot) < 0) return { field: "slot", msg: "Choose breakfast, lunch or dinner." };
+                var ings = v.ingredients.split(/[,\n]+/).map(function (x) { return x.trim(); }).filter(Boolean);
+                if (ings.length > 25) return { field: "ingredients", msg: "Keep it to 25 ingredients or fewer." };
+                if (ings.some(function (x) { return x.length > 40 || /[<>]/.test(x); })) return { field: "ingredients", msg: "Each ingredient can be at most 40 characters." };
+                var dup = meals().some(function (x) { return (!m || x.id !== m.id) && x.date === v.date && x.slot === v.slot; });
+                if (dup) return { field: "slot", msg: "There's already a " + v.slot.toLowerCase() + " planned that day. Edit that one instead." };
+                return null;
+            }
+        }).then(function (v) {
+            if (!v) return;
+            var r = recipeByName(v.name), typed = v.ingredients.split(/[,\n]+/).map(function (x) { return x.trim(); }).filter(Boolean);
+            // keep the recipe's "a|b" alternatives when the person left the suggested ingredients as they were
+            var ings = r && typed.join(",").toLowerCase() === r.needs.map(ingName).join(",").toLowerCase() ? r.needs.slice() : typed;
+            var list = meals(), u = me(), data = { date: v.date, slot: v.slot, name: v.name, ingredients: ings };
+            if (m) list = list.map(function (x) { return x.id === m.id ? Object.assign({}, x, data, { updatedAt: Date.now() }) : x; });
+            else list.push(Object.assign({ id: Date.now() + Math.floor(Math.random() * 1000), by: u.id, byName: u.first, createdAt: Date.now() }, data));
+            save("elaraMeals", list.filter(function (x) { return x.date >= F.util.addDaysKey(today, -60); }).slice(-300));
+            D.log((m ? "changed the meal plan: " : "planned ") + v.name + " (" + v.slot.toLowerCase() + ", " + dayLabel(v.date) + ")", "fa-utensils");
+            UI.toast(v.name + " is on the plan."); renderMeals();
+        });
+    }
+    $("#mealWeek").addEventListener("click", function (e) {
+        var add = e.target.closest("[data-add]");
+        if (add) return openMeal(null, add.dataset.add);
+        var chip = e.target.closest("[data-meal]"); if (!chip) return;
+        var m = meals().filter(function (x) { return String(x.id) === chip.dataset.meal; })[0]; if (!m) return;
+        if (!canEdit() || m.date < D.util.dayKey()) return UI.toast(m.name + ": " + ((m.ingredients || []).map(ingName).join(", ") || "no ingredients listed"), "info");
+        var ov = document.createElement("div");
+        ov.className = "eui-overlay";
+        ov.innerHTML = '<div class="eui-box" role="dialog" aria-modal="true"><div class="eui-icon info"><i class="fa-solid fa-utensils"></i></div><h3>' + esc(m.name) + "</h3><p>" +
+            esc(m.slot + ", " + dayLabel(m.date) + (m.byName ? " • planned by " + m.byName : "")) + "</p><p><small>" + esc((m.ingredients || []).map(ingName).join(", ") || "No ingredients listed") + "</small></p>" +
+            '<div class="eui-actions"><button type="button" class="eui-btn danger" data-m="del">Remove</button><button type="button" class="eui-btn ghost" data-m="close">Close</button><button type="button" class="eui-btn primary" data-m="edit">Edit</button></div></div>';
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add("show"); });
+        function shut() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
+        ov.addEventListener("click", function (ev) {
+            var b = ev.target.closest("[data-m]");
+            if (ev.target === ov || (b && b.dataset.m === "close")) return shut();
+            if (!b) return;
+            shut();
+            if (b.dataset.m === "edit") return openMeal(m);
+            save("elaraMeals", meals().filter(function (x) { return x.id !== m.id; }));
+            D.log("removed " + m.name + " from the meal plan", "fa-utensils"); UI.toast(m.name + " removed from the plan.", "info"); renderMeals();
+        });
+    });
+    $("#mealPrev").addEventListener("click", function () { if (mealWeek > 0) { mealWeek--; renderMeals(); } });
+    $("#mealNext").addEventListener("click", function () { if (mealWeek < 3) { mealWeek++; renderMeals(); } });
+
+    /* fill empty dinners: Elara AI if it's on, otherwise the built-in recipes that best match what's in the house */
+    function planDinners(picks) {
+        var today = D.util.dayKey(), list = meals(), u = me(), added = [];
+        var free = weekDays().filter(function (k) { return k >= today && !list.some(function (m) { return m.date === k && m.slot === "Dinner"; }); });
+        var used = list.filter(function (m) { return weekDays().indexOf(m.date) > -1; }).map(function (m) { return norm(m.name); });
+        picks = picks.filter(function (p) { return used.indexOf(norm(p.name)) < 0; });
+        free.forEach(function (k, i) {
+            var p = picks[i]; if (!p) return;
+            list.push({ id: Date.now() + i, date: k, slot: "Dinner", name: p.name.slice(0, 60), ingredients: (p.needs || []).slice(0, 25), by: u.id, byName: u.first, createdAt: Date.now(), suggested: true });
+            added.push(p.name);
+        });
+        if (added.length) { save("elaraMeals", list); D.log("planned " + added.length + " dinner" + (added.length === 1 ? "" : "s") + " with Elara", "fa-wand-magic-sparkles"); }
+        renderMeals();
+        return added;
+    }
+    $("#mealSuggest").addEventListener("click", function () {
+        if (!canEdit() || !A) return;
+        var btn = this, today = D.util.dayKey();
+        var free = weekDays().filter(function (k) { return k >= today && !meals().some(function (m) { return m.date === k && m.slot === "Dinner"; }); });
+        if (!free.length) return UI.toast("Every dinner this week is already planned.", "info");
+        var local = A.rankMeals(A.pantry(), 14, 0);
+        function finish(picks, how) {
+            var added = planDinners(picks);
+            UI.toast(added.length ? "Planned " + added.length + " dinner" + (added.length === 1 ? "" : "s") + how + ". Tap one to change it." : "No new ideas this time.", added.length ? "success" : "info");
+            btn.disabled = false;
+        }
+        btn.disabled = true;
+        if (!cfg.aiEndpoint || !D.user || navigator.onLine === false) return finish(local, " from what's in the house");
+        var ask = "Plan " + free.length + " different South African family dinners for this week, using what's in the house first. " +
+            "Reply ONLY with one line per dinner, exactly like: MEAL: <dish name> | <ingredient>, <ingredient>, ... (short ingredient names, no amounts, no DO: lines).";
+        D.callFunction(cfg.aiEndpoint, { message: ask, context: A.context(), history: [] }).then(function (j) {
+            var picks = String(j.reply || "").split(/\n+/).map(function (l) {
+                var mm = l.match(/MEAL:\s*([^|]{2,60})\|\s*(.+)$/i); if (!mm) return null;
+                var name = mm[1].replace(/[*_#<>]/g, "").trim(), ings = mm[2].split(",").map(function (x) { return x.replace(/[*_<>.]/g, "").trim().toLowerCase(); }).filter(function (x) { return x && x.length <= 40; });
+                return name.length >= 2 ? { name: name, needs: ings.slice(0, 20) } : null;
+            }).filter(Boolean);
+            finish(picks.length ? picks.concat(local) : local, picks.length ? " with Elara AI" : " from what's in the house");
+        }).catch(function () { finish(local, " from what's in the house"); });
+    });
+    $("#mealMissing").addEventListener("click", function () {
+        if (!canEdit()) return;
+        var today = D.util.dayKey(), has = inHouseFn(), onList = listItems().map(function (i) { return norm(i.name); });
+        var planned = meals().filter(function (m) { return weekDays().indexOf(m.date) > -1 && m.date >= today; });
+        if (!planned.length) return UI.toast("Plan some meals for this week first.", "info");
+        var need = [], seen = {};
+        planned.forEach(function (m) {
+            (m.ingredients || []).forEach(function (n) {
+                var name = ingName(n), k = norm(name); if (!k || seen[k]) return; seen[k] = 1;
+                if (has(n)) return;
+                if (onList.some(function (l) { return String(n).toLowerCase().split("|").some(function (alt) { alt = alt.trim(); return alt && (l.indexOf(alt) > -1 || alt.indexOf(l) > -1 && l.length > 3); }); })) return;
+                need.push(name);
+            });
+        });
+        if (!need.length) return UI.toast("You have everything for this week's meals (or it's already on the list).", "success");
+        UI.confirm({ title: "Add " + need.length + " item" + (need.length === 1 ? "" : "s") + "?", message: need.join(", ") + ".", confirmText: "Add to the list", danger: false, icon: "fa-cart-plus" }).then(function (ok) {
+            if (!ok) return;
+            var list = items(), u = me(), t = Date.now();
+            need.forEach(function (n, i) {
+                var last = bought().filter(function (c) { return norm(c.name) === norm(n); }).pop();
+                var nm = n.charAt(0).toUpperCase() + n.slice(1);
+                list.push({ id: t + i, name: nm, details: "For the meal plan", price: last ? last.price : 0, qty: 1, category: "Groceries", icon: "fa-cart-shopping", by: u.id, byName: u.first, createdAt: t, status: "Pending" });
+            });
+            save("elaraShoppingItems", list);
+            D.log("added " + need.length + " ingredient" + (need.length === 1 ? "" : "s") + " for the meal plan to the shopping list", "fa-cart-plus");
+            D.notify({ to: "household", kind: "shopping", title: "Added to the shopping list", body: u.first + " added " + need.length + " item" + (need.length === 1 ? "" : "s") + " for this week's meals.", href: "dashboard-shopping.html" });
+            UI.toast(need.length + " item" + (need.length === 1 ? "" : "s") + " added to the list."); renderAll();
+        });
     });
 
     /* ---------------- predictions ---------------- */
@@ -396,8 +601,115 @@
     function pickFile(capture) {
         var inp = document.createElement("input");
         inp.type = "file"; inp.accept = capture ? "image/*" : "image/*,.pdf"; if (capture) inp.capture = "environment";
-        inp.addEventListener("change", function () { if (inp.files[0]) addReceipt(inp.files[0], capture ? "scan" : "upload"); });
+        inp.addEventListener("change", function () {
+            var f = inp.files[0]; if (!f) return;
+            if (/^image\//.test(f.type) && F && F.receipt && f.size <= 15 * 1024 * 1024) scanReceipt(f);
+            else addReceipt(f, capture ? "scan" : "upload");
+        });
         inp.click();
+    }
+
+    /* read the till slip on the phone, then let the person check what Elara found before anything changes */
+    function scanReceipt(file) {
+        if (!canEdit()) return;
+        var ov = document.createElement("div");
+        ov.className = "eui-overlay";
+        ov.innerHTML = '<div class="eui-box scan-box" role="dialog" aria-modal="true"><div class="eui-icon info"><i class="fa-solid fa-receipt"></i></div><h3>Reading your receipt...</h3>' +
+            '<p class="scan-msg">Getting the reader ready. The first time takes a little longer.</p><div class="scan-bar"><i style="width:4%"></i></div>' +
+            '<div class="eui-actions"><button type="button" class="eui-btn ghost" data-skip>Skip, just save it</button></div></div>';
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add("show"); });
+        var cancelled = false;
+        function shut() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
+        ov.querySelector("[data-skip]").addEventListener("click", function () { cancelled = true; shut(); addReceipt(file, "scan"); });
+        F.receipt.read(file, function (pct) {
+            ov.querySelector(".scan-msg").textContent = "Reading the text... " + pct + "%";
+            ov.querySelector(".scan-bar i").style.width = Math.max(4, pct) + "%";
+        }).then(function (text) {
+            if (cancelled) return;
+            shut();
+            var r = F.receipt.parse(text);
+            if (!r.items.length && r.total == null) { UI.toast("I couldn't read that receipt. Try a flatter, brighter photo, or fill it in yourself.", "error"); return addReceipt(file, "scan"); }
+            reviewReceipt(file, r);
+        }).catch(function (e) {
+            if (cancelled) return;
+            shut(); UI.toast(e.message + " You can still save the receipt.", "error"); addReceipt(file, "scan");
+        });
+    }
+    function reviewReceipt(file, r) {
+        var onList = listItems(), recent = bought().slice(-80).reverse(), inHouse = pantry().filter(function (x) { return !x.usedUp; });
+        var cands = onList.map(function (i) { return { name: i.name, kind: "list", ref: i }; })
+            .concat(recent.map(function (c) { return { name: c.name, kind: "bought", ref: c }; }))
+            .concat(inHouse.map(function (x) { return { name: x.name, kind: "pantry", ref: x }; }));
+        var used = {}, rows = r.items.slice(0, 40).map(function (it, i) {
+            var m = F.receipt.match(it.name, cands.filter(function (c) { return !used[c.kind + c.name]; }));
+            if (m) used[m.item.kind + m.item.name] = 1;
+            return { i: i, it: it, m: m };
+        });
+        var ov = document.createElement("div");
+        ov.className = "eui-overlay";
+        ov.innerHTML = '<form class="eui-box eui-form auto-form receipt-review" novalidate><div class="eui-icon info"><i class="fa-solid fa-receipt"></i></div><h3>Check the receipt</h3>' +
+            "<p>Elara read " + r.items.length + " line" + (r.items.length === 1 ? "" : "s") + ". Untick anything that's wrong.</p>" +
+            '<label>Store<input name="store" maxlength="40" value="' + esc(r.store) + '" placeholder="e.g. Checkers"></label>' +
+            '<div class="rr-two"><label>Total (R)<input name="total" type="number" min="0" max="100000" step="0.01" value="' + esc(r.total == null ? "" : r.total.toFixed(2)) + '"></label>' +
+            '<label>Date<input name="date" type="date" max="' + D.util.dayKey() + '" value="' + esc(r.date || D.util.dayKey()) + '"></label></div>' +
+            '<fieldset><legend>What Elara found</legend><div class="rr-list">' + (rows.length ? rows.map(function (x) {
+                var on = x.m && x.m.item.kind === "list";
+                return '<div class="rr-row' + (x.m ? "" : " nomatch") + '"><div class="rr-line"><strong>' + esc(x.it.name) + "</strong><span>" + (x.it.qty > 1 ? x.it.qty + " × " + money(x.it.each) + " = " : "") + money(x.it.price) + "</span></div>" +
+                    (x.m ? '<small>Matches <b>' + esc(x.m.item.name) + "</b>" + (x.m.item.kind === "list" ? " on your list" : x.m.item.kind === "pantry" ? " in the house" : " (bought before)") + "</small>" +
+                        '<label class="rr-opt"><input type="checkbox" name="price_' + x.i + '" checked> Use ' + money(x.it.each) + " as its price</label>" +
+                        (on ? '<label class="rr-opt"><input type="checkbox" name="buy_' + x.i + '" checked> Mark as bought</label>' : "")
+                      : '<label class="rr-opt"><input type="checkbox" name="add_' + x.i + '"> Not on your list: add to spending and “In the House”</label>') + "</div>";
+            }).join("") : "<p>No items found, only the total.</p>") + "</div></fieldset>" +
+            '<p class="eui-err" aria-live="assertive"></p><div class="eui-actions"><button type="button" class="eui-btn ghost" data-close>Cancel</button><button type="submit" class="eui-btn primary">Save</button></div></form>';
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add("show"); });
+        var f = ov.querySelector("form");
+        function shut() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
+        ov.addEventListener("click", function (e) { if (e.target === ov || e.target.closest("[data-close]")) shut(); });
+        f.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var store = f.store.value.trim(), total = f.total.value.trim(), date = f.date.value, err = null;
+            f.querySelectorAll(".invalid").forEach(function (x) { x.classList.remove("invalid"); });
+            if (store.length < 2 || store.length > 40 || /[<>]/.test(store)) err = ["store", "Enter the store name (2 to 40 characters)."];
+            else if (total !== "" && (!(Number(total) >= 0) || Number(total) > 100000)) err = ["total", "Enter a total from R0 to R100 000, or leave it empty."];
+            else if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > D.util.dayKey()) err = ["date", "The receipt date can't be in the future."];
+            if (err) { f.querySelector(".eui-err").textContent = err[1]; f[err[0]].classList.add("invalid"); f[err[0]].focus(); return; }
+            var list = items(), cart = bought(), u = me(), t = Date.now(), nPrice = 0, nBuy = 0, nAdd = 0;
+            var when = date === D.util.dayKey() ? t : new Date(date + "T12:00:00").getTime();
+            rows.forEach(function (x) {
+                var chk = function (n) { var el = f.elements[n + "_" + x.i]; return el && el.checked; };
+                if (x.m && chk("price")) {
+                    var nm = norm(x.m.item.name);
+                    list.forEach(function (i) { if (norm(i.name) === nm && !cart.some(function (c) { return c.id === i.id; })) { i.price = x.it.each; i.updatedAt = t; nPrice++; } });
+                }
+                if (x.m && x.m.item.kind === "list" && chk("buy")) {
+                    var li = x.m.item.ref;
+                    if (!cart.some(function (c) { return c.id === li.id; })) {
+                        cart.push({ id: li.id, name: li.name, price: x.it.each, qty: x.it.qty || li.qty || 1, category: li.category, addedAt: when, by: u.id, byName: u.first, receipt: t });
+                        addToPantry(li.name, x.it.qty || li.qty || 1, li.category, F ? F.expiry.suggest(li.name, li.category) : "");
+                        nBuy++;
+                    }
+                }
+                if (!x.m && chk("add")) {
+                    var name = x.it.name.toLowerCase().replace(/\b\d+(ml|l|g|kg|s)\b/g, "").replace(/\s+/g, " ").trim();
+                    name = name.charAt(0).toUpperCase() + name.slice(1);
+                    cart.push({ id: t + 1000 + x.i, name: name.slice(0, 60), price: x.it.each, qty: x.it.qty || 1, category: "Groceries", addedAt: when, by: u.id, byName: u.first, receipt: t });
+                    addToPantry(name.slice(0, 60), x.it.qty || 1, "Groceries", F ? F.expiry.suggest(name, "Groceries") : "");
+                    nAdd++;
+                }
+            });
+            save("elaraShoppingItems", list); save("elaraCartItems", cart);
+            RDB.put(t, file).catch(function () { /* the receipt details are kept even if the photo can't be */ }).then(function () {
+                var rl = receipts();
+                rl.unshift({ id: t, store: store, total: total === "" ? null : Number(total), date: date, fileName: file.name.slice(0, 80), mime: file.type || "", size: file.size, hasFile: true, by: u.id, byName: u.first, scanned: true });
+                save("elaraReceipts", rl.slice(0, 50));
+                D.log("scanned a " + store + " receipt" + (nBuy ? " (" + nBuy + " bought)" : ""), "fa-receipt");
+                if (nBuy) D.notify({ to: "household", kind: "shopping", title: "Shopping done", body: u.first + " bought " + nBuy + " item" + (nBuy === 1 ? "" : "s") + " at " + store + ".", href: "dashboard-shopping.html" });
+                UI.toast("Receipt saved" + (nBuy ? ", " + nBuy + " marked as bought" : "") + (nPrice ? ", " + nPrice + " price" + (nPrice === 1 ? "" : "s") + " updated" : "") + (nAdd ? ", " + nAdd + " added" : "") + ".");
+                shut(); renderAll();
+            });
+        });
     }
     $(".scan-btn").addEventListener("click", function () { pickFile(true); });
     $(".upload-btn").addEventListener("click", function () { pickFile(false); });
@@ -551,7 +863,7 @@
 
     function renderAll() {
         $("#itemCount").textContent = listItems().length;
-        renderList(); renderPantry(); renderPredictions(); renderSpending(); renderReceipts(); renderWarranties(); renderPriceWatch(); renderActivity();
+        renderList(); renderPantry(); renderMeals(); renderPredictions(); renderSpending(); renderReceipts(); renderWarranties(); renderPriceWatch(); renderActivity();
     }
     D.onChange(renderAll);
     document.addEventListener("elara:refresh", renderAll);

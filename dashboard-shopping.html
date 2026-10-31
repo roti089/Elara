@@ -68,7 +68,7 @@
             <div class="card"><i class="fa-solid fa-basket-shopping"></i><h3>On the List</h3><h2 id="itemCount">0</h2><p>Items still to buy</p></div>
             <div class="card"><i class="fa-solid fa-wallet"></i><h3>Spent This Month</h3><h2 id="monthlySpending">R0.00</h2><p id="spendNote">Items marked as bought</p></div>
             <div class="card"><i class="fa-solid fa-box-open"></i><h3>Running Low</h3><h2 id="lowStock">0</h2><p>Predicted from how often you buy</p></div>
-            <div class="card"><i class="fa-solid fa-house-chimney"></i><h3>In the House</h3><h2 id="inHouseCount">0</h2><p>Food and supplies at home</p></div>
+            <div class="card"><i class="fa-solid fa-house-chimney"></i><h3>In the House</h3><h2 id="inHouseCount">0</h2><p id="inHouseNote">Food and supplies at home</p></div>
         </section>
 
         <!-- CONTROLS -->
@@ -108,9 +108,25 @@
                             <button type="button" class="ghost-btn needs-edit" id="addPantryBtn"><i class="fa-solid fa-plus"></i> Add</button>
                         </div>
                     </div>
-                    <p class="panel-note">Things you mark as bought land here automatically. Elara suggests meals from them.</p>
+                    <p class="panel-note">Things you mark as bought land here automatically, with a “best before” date for food. Elara reminds you before they expire.</p>
+                    <div id="useSoon" class="use-soon" hidden></div>
                     <div id="mealIdeas" class="meal-ideas" hidden></div>
                     <div id="pantryList"></div>
+                </section>
+
+                <section class="panel" id="mealPanel">
+                    <div class="panel-header">
+                        <div><h2><i class="fa-solid fa-utensils"></i> Meal Planner</h2><p class="panel-subtitle" id="mealWeekLabel">This week</p></div>
+                        <div class="panel-actions">
+                            <button type="button" class="ghost-btn" id="mealPrev" aria-label="Previous week"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button type="button" class="ghost-btn" id="mealNext" aria-label="Next week"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="meal-tools needs-edit">
+                        <button type="button" class="ghost-btn" id="mealSuggest"><i class="fa-solid fa-wand-magic-sparkles"></i> Suggest dinners</button>
+                        <button type="button" class="ghost-btn primary-ghost" id="mealMissing"><i class="fa-solid fa-cart-plus"></i> Add missing to list</button>
+                    </div>
+                    <div id="mealWeek" class="meal-week"></div>
                 </section>
 
                 <section class="panel" id="predictionPanel">
@@ -160,6 +176,7 @@
 <script src="elara-theme.js"></script>
 <script src="elara-assistant.js"></script>
 <script src="elara-common.js"></script>
+<script src="elara-features.js"></script>
 <script src="dashboard-shopping.js"></script>
 </body>
 </html>

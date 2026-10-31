@@ -42,10 +42,10 @@ $$;
 create or replace function public.elara_key_area(k text) returns text
 language sql immutable as $$
   select case
-    when k = 'elaraTasks' then 'tasks'
-    when k ~ '^elara(ShoppingItems|CartItems|Receipts|Warranties|ShoppingActivities|Pantry)$' then 'shopping'
+    when k ~ '^elara(Tasks|Chores)$' then 'tasks'
+    when k ~ '^elara(ShoppingItems|CartItems|Receipts|Warranties|ShoppingActivities|Pantry|Meals)$' then 'shopping'
     when k ~ '^elara(Schedules|ScheduleLog|CalendarSources)$' then 'schedule'
-    when k ~ '^elara(Devices|EnergyLog|MeterState|MeterKwh|Automations|AutomationRuns|CbiLinked|EnergySample|IncludeEstimates|Tariff)$' then 'smartHome'
+    when k ~ '^elara(Devices|EnergyLog|MeterState|MeterKwh|Automations|AutomationRuns|CbiLinked|EnergySample|IncludeEstimates|Tariff|Prepaid|Loadshedding|LoadsheddingArea)$' then 'smartHome'
     when k ~ '^elara(Activity|Presence|Availability)$' then 'common'
     else 'home'
   end
@@ -342,6 +342,7 @@ create table if not exists public.elara_device_state (
   total_kwh double precision,          -- the meter's own running total, if it has one
   primary key (owner_id, device)
 );
+alter table public.elara_device_state add column if not exists on_since timestamptz;   -- when it was last switched on (for "left on" alerts)
 
 alter table public.elara_energy enable row level security;
 alter table public.elara_device_state enable row level security;
@@ -379,14 +380,16 @@ begin
 
   select * into st from elara_device_state where owner_id = p_owner and device = p_device for update;
   if not found then
-    insert into elara_device_state (owner_id, device, last_at, watts, is_on, online, total_kwh)
-    values (p_owner, p_device, now_ts, p_watts, p_on, p_online, p_total_kwh);
+    insert into elara_device_state (owner_id, device, last_at, watts, is_on, online, total_kwh, on_since)
+    values (p_owner, p_device, now_ts, p_watts, p_on, p_online, p_total_kwh, case when p_on then now_ts end);
     return 0;
   end if;
 
   dt := extract(epoch from now_ts - st.last_at);
   if dt < 20 then                                   -- another screen just recorded this switch
-    update elara_device_state set is_on = p_on, online = p_online where owner_id = p_owner and device = p_device;
+    update elara_device_state set is_on = p_on, online = p_online,
+           on_since = case when p_on is not true then null when st.is_on is true and st.on_since is not null then st.on_since else now_ts end
+     where owner_id = p_owner and device = p_device;
     return 0;
   end if;
 
@@ -416,7 +419,8 @@ begin
   end if;
 
   update elara_device_state
-     set last_at = now_ts, watts = p_watts, is_on = p_on, online = p_online, total_kwh = coalesce(p_total_kwh, total_kwh)
+     set last_at = now_ts, watts = p_watts, is_on = p_on, online = p_online, total_kwh = coalesce(p_total_kwh, total_kwh),
+         on_since = case when p_on is not true then null when st.is_on is true and st.on_since is not null then st.on_since else now_ts end
    where owner_id = p_owner and device = p_device;
   return kwh;
 end $$;
@@ -428,6 +432,117 @@ create or replace function public.elara_energy_tidy() returns void language sql 
   delete from elara_energy where hour < now() - interval '400 days';
 $$;
 revoke all on function public.elara_energy_tidy() from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 6c. Things the server writes into the home's activity log
+--     ("Elara turned off the Geyser before load-shedding"). Server only.
+-- ---------------------------------------------------------------------
+create or replace function public.elara_try_json(t text) returns jsonb language plpgsql immutable as $$
+begin return t::jsonb; exception when others then return null; end $$;
+
+create or replace function public.elara_server_log(p_owner uuid, p_text text, p_icon text default 'fa-robot')
+returns void language plpgsql security definer set search_path = public as $$
+declare cur jsonb; entry jsonb;
+begin
+  entry := jsonb_build_object('k', 's' || floor(extract(epoch from clock_timestamp()) * 1000)::bigint || substr(md5(random()::text), 1, 5),
+                              't', floor(extract(epoch from clock_timestamp()) * 1000)::bigint, 'who', 'Elara', 'by', null,
+                              'text', left(p_text, 200), 'icon', coalesce(p_icon, 'fa-robot'));
+  select elara_try_json(value->>'v') into cur from elara_user_data where user_id = p_owner and key = 'elaraActivity' for update;
+  if cur is null or jsonb_typeof(cur) <> 'array' then cur := '[]'::jsonb; end if;
+  cur := jsonb_path_query_array(entry || cur, '$[0 to 299]');
+  insert into elara_user_data (user_id, key, value) values (p_owner, 'elaraActivity', jsonb_build_object('v', cur::text))
+  on conflict (user_id, key) do update set value = excluded.value;
+end $$;
+revoke all on function public.elara_server_log(uuid, text, text) from public, anon, authenticated;
+grant execute on function public.elara_server_log(uuid, text, text) to service_role;
+
+-- ---------------------------------------------------------------------
+-- 6d. Guest links: a time-limited, VIEW-ONLY page for a house-sitter.
+--     The owner makes a link (Members page). Anyone with the link can see
+--     only the parts the owner ticked, until it expires or is revoked.
+-- ---------------------------------------------------------------------
+create table if not exists public.elara_guest_links (
+  id          uuid primary key default gen_random_uuid(),
+  owner_id    uuid not null references auth.users(id) on delete cascade,
+  token       text not null unique check (token ~ '^[A-Za-z0-9_-]{32,80}$'),
+  label       text not null check (char_length(label) between 1 and 60),
+  areas       text[] not null default '{}',
+  note        text check (note is null or char_length(note) <= 1000),
+  expires_at  timestamptz not null,
+  revoked     boolean not null default false,
+  created_at  timestamptz not null default now(),
+  last_viewed timestamptz,
+  views       integer not null default 0
+);
+alter table public.elara_guest_links enable row level security;
+revoke all on public.elara_guest_links from anon;
+grant select, insert, update, delete on public.elara_guest_links to authenticated;
+drop policy if exists "guest links owner" on public.elara_guest_links;
+create policy "guest links owner" on public.elara_guest_links for all to authenticated
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid() and expires_at <= now() + interval '31 days'
+              and areas <@ array['tasks','schedule','shopping','smartHome']::text[]);
+
+-- what a guest sees (called from guest.html, no login)
+create or replace function public.elara_guest_view(p_token text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  g elara_guest_links%rowtype;
+  out jsonb;
+  v jsonb;
+  today text;
+  tz text;
+  until_day text;
+begin
+  if p_token is null or p_token !~ '^[A-Za-z0-9_-]{32,80}$' then return jsonb_build_object('error', 'This link is not valid.'); end if;
+  select * into g from elara_guest_links where token = p_token;
+  if not found or g.revoked then return jsonb_build_object('error', 'This link is not valid any more. Ask the home owner for a new one.'); end if;
+  if g.expires_at < now() then return jsonb_build_object('error', 'This link expired on ' || to_char(g.expires_at, 'DD Mon YYYY') || '. Ask the home owner for a new one.'); end if;
+  update elara_guest_links set last_viewed = now(), views = views + 1 where id = g.id;
+
+  select coalesce(nullif(value->>'v', ''), 'Africa/Johannesburg') into tz from elara_user_data where user_id = g.owner_id and key = 'elaraTimezone';
+  tz := trim(both '"' from coalesce(tz, 'Africa/Johannesburg'));
+  begin today := to_char(now() at time zone tz, 'YYYY-MM-DD'); exception when others then today := to_char(now(), 'YYYY-MM-DD'); end;
+  until_day := to_char((today::date + 14), 'YYYY-MM-DD');
+
+  out := jsonb_build_object('label', g.label, 'note', g.note, 'expires', g.expires_at, 'areas', to_jsonb(g.areas), 'today', today,
+    'home', (select trim(both '"' from value->>'v') from elara_user_data where user_id = g.owner_id and key = 'elaraHomeName'));
+
+  if 'tasks' = any(g.areas) then
+    select elara_try_json(value->>'v') into v from elara_user_data where user_id = g.owner_id and key = 'elaraTasks';
+    out := out || jsonb_build_object('tasks', coalesce((
+      select jsonb_agg(jsonb_build_object('title', t->>'title', 'date', t->>'date', 'time', t->>'time', 'who', t->>'assignee') order by t->>'date', t->>'time')
+      from jsonb_array_elements(case when jsonb_typeof(v) = 'array' then v else '[]' end) t
+      where coalesce(t->>'status', '') <> 'Completed' and t->>'date' between today and until_day), '[]'::jsonb));
+  end if;
+  if 'schedule' = any(g.areas) then
+    select elara_try_json(value->>'v') into v from elara_user_data where user_id = g.owner_id and key = 'elaraSchedules';
+    out := out || jsonb_build_object('events', coalesce((
+      select jsonb_agg(jsonb_build_object('title', e->>'title', 'date', e->>'date', 'time', e->>'time', 'category', e->>'category') order by e->>'date', e->>'time')
+      from jsonb_array_elements(case when jsonb_typeof(v) = 'array' then v else '[]' end) e
+      where e->>'date' between today and until_day), '[]'::jsonb));
+  end if;
+  if 'shopping' = any(g.areas) then
+    select elara_try_json(value->>'v') into v from elara_user_data where user_id = g.owner_id and key = 'elaraShoppingItems';
+    out := out || jsonb_build_object('shopping', coalesce((
+      select jsonb_agg(jsonb_build_object('name', i->>'name', 'qty', i->'qty', 'details', i->>'details'))
+      from jsonb_array_elements(case when jsonb_typeof(v) = 'array' then v else '[]' end) i
+      where not exists (select 1 from elara_user_data c, jsonb_array_elements(case when jsonb_typeof(elara_try_json(c.value->>'v')) = 'array' then elara_try_json(c.value->>'v') else '[]' end) x
+                        where c.user_id = g.owner_id and c.key = 'elaraCartItems' and x->'id' = i->'id')), '[]'::jsonb));
+  end if;
+  if 'smartHome' = any(g.areas) then
+    select elara_try_json(value->>'v') into v from elara_user_data where user_id = g.owner_id and key = 'elaraDevices';
+    out := out || jsonb_build_object('devices', coalesce((
+      select jsonb_agg(jsonb_build_object('name', d->>'name', 'room', d->>'room', 'type', d->>'type',
+                        'on', coalesce(s.is_on, (d->>'on')::boolean), 'online', s.online) order by d->>'room', d->>'name')
+      from jsonb_array_elements(case when jsonb_typeof(v) = 'array' then v else '[]' end) d
+      left join elara_device_state s on s.owner_id = g.owner_id and s.device = d->>'tuyaId'
+      where d->>'tuyaId' is not null and coalesce((d->>'hidden')::boolean, false) = false), '[]'::jsonb));
+  end if;
+  return out;
+end $$;
+revoke all on function public.elara_guest_view(text) from public;
+grant execute on function public.elara_guest_view(text) to anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- 7. Live updates: every member's screen updates when someone changes something

@@ -7,7 +7,7 @@
 ========================================================== */
 (function () {
     "use strict";
-    var D = window.ElaraData, UI = window.ElaraUI;
+    var D = window.ElaraData, UI = window.ElaraUI, F = window.ElaraFeatures;
     if (!D) return;
     window.ElaraPageLive = true;
 
@@ -64,6 +64,7 @@
             if (tab === "Upcoming") return t.date > tk && t.status !== "Completed";
             if (tab === "Completed") return t.status === "Completed";
             if (tab === "Overdue") return isOverdue(t);
+            if (tab === "Chores") return !!t.choreId && (t.status !== "Completed" || t.date >= toKey(addDays(now(), -14)));
             return true;
         });
         var rank = { High: 0, Medium: 1, Low: 2 };
@@ -80,7 +81,7 @@
         return '<div class="task-card ' + p[0] + '" data-id="' + esc(t.id) + '">' +
             '<div class="task-top"><span class="priority ' + p[1] + '">' + p[2] + '</span>' +
             '<span class="status ' + (overdue ? "pending overdue" : STAT[t.status] || "pending") + '">' + (overdue ? "Overdue" : esc(t.status)) + "</span></div>" +
-            "<h3>" + esc(t.title) + "</h3><p>" + esc(t.description) + "</p>" +
+            "<h3>" + esc(t.title) + (t.choreId ? ' <span class="chore-badge" title="Chore rotation"><i class="fa-solid fa-rotate"></i> ' + (Number(t.points) || 1) + " pt" + ((Number(t.points) || 1) === 1 ? "" : "s") + "</span>" : "") + "</h3><p>" + esc(t.description) + "</p>" +
             '<div class="task-details"><span><i class="fa-solid fa-user"></i> ' + esc(personName(t.assigneeId, t.assignee)) + "</span>" +
             '<span><i class="fa-solid ' + (done ? "fa-circle-check" : "fa-clock") + '"></i> ' + (done ? "Done" + (t.completedByName ? " by " + esc(t.completedByName) : "") : esc(dueLabel(t))) + "</span></div>" +
             (t.createdByName ? '<div class="task-meta">Added by ' + esc(t.createdByName) + "</div>" : "") +
@@ -129,6 +130,7 @@
 
         renderActivity();
         renderPeopleFilter();
+        renderChores();
     }
 
     function renderPeopleFilter() {
@@ -240,6 +242,120 @@
         if (to.length) D.notify({ to: to, kind: "tasks", title: "Task completed", body: m.first + " completed “" + t.title + "”.", href: "dashboard-tasks.html" });
     }
 
+    /* ---------- chore rotation ---------- */
+    function renderChores() {
+        if (!F || !$("#choreList")) return;
+        var list = F.chores.all(), edit = canEdit();
+        $("#choreList").innerHTML = list.length ? list.map(function (c) {
+            var d = F.chores.describe(c), off = c.on === false;
+            var order = (c.people || []).map(function (id) { var p = D.members.find(id); return p ? (p.isMe ? "You" : p.name) : null; }).filter(Boolean);
+            return '<div class="chore-row' + (off ? " off" : "") + '" data-id="' + esc(c.id) + '"><div class="chore-ic"><i class="fa-solid fa-broom"></i></div><div class="chore-main"><strong>' + esc(c.title) + "</strong>" +
+                "<small>" + esc(d.when) + " • " + (Number(c.points) || 1) + " pt" + ((Number(c.points) || 1) === 1 ? "" : "s") + "</small>" +
+                '<small class="chore-turn">' + (off ? "Paused" : "This week: <b>" + esc(d.now) + "</b> • Next week: " + esc(d.next)) + "</small>" +
+                '<small class="chore-order">Rotation: ' + esc(order.join(" → ") || "nobody") + "</small></div>" +
+                (edit ? '<div class="chore-acts"><button type="button" class="icon-act" data-chore="edit" aria-label="Edit ' + esc(c.title) + '"><i class="fa-solid fa-pen"></i></button></div>' : "") + "</div>";
+        }).join("") : '<div class="feature-empty"><i class="fa-solid fa-broom"></i><p>No chores yet. Add one (e.g. “Take out the bins”, Tuesdays) and Elara gives it to a different person each week.</p></div>';
+        var board = F.chores.board();
+        $("#choreBoard").innerHTML = board.length && list.length ? '<div class="board-head"><span>Person</span><span>This week</span><span>4 weeks</span><span>Streak</span></div>' + board.map(function (r, i) {
+            return '<div class="board-row' + (i === 0 && r.week > 0 ? " lead" : "") + '"><span class="board-name">' + (i === 0 && r.week > 0 ? '<i class="fa-solid fa-crown"></i> ' : "") + esc(r.name) +
+                (r.open ? "<small>" + r.open + " chore" + (r.open === 1 ? "" : "s") + " left this week</small>" : "") + "</span><span><b>" + r.week + "</b> pts</span><span>" + r.month + " pts</span>" +
+                '<span class="board-streak' + (r.streak ? " hot" : "") + '">' + (r.streak ? '<i class="fa-solid fa-fire"></i> ' + r.streak + " wk" + (r.streak === 1 ? "" : "s") : "—") + "</span></div>";
+        }).join("") : '<div class="feature-empty"><i class="fa-solid fa-trophy"></i><p>Points appear here once chores are being done.</p></div>';
+    }
+    function openChore(c) {
+        if (!canEdit()) return UI.toast("You can view tasks but not change them.", "error");
+        var ppl = people(), isNew = !c;
+        if (!ppl.length) return UI.toast("Nobody is in the home yet.", "error");
+        c = c || { id: "ch" + Date.now().toString(36), title: "", people: ppl.map(function (p) { return p.userId; }), days: [6], time: "09:00", points: 2, on: true };
+        var order = (c.people || []).filter(function (id) { return D.members.find(id); });
+        ppl.forEach(function (p) { if (order.indexOf(p.userId) < 0) order.push(p.userId); });
+        var nowWho = F.chores.assignee(c, todayKey());
+        var ov = document.createElement("div");
+        ov.className = "eui-overlay";
+        ov.innerHTML = '<form class="eui-box eui-form auto-form" novalidate><div class="eui-icon info"><i class="fa-solid fa-rotate"></i></div><h3>' + (isNew ? "New chore" : "Edit chore") + "</h3>" +
+            '<label>Chore<input name="title" maxlength="60" value="' + esc(c.title) + '" placeholder="e.g. Take out the bins"></label>' +
+            '<fieldset><legend>Which days</legend><div class="day-picks">' + DAYS.map(function (d, i) {
+                return '<label><input type="checkbox" name="day" value="' + i + '"' + ((c.days || []).indexOf(i) > -1 ? " checked" : "") + "> " + d + "</label>";
+            }).join("") + "</div></fieldset>" +
+            '<label>Time<input type="time" name="time" value="' + esc(c.time || "09:00") + '"></label>' +
+            '<label>Points (1 to 10)<input type="number" name="points" min="1" max="10" step="1" value="' + esc(c.points || 2) + '"></label>' +
+            '<fieldset><legend>Who takes turns (use the arrows to set the order)</legend><div class="dev-picks rot-picks">' + order.map(function (id) {
+                var p = D.members.find(id);
+                return '<div class="rot-row" data-id="' + esc(id) + '"><label><input type="checkbox" name="who" value="' + esc(id) + '"' + ((c.people || []).indexOf(id) > -1 ? " checked" : "") + "> " + esc(p.isMe ? p.name + " (you)" : p.name) + "</label>" +
+                    '<span><button type="button" class="icon-act" data-move="-1" aria-label="Move up"><i class="fa-solid fa-arrow-up"></i></button><button type="button" class="icon-act" data-move="1" aria-label="Move down"><i class="fa-solid fa-arrow-down"></i></button></span></div>';
+            }).join("") + "</div></fieldset>" +
+            '<label>Whose turn is it this week?<select name="startWho"></select></label>' +
+            (isNew ? "" : '<label>Status<select name="on"><option value="on">Active</option><option value="off">Paused</option></select></label>') +
+            '<p class="eui-err" aria-live="assertive"></p><div class="eui-actions">' + (isNew ? "" : '<button type="button" class="eui-btn danger" data-del>Delete</button>') +
+            '<button type="button" class="eui-btn ghost" data-close>Cancel</button><button type="submit" class="eui-btn primary">Save</button></div></form>';
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add("show"); });
+        var f = ov.querySelector("form"), box = f.querySelector(".rot-picks");
+        if (!isNew) f.on.value = c.on === false ? "off" : "on";
+        function picked() { return Array.prototype.map.call(box.querySelectorAll(".rot-row"), function (r) { return r.querySelector("input").checked ? r.dataset.id : null; }).filter(Boolean); }
+        function fillWho() {
+            var cur = f.startWho.value || nowWho, list = picked();
+            f.startWho.innerHTML = list.map(function (id) { var p = D.members.find(id); return '<option value="' + esc(id) + '">' + esc(p.isMe ? p.name + " (you)" : p.name) + "</option>"; }).join("");
+            if (list.indexOf(cur) > -1) f.startWho.value = cur;
+        }
+        fillWho();
+        box.addEventListener("change", fillWho);
+        box.addEventListener("click", function (e) {
+            var b = e.target.closest("[data-move]"); if (!b) return;
+            var row = b.closest(".rot-row"), dir = Number(b.dataset.move);
+            if (dir < 0 && row.previousElementSibling) box.insertBefore(row, row.previousElementSibling);
+            if (dir > 0 && row.nextElementSibling) box.insertBefore(row.nextElementSibling, row);
+            fillWho();
+        });
+        f.title.focus();
+        function close() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
+        ov.addEventListener("click", function (e) {
+            if (e.target === ov || e.target.closest("[data-close]")) close();
+            if (e.target.closest("[data-del]")) UI.confirm({ title: "Delete “" + c.title + "”?", message: "It stops rotating. Chore tasks already done stay (with their points); upcoming ones nobody started are removed.", confirmText: "Delete chore" }).then(function (ok) {
+                if (!ok) return;
+                F.chores.save(F.chores.all().filter(function (x) { return x.id !== c.id; }));
+                F.chores.resetFuture(c.id);
+                D.log("deleted chore “" + c.title + "”", "fa-trash"); close(); render(); renderChores(); renderCalendar();
+            });
+        });
+        ov.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+        f.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var title = f.title.value.trim().replace(/\s+/g, " "), days = Array.prototype.map.call(f.querySelectorAll('[name="day"]:checked'), function (x) { return Number(x.value); });
+            var time = f.time.value, pts = Number(f.points.value), who = picked(), start = f.startWho.value;
+            var err = title.length < 2 || title.length > 60 || /[<>]/.test(title) || !/[a-z]/i.test(title) ? ["title", "Name the chore (2 to 60 characters)."]
+                : !days.length ? [null, "Tick at least one day."]
+                : !/^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? ["time", "Choose a time."]
+                : !Number.isInteger(pts) || pts < 1 || pts > 10 ? ["points", "Points must be a whole number from 1 to 10."]
+                : !who.length ? [null, "Tick at least one person."]
+                : F.chores.all().some(function (x) { return x.id !== c.id && x.title.toLowerCase() === title.toLowerCase(); }) ? ["title", "There's already a chore with that name."] : null;
+            f.querySelectorAll(".invalid").forEach(function (x) { x.classList.remove("invalid"); });
+            if (err) { f.querySelector(".eui-err").textContent = err[1]; if (err[0]) { f[err[0]].classList.add("invalid"); f[err[0]].focus(); } return; }
+            // rotate the list so the chosen person has this week; everyone after them follows in order
+            var idx = Math.max(0, who.indexOf(start));
+            var startKey = F.util.mondayOf(todayKey());
+            var rotated = who.slice(idx).concat(who.slice(0, idx));
+            var list = F.chores.all(), m = me(), item = Object.assign({}, c, { title: title, days: days.sort(), time: time, points: pts, people: rotated, start: startKey,
+                on: isNew ? true : f.on.value === "on", updatedAt: Date.now() });
+            if (isNew) { item.createdBy = m.id; item.createdAt = Date.now(); list.push(item); }
+            else list = list.map(function (x) { return x.id === c.id ? item : x; });
+            F.chores.save(list.slice(0, 40));
+            if (!isNew) F.chores.resetFuture(c.id);
+            var made = F.chores.ensure();
+            D.log((isNew ? "added chore “" : "changed chore “") + title + "”", "fa-rotate");
+            var first = D.members.find(rotated[0]);
+            if (isNew && first && first.userId !== m.id) D.notify({ to: [first.userId], kind: "tasks", title: "New chore for you", body: m.first + " added “" + title + "”. It's your turn this week.", href: "dashboard-tasks.html" });
+            UI.toast(title + " saved" + (made ? ": " + made + " task" + (made === 1 ? "" : "s") + " added for the coming days." : "."));
+            close(); render(); renderChores(); renderCalendar();
+        });
+    }
+    if ($("#addChoreBtn")) $("#addChoreBtn").addEventListener("click", function () { openChore(null); });
+    if ($("#choreList")) $("#choreList").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-chore]"); if (!b || !canEdit()) return;
+        var c = F.chores.all().filter(function (x) { return x.id === b.closest("[data-id]").dataset.id; })[0];
+        if (c) openChore(c);
+    });
+
     /* ---------- events ---------- */
     $(".add-task").addEventListener("click", function () { openForm(null); });
 
@@ -263,10 +379,11 @@
             t.updatedAt = Date.now(); t.updatedBy = m.id;
             D.tasks.save(list); render(); renderCalendar();
         } else if (btn.dataset.action === "delete") {
-            UI.confirm({ title: "Delete this task?", message: "“" + t.title + "” will be permanently removed for everyone.", confirmText: "Delete task" })
+            UI.confirm({ title: "Delete this task?", message: "“" + t.title + "” will be permanently removed for everyone." + (t.choreId ? " The chore carries on next time; only this day is skipped." : ""), confirmText: "Delete task" })
                 .then(function (ok) {
                     if (!ok) return;
                     D.tasks.save(tasks().filter(function (x) { return String(x.id) !== id; }));
+                    if (t.choreId && F) F.chores.skip(t.choreId, t.date);           // don't make it again
                     D.log("deleted task “" + t.title + "”", "fa-trash");
                     render(); renderCalendar(); UI.toast("Task deleted.");
                 });

@@ -84,44 +84,48 @@
   ],
   "shortcuts": [
     {
+      "name": "Add to shopping list",
+      "short_name": "Shopping",
+      "url": "./dashboard-shopping.html?new=1",
+      "icons": [
+        {
+          "src": "icons/sc-shop.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Add a task",
+      "short_name": "Add task",
       "url": "./dashboard-tasks.html?new=1",
       "icons": [
         {
-          "src": "icons/icon-96.png",
+          "src": "icons/sc-task.png",
           "sizes": "96x96",
           "type": "image/png"
         }
       ]
     },
     {
-      "name": "Shopping list",
-      "url": "./dashboard-shopping.html",
+      "name": "Geyser on / off",
+      "short_name": "Geyser",
+      "url": "./dashboard-smart-home.html?do=geyser",
       "icons": [
         {
-          "src": "icons/icon-96.png",
+          "src": "icons/sc-geyser.png",
           "sizes": "96x96",
           "type": "image/png"
         }
       ]
     },
     {
-      "name": "Schedule",
-      "url": "./dashboard-schedule.html",
+      "name": "Talk to Elara",
+      "short_name": "Voice",
+      "url": "./dashboard-content.html?do=voice",
       "icons": [
         {
-          "src": "icons/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Smart Home",
-      "url": "./dashboard-smart-home.html",
-      "icons": [
-        {
-          "src": "icons/icon-96.png",
+          "src": "icons/sc-voice.png",
           "sizes": "96x96",
           "type": "image/png"
         }

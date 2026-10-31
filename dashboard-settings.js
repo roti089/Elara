@@ -180,11 +180,106 @@
         askLocation(true).then(function (l) { D.log("set the home location to " + l.label, "fa-location-dot"); toast("Home location set to " + l.label + "."); }).catch(function (e) { toast(e.message, "error"); });
     });
 
+
+    /* ---------------- export data (CSV) ---------------- */
+    function F() { return window.ElaraFeatures; }
+    function hhmm(d) { return (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes(); }
+    function personName(id, fb) { var p = id && D.members.find(id); return p ? p.name : (fb || ""); }
+    function dl(name, head, rows) {
+        if (!rows.length) return toast("There's nothing to export yet.", "info");
+        F().csv("elara-" + name + "-" + D.util.dayKey() + ".csv", head, rows);
+        toast(rows.length + " row" + (rows.length === 1 ? "" : "s") + " downloaded.");
+    }
+    function exportEnergy(btn) {
+        if (!(D.can("smartHome") || D.can("analytics") || D.can("reports"))) return toast("You can't see this home's energy.", "error");
+        var days = Number($("exportRange").value) || 30, byDay = $("exportGroup").value === "day", tariff = D.energy.tariff();
+        var names = {}; D.devices.everything().forEach(function (d) { if (d.tuyaId) names[d.tuyaId] = d; });
+        function build(rows) {
+            var out;
+            if (byDay) {
+                var agg = {};
+                rows.forEach(function (r) { var k = D.util.dayKey(new Date(r.h)) + "|" + r.d; agg[k] = agg[k] || { day: D.util.dayKey(new Date(r.h)), d: r.d, k: 0, p: 0 }; agg[k].k += r.k; agg[k].p = Math.max(agg[k].p, r.p); });
+                out = Object.keys(agg).sort().map(function (k) { var a = agg[k], dv = names[a.d] || {}; return [a.day, dv.name || a.d, dv.room || "", a.k.toFixed(3), Math.round(a.p), (a.k * tariff).toFixed(2)]; });
+                return dl("energy-daily", ["Date", "Device", "Room", "kWh", "Highest watts", "Cost (R)"], out);
+            }
+            out = rows.slice().sort(function (a, b) { return a.h - b.h || String(a.d).localeCompare(b.d); }).map(function (r) {
+                var d = new Date(r.h), dv = names[r.d] || {};
+                return [D.util.dayKey(d), hhmm(d), dv.name || r.d, dv.room || "", r.k.toFixed(4), Math.round(r.p), (r.k * tariff).toFixed(2)];
+            });
+            dl("energy-hourly", ["Date", "Hour", "Device", "Room", "kWh", "Highest watts", "Cost (R)"], out);
+        }
+        if (!D.user || !cfg.supabaseUrl) return build(D.energy.rows());
+        btn.disabled = true; btn.textContent = "Preparing...";
+        var since = new Date(Date.now() - days * 86400000).toISOString(), all = [], owner = D.household.ownerId || D.user.id;
+        D.getClient().then(function (c) {
+            function page(from) {
+                return c.from("elara_energy").select("device,hour,kwh,peak_w").eq("owner_id", owner).gte("hour", since).order("hour").range(from, from + 999).then(function (r) {
+                    if (r.error) throw r.error;
+                    all = all.concat(r.data || []);
+                    return (r.data || []).length === 1000 && from < 200000 ? page(from + 1000) : null;
+                });
+            }
+            return page(0);
+        }).then(function () {
+            build(all.map(function (x) { return { d: x.device, h: new Date(x.hour).getTime(), k: Number(x.kwh) || 0, p: Number(x.peak_w) || 0 }; }));
+        }).catch(function (e) { toast("Couldn't get the energy history: " + e.message, "error"); })
+          .then(function () { btn.disabled = false; btn.textContent = "Download"; });
+    }
+    document.querySelectorAll("[data-export]").forEach(function (b) {
+        b.addEventListener("click", function () {
+            if (!F()) return;
+            var what = b.dataset.export, load = D.util.load;
+            if (what === "energy") return exportEnergy(b);
+            if (what === "shopping") {
+                if (!D.can("shopping")) return toast("You can't see Shopping in this home.", "error");
+                var cart = load("elaraCartItems", []), rows = [];
+                load("elaraShoppingItems", []).filter(function (i) { return !cart.some(function (c) { return c.id === i.id; }); }).forEach(function (i) {
+                    rows.push(["On the list", "", i.name, i.details || "", i.category || "", i.qty || 1, i.price || "", i.price ? (i.price * (i.qty || 1)).toFixed(2) : "", i.byName || "", ""]);
+                });
+                cart.slice().sort(function (a, b) { return b.addedAt - a.addedAt; }).forEach(function (c) {
+                    rows.push(["Bought", D.util.dayKey(new Date(c.addedAt)), c.name, "", c.category || "", c.qty || 1, c.price, (c.price * (c.qty || 1)).toFixed(2), c.byName || personName(c.by), ""]);
+                });
+                load("elaraPantry", []).filter(function (x) { return !x.usedUp; }).forEach(function (x) {
+                    rows.push(["In the house", x.addedAt ? D.util.dayKey(new Date(x.addedAt)) : "", x.name, x.unit || "", x.category || "", x.qty, "", "", x.byName || "", x.expires || ""]);
+                });
+                return dl("shopping", ["Status", "Date", "Item", "Details / unit", "Category", "Quantity", "Price each (R)", "Total (R)", "Who", "Best before"], rows);
+            }
+            if (what === "meals") {
+                if (!D.can("shopping")) return toast("You can't see Shopping in this home.", "error");
+                return dl("meals", ["Date", "Meal", "Dish", "Ingredients", "Planned by"], load("elaraMeals", []).slice().sort(function (a, b) { return a.date.localeCompare(b.date); }).map(function (m) {
+                    return [m.date, m.slot, m.name, (m.ingredients || []).map(function (x) { return String(x).split("|")[0]; }).join(", "), m.byName || ""];
+                }));
+            }
+            if (what === "tasks") {
+                if (!D.can("tasks")) return toast("You can't see Tasks in this home.", "error");
+                return dl("tasks", ["Due date", "Time", "Task", "Assigned to", "Priority", "Status", "Completed by", "Completed on", "Chore points", "Added by"], D.tasks.all().slice().sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); }).map(function (t) {
+                    return [t.date, t.time, t.title, personName(t.assigneeId, t.assignee), t.priority, t.status, t.completedByName || "", t.completedAt ? D.util.dayKey(new Date(t.completedAt)) : "", t.choreId ? (t.points || 1) : "", t.createdByName || ""];
+                }));
+            }
+            if (what === "events") {
+                if (!D.can("schedule")) return toast("You can't see the Schedule in this home.", "error");
+                return dl("events", ["Date", "Time", "Event", "Category", "Details", "Who"], load("elaraSchedules", []).slice().sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); }).map(function (e) {
+                    return [e.date, e.time || "", e.title, e.category || "", e.description || "", (e.involves || []).map(function (id) { return personName(id); }).filter(Boolean).join(", ")];
+                }));
+            }
+            if (what === "prepaid") {
+                if (!D.can("smartHome")) return toast("You can't see Smart Home in this home.", "error");
+                return dl("prepaid", ["Date", "Time", "Type", "Units", "Amount (R)", "Who"], F().prepaid.get().entries.slice().sort(function (a, b) { return a.t - b.t; }).map(function (e) {
+                    var d = new Date(e.t); return [D.util.dayKey(d), hhmm(d), e.kind === "buy" ? "Bought" : "Meter reading", e.units, e.kind === "buy" ? (e.amount || "") : "", e.byName || ""];
+                }));
+            }
+            if (what === "activity") {
+                return dl("activity", ["Date", "Time", "Who", "What"], D.activity(300).map(function (a) { var d = new Date(a.t); return [D.util.dayKey(d), hhmm(d), a.who, a.text]; }));
+            }
+        });
+    });
+
     /* ---------------- notifications ---------------- */
     var KINDS = ["tasks", "schedule", "shopping", "smartHome", "energy", "members", "security"];
     function loadNotifs() {
         var p = N.prefs ? N.prefs() : {};
         KINDS.forEach(function (k) { if ($("n_" + k)) $("n_" + k).checked = p[k] !== false; });
+        if ($("n_daily")) { $("n_daily").checked = p.daily !== false; $("dailyAt").value = p.dailyAt || "07:00"; $("dailyAt").disabled = p.daily === false; }
         var perm = "Notification" in window ? Notification.permission : "unsupported";
         $("pushNotifications").checked = !!p.push && perm === "granted";
         $("pushState").textContent = perm === "unsupported" ? "This browser can't show notifications." : perm === "denied" ? "Blocked in your browser's site settings." :
@@ -192,6 +287,16 @@
     }
     KINDS.forEach(function (k) {
         $("n_" + k).addEventListener("change", function () { if (N.setPref) N.setPref(k, this.checked); });
+    });
+    $("n_daily").addEventListener("change", function () {
+        if (N.setPref) N.setPref("daily", this.checked);
+        $("dailyAt").disabled = !this.checked;
+        toast(this.checked ? "You'll get a morning summary at " + $("dailyAt").value + (cfg.pushEndpoint ? "." : " once push notifications are set up (README, step 6).") : "Morning summary off.", "info");
+    });
+    $("dailyAt").addEventListener("change", function () {
+        if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(this.value)) { this.value = (N.prefs ? N.prefs().dailyAt : "07:00"); return toast("Choose a time for the summary.", "error"); }
+        if (N.setPref) N.setPref("dailyAt", this.value);
+        toast("Morning summary at " + this.value + ".");
     });
     $("pushNotifications").addEventListener("change", function () {
         var box = this;
