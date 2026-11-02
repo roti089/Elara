@@ -334,7 +334,21 @@
         var btn = this; btn.disabled = true;
         var local = function () { if (C.notifySystem) C.notifySystem("Elara test", "Notifications work on this device.", "dashboard-settings.html#notifications", "elara-test"); };
         if (cfg.pushEndpoint && D.user) {
-            D.callFunction(cfg.pushEndpoint, { action: "test" }).then(function (r) { toast(r && r.delivered ? "Test sent to " + r.delivered + " device(s)." : r && r.push === false ? "Saved to your bell. Pop-ups need the VAPID keys (README, step 6)." : "Test saved to your notifications.", "success"); })
+            D.callFunction(cfg.pushEndpoint, { action: "test" }).then(function (r) {
+                r = r || {};
+                if (r.push === false) return toast("Saved to your bell. Pop-ups need the VAPID keys (README, step 6).", "error");
+                var pops = r.pops || [], ok = pops.filter(function (x) { return x.ok; }), bad = pops.filter(function (x) { return !x.ok; });
+                var keyMismatch = r.vapidKey && cfg.vapidPublicKey && cfg.vapidPublicKey.indexOf(r.vapidKey) !== 0;
+                if (!r.pops) return toast(r.delivered ? "Test sent." : "Test saved to your notifications.", "success");
+                if (!pops.length || bad.length || keyMismatch) return UI.confirm({
+                    title: keyMismatch ? "Push keys don't match" : !pops.length ? "No device to send to" : "Some pop-ups didn't go out",
+                    message: (keyMismatch ? "vapidPublicKey in elara-config.js isn't the same as the VAPID_PUBLIC_KEY secret in Supabase, so phones reject the pop-ups. Make them the same key pair (README, step 6), then switch Push notifications off and on again on each device. " : "") +
+                             (!pops.length ? "This account has no device signed up for pop-ups. Switch Push notifications off and on again on this device." :
+                              "Sent: " + (ok.map(function (x) { return x.device; }).join(", ") || "none") + ". Failed: " + bad.map(function (x) { return x.device + " (" + (x.status || "?") + (x.error ? ": " + x.error : "") + ")"; }).join("; ") + "."),
+                    confirmText: "OK", cancelText: "Close", icon: "fa-bell", danger: false
+                });
+                toast("Pop-up sent to " + ok.map(function (x) { return x.device; }).join(", ") + ". Close Elara and it should appear within seconds.", "success");
+            })
                 .catch(function (e) {
                     local();
                     var missing = /failed to fetch|networkerror|load failed|404|not found/i.test(e.message || "") || e.status === 404;
