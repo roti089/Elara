@@ -27,7 +27,7 @@
         var msg = "";
         if (D.demo) msg = '<i class="fa-solid fa-flask"></i> Demo mode: these devices aren’t real. Log in and connect CBi Home to control your own switches.';
         else if (!cfg.tuyaEndpoint) msg = '<i class="fa-solid fa-link-slash"></i> CBi Home isn’t connected yet. Deploy the <code>elara-tuya</code> function (README, step 8), then press <strong>CBi Home</strong>.';
-        else if (!devs.length) msg = '<i class="fa-solid fa-plug-circle-plus"></i> No switches yet. Press <strong>CBi Home</strong> to import the switches from your Smart Life account.';
+        else if (!devs.length) msg = '<i class="fa-solid fa-plug-circle-plus"></i> No switches yet. <button type="button" class="link-guide" data-guide>Read how to connect your switches</button>, then press <strong>CBi Home</strong> to import them.';
         b.hidden = !msg; b.innerHTML = msg;
     }
 
@@ -606,6 +606,41 @@
         });
     }
     $("cbiBtn").addEventListener("click", openCbi);
+
+    /* ---------------- guide: connecting your switches ---------------- */
+    function openGuide() {
+        var owner = D.household.isOwner;
+        var ov = document.createElement("div");
+        ov.className = "eui-overlay";
+        ov.innerHTML = '<div class="eui-box guide-box" role="dialog" aria-modal="true" aria-labelledby="guideTitle"><div class="eui-icon info"><i class="fa-solid fa-book-open"></i></div>' +
+            '<h3 id="guideTitle">Connect your smart switches</h3>' +
+            "<p>Elara works with CBi and other Smart Life (Tuya) Wi-Fi switches and plugs. The switches have to be in the <b>Smart Life</b> app, in the home that is linked to Elara.</p>" +
+            '<ol class="guide-steps">' +
+            "<li><b>Install Smart Life</b> from the Play Store or App Store and log in" + (owner ? " with the account that is linked to Elara." : ". Ask the home owner to invite you to their Smart Life home (Smart Life: Me &gt; Home Management &gt; the home &gt; Add Member), so new switches land in the right home.") + "</li>" +
+            "<li><b>Switch already in CBi Home?</b> Open it in CBi Home and choose <i>Remove device</i>. CBi Home and Smart Life can't share a switch.</li>" +
+            "<li><b>Put the switch in pairing mode:</b> hold its button for about 5 to 10 seconds until the light blinks fast. For a geyser or DIN-rail switch, check its manual.</li>" +
+            "<li><b>Add it in Smart Life:</b> tap <b>+</b> &gt; <i>Add Device</i>. Use your home's <b>2.4 GHz</b> Wi-Fi (not 5 GHz). If scanning finds nothing, add it by category: <i>Electrical &gt; Switch</i>.</li>" +
+            "<li><b>Test it in Smart Life:</b> it must switch on and off there before Elara can use it.</li>" +
+            "<li><b>Import it into Elara:</b> on this page press <b>CBi Home</b> &gt; <b>Import / refresh switches</b>" + (owner ? "." : " (people with Edit access to Smart Home can do this).") + "</li>" +
+            "<li><b>Give it a room and a type</b> with its pencil button. The type matters: <i>Geyser</i> turns on Geyser Savings and the Geyser button, <i>Light</i> the Lights button, and each type has its own \u201cleft on\u201d warning.</li>" +
+            "</ol>" +
+            '<p class="guide-note"><i class="fa-solid fa-bolt"></i> Energy, cost and Analytics only work for switches with a <b>power meter</b> (most geyser switches and many plugs have one). Readings start after the import and fill in every 5 minutes.</p>' +
+            '<p class="guide-note"><i class="fa-solid fa-eye-slash"></i> Don\'t want a switch in Elara? Its pencil button &gt; <i>Show in Elara: No</i>. Elara stops showing it and stops measuring its energy. It stays in Smart Life.</p>' +
+            (owner && !cbiReady ? '<p class="guide-note warn-text"><i class="fa-solid fa-triangle-exclamation"></i> The connection to the Tuya cloud isn\'t set up yet. That is a one-time job for whoever runs Elara (README, step 8).</p>' : "") +
+            '<div class="eui-actions"><button type="button" class="eui-btn ghost" data-close>Close</button>' + (canEdit() && cbiReady ? '<button type="button" class="eui-btn primary" data-go>Import switches now</button>' : "") + "</div></div>";
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add("show"); });
+        var first = ov.querySelector("[data-close]"); if (first) first.focus();
+        function shut() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
+        ov.addEventListener("click", function (e) {
+            if (e.target === ov || e.target.closest("[data-close]")) return shut();
+            if (e.target.closest("[data-go]")) { shut(); setTimeout(openCbi, 200); }
+        });
+        ov.addEventListener("keydown", function (e) { if (e.key === "Escape") shut(); });
+    }
+    $("guideBtn").addEventListener("click", openGuide);
+    $("smartBanner").addEventListener("click", function (e) { if (e.target.closest("[data-guide]")) openGuide(); });
+    if (/[#&]guide\b/.test(location.hash)) setTimeout(openGuide, 400);
     $("syncFab").addEventListener("click", openCbi);
 
     /* ---------------- outside temperature ---------------- */

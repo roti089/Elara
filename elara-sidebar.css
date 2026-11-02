@@ -608,3 +608,14 @@ body.light-theme .chore-turn b, body.light-theme .chore-badge{ color:#5b4ee0; }
 .paused-tag{ font-size:12px; padding:4px 10px; border-radius:999px; background:rgba(255,255,255,.08); }
 body.light-theme .auto-paused{ background:rgba(251,191,36,.14); }
 body.light-theme .paused-tag{ background:rgba(0,0,0,.06); }
+
+/* ===== Smart Home: "How to connect" guide ===== */
+.guide-box{ max-width:560px !important; max-height:90vh; overflow-y:auto; text-align:left; }
+.guide-box h3, .guide-box .eui-icon{ text-align:center; margin-left:auto; margin-right:auto; }
+.guide-box > p{ margin:0 0 14px; }
+.guide-steps{ margin:0 0 14px 20px; padding:0; display:flex; flex-direction:column; gap:10px; color:inherit; font-size:14.5px; line-height:1.5; }
+.guide-steps li{ padding-left:4px; }
+.guide-note{ font-size:13.5px !important; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.05); }
+.guide-note i.fa-solid{ margin-right:6px; color:#9b8cff; }
+body.light-theme .guide-note{ background:#f3f5fb; }
+.link-guide{ border:none; background:none; padding:0; color:#9d95ff; text-decoration:underline; font:inherit; cursor:pointer; }

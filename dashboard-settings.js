@@ -532,14 +532,15 @@
     /* ---------------- danger zone ---------------- */
     $("deleteHomeBtn").addEventListener("click", function () {
         if (!isOwner()) return;
-        UI.confirm({ title: "Delete this home's data?", message: "Tasks, events, devices, shopping, settings and members will be erased for everyone. A backup is saved first so you can undo this from Backup & Restore.", confirmText: "Delete everything" }).then(function (ok) {
+        UI.confirm({ title: "Delete this home's data?", message: "Tasks, events, devices, energy history, shopping, settings and members will be erased for everyone. A backup is saved first so you can bring back everything except the energy history from Backup & Restore.", confirmText: "Delete everything" }).then(function (ok) {
             if (!ok) return;
             var safety = D.user ? D.backup.create("Before deleting the home").catch(function () {}) : Promise.resolve();
             safety.then(function () {
                 var links = D.members.all().filter(function (m) { return m.linkId; });
                 return Promise.all(links.map(function (m) { return D.household.remove(m.linkId).catch(function () {}); }));
-            }).then(function () { return D.resetData(); }).then(function () {
-                toast("Your home data was deleted.", "info"); setTimeout(function () { location.href = "dashboard-content.html"; }, 1000);
+            }).then(function () { return D.resetData(); }).then(function (info) {
+                toast(info && info.energyKept ? "Your home data was deleted, but the energy history couldn't be: run the latest elara-setup.sql in Supabase, then delete again." : "Your home data was deleted.", info && info.energyKept ? "error" : "info");
+                setTimeout(function () { location.href = "dashboard-content.html"; }, info && info.energyKept ? 5000 : 1000);
             }).catch(function (e) { toast(e.message, "error"); });
         });
     });

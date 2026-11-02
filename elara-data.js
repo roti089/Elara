@@ -1197,7 +1197,15 @@
             }
         }
         keys.forEach(function (k) { localStorage.removeItem(k); });
-        return flush();
+        // the measured energy and switch readings live in their own tables: the owner clears those too
+        energyStore = { rows: [], state: {}, at: 0 }; lsDel(EN_KEY);
+        var server = user && cfg.supabaseUrl && !shared
+            ? getClient().then(function (c) { return c.rpc("elara_reset_home"); }).then(function (r) {
+                  if (r && r.error) { console.warn("[Elara] reset energy:", r.error.message); return { energyKept: true }; }
+                  return {};
+              }).catch(function (e) { console.warn("[Elara] reset energy:", e.message || e); return { energyKept: true }; })
+            : Promise.resolve({});
+        return server.then(function (info) { return flush().then(function () { return info; }); });
     }
 
     /* ---------------------------------------------------------
