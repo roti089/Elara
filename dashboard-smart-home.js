@@ -213,6 +213,8 @@
     });
     $("addAutomation").addEventListener("click", function () { if (canEdit() && (C.homeAuto ? C.homeAuto().automations : true)) editAutomation(null); });
 
+    /* morning routines run before noon (the built-in Morning Routine, or any automation with "morning" in its name) */
+    function isMorning(a) { return a.id === "morning" || /\bmorning\b/i.test(a.name || ""); }
     function editAutomation(a) {
         var isNew = !a;
         a = a || { id: "a" + Date.now().toString(36), name: "", icon: "fa-clock", kind: "time", at: "18:00", offset: 0, days: [], action: "on", on: true, devices: [] };
@@ -222,7 +224,7 @@
         ov.innerHTML = '<form class="eui-box eui-form auto-form" novalidate><div class="eui-icon info"><i class="fa-solid fa-robot"></i></div><h3>' + (isNew ? "New automation" : "Edit automation") + "</h3>" +
             '<label>Name<input name="name" maxlength="40" value="' + esc(a.name) + '" placeholder="e.g. Pool pump"></label>' +
             '<label>When<select name="kind"><option value="time">At a time</option><option value="sunset">At sunset</option><option value="sunrise">At sunrise</option><option value="manual">Only when I press Run</option></select></label>' +
-            '<label class="k-time">Time<input type="time" name="at" value="' + esc(a.at || "18:00") + '"></label>' +
+            '<label class="k-time">Time<input type="time" name="at" value="' + esc(a.at || "18:00") + '"><small class="eui-hint" data-time-hint></small></label>' +
             '<label class="k-sun">Minutes before (−) or after (+)<input type="number" name="offset" min="-120" max="120" step="5" value="' + esc(a.offset || 0) + '"></label>' +
             '<fieldset class="k-days"><legend>Days (none ticked = every day)</legend><div class="day-picks">' + DAYS.map(function (d, i) {
                 return '<label><input type="checkbox" name="day" value="' + i + '"' + (a.days.indexOf(i) > -1 ? " checked" : "") + "> " + d + "</label>";
@@ -243,7 +245,12 @@
             f.querySelector(".k-sun").style.display = k === "sunset" || k === "sunrise" ? "" : "none";
             f.querySelector(".k-days").style.display = k === "manual" ? "none" : "";
         }
-        sync(); f.kind.addEventListener("change", sync);
+        function timeRule() {
+            var who = { id: a.id, name: f.name.value }, hint = f.querySelector("[data-time-hint]");
+            f.at.min = ""; f.at.max = ""; hint.textContent = "";
+            if (isMorning(who)) { f.at.min = "00:00"; f.at.max = "11:59"; hint.textContent = "Morning: any time before 12:00."; }
+        }
+        sync(); timeRule(); f.kind.addEventListener("change", sync); f.name.addEventListener("input", timeRule);
         f.name.focus();
         function close() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
         ov.addEventListener("click", function (e) {
@@ -262,6 +269,7 @@
                       devices: Array.prototype.map.call(f.querySelectorAll('[name="dev"]:checked'), function (x) { return x.value; }) };
             var err = v.name.length < 2 || v.name.length > 40 || /[<>]/.test(v.name) ? "Give it a name of 2 to 40 characters."
                 : v.kind === "time" && !/^([01]\d|2[0-3]):[0-5]\d$/.test(v.at) ? "Choose a time."
+                : v.kind === "time" && isMorning({ id: a.id, name: v.name }) && v.at >= "12:00" ? "A morning automation must run before 12:00. Choose a time in the morning."
                 : (v.kind === "sunset" || v.kind === "sunrise") && (!isFinite(v.offset) || v.offset < -120 || v.offset > 120) ? "The offset must be between −120 and 120 minutes."
                 : !v.devices.length ? "Tick at least one device." : null;
             if (err) { f.querySelector(".eui-err").textContent = err; return; }
