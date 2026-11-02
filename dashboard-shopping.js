@@ -401,6 +401,20 @@
             D.log("removed " + m.name + " from the meal plan", "fa-utensils"); UI.toast(m.name + " removed from the plan.", "info"); renderMeals();
         });
     });
+    /* clear the week you're looking at (days already past stay, as a record) */
+    $("#mealClear").addEventListener("click", function () {
+        if (!canEdit()) return UI.toast("You can view Shopping but not change it.", "error");
+        var today = D.util.dayKey(), days = weekDays(), label = $("#mealWeekLabel").textContent; label = label.charAt(0).toLowerCase() + label.slice(1);
+        var gone = meals().filter(function (m) { return days.indexOf(m.date) > -1 && m.date >= today; });
+        if (!gone.length) return UI.toast("Nothing planned " + (mealWeek === 0 ? "for the rest of this week." : "for " + label + "."), "info");
+        UI.confirm({ title: "Clear " + label + "?", message: "Removes the " + gone.length + " meal" + (gone.length === 1 ? "" : "s") + " planned" + (mealWeek === 0 ? " from today to Sunday" : "") + ". Your shopping list stays as it is.", confirmText: "Clear week" }).then(function (ok) {
+            if (!ok) return;
+            var ids = gone.map(function (m) { return m.id; });
+            save("elaraMeals", meals().filter(function (m) { return ids.indexOf(m.id) < 0; }));
+            D.log("cleared the meal plan for " + label + " (" + gone.length + " meal" + (gone.length === 1 ? "" : "s") + ")", "fa-utensils");
+            UI.toast("Meal plan cleared.", "info"); renderMeals();
+        });
+    });
     $("#mealPrev").addEventListener("click", function () { if (mealWeek > 0) { mealWeek--; renderMeals(); } });
     $("#mealNext").addEventListener("click", function () { if (mealWeek < 3) { mealWeek++; renderMeals(); } });
 

@@ -111,7 +111,8 @@
         $("dashTasks").innerHTML = list.length ? list.map(function (t) {
             var who = t.assigneeId === me ? "You" : (D.members.find(t.assigneeId) || {}).name || t.assignee || "Unassigned";
             var late = t.status !== "Completed" && (t.date + " " + t.time) < (k + " " + nowHM());
-            var mayTick = edit && (t.assigneeId === me || D.household.isOwner || D.access.role === "adult");
+            var early = t.status !== "Completed" && D.tasks.canComplete && D.tasks.canComplete(t);
+            var mayTick = edit && !early && (t.assigneeId === me || D.household.isOwner || D.access.role === "adult");
             return '<li data-id="' + esc(t.id) + '"><label><input type="checkbox"' + (t.status === "Completed" ? " checked" : "") + (mayTick ? "" : " disabled") + "> " +
                 esc(t.title) + '</label><small class="' + (late ? "late" : "") + '">' + esc(who + " • " + (late ? "overdue" : t.time)) + "</small></li>";
         }).join("") : '<li class="dash-empty">Nothing due today.</li>';
@@ -120,6 +121,8 @@
         var input = e.target.closest("input"); if (!input) return;
         var id = input.closest("li").dataset.id, all = D.tasks.all(), t = all.filter(function (x) { return String(x.id) === id; })[0], m = D.me();
         if (!t) return;
+        var why = input.checked && D.tasks.canComplete ? D.tasks.canComplete(t) : null;
+        if (why) { input.checked = false; return UI.toast(why, "error"); }
         if (input.checked) { t.status = "Completed"; t.progress = 100; t.completedBy = m.id; t.completedByName = m.first; t.completedAt = Date.now(); }
         else { t.status = "In Progress"; t.progress = Math.min(t.progress || 0, 90); delete t.completedAt; delete t.completedBy; delete t.completedByName; }
         t.updatedAt = Date.now(); t.updatedBy = m.id;

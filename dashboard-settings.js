@@ -39,6 +39,24 @@
         document.querySelectorAll(".member-only").forEach(function (el) { el.style.display = owner || !D.user ? "none" : ""; });
         ["backupNow", "downloadBackup", "restoreFile"].forEach(function (id) { if ($(id)) $(id).disabled = !owner; });
         var rf = $("restoreFile"); if (rf) rf.closest("label").classList.toggle("disabled", !owner);
+        applyAccess();
+    }
+    /* only show what this person can actually use */
+    function mayExport() { return isOwner() || D.access.role === "adult"; }
+    var NOTIF_AREA = { tasks: "tasks", schedule: "schedule", shopping: "shopping", smartHome: "smartHome", energy: "smartHome" };
+    function applyAccess() {
+        function showEl(el, on) { if (el) el.style.display = on ? "" : "none"; }
+        Object.keys(NOTIF_AREA).forEach(function (k) { var i = $("n_" + k); if (i) showEl(i.closest(".setting-item"), D.can(NOTIF_AREA[k])); });
+        var smart = D.can("smartHome");
+        ["smartAutomations"].forEach(function (id) { if ($(id)) showEl($(id).closest(".setting-item"), smart); });
+        var link = document.querySelector('#smart-home a[href^="dashboard-smart-home.html"]'); if (link) showEl(link.closest(".setting-item"), smart);
+        var nav = document.querySelector('.settings-nav-item[data-section="smart-home"]');
+        if (nav) { nav.querySelector("span").textContent = smart ? "Smart Home" : "Voice"; nav.querySelector("i").className = "fa-solid " + (smart ? "fa-house-signal" : "fa-microphone"); }
+        var head = document.querySelector("#smart-home .panel-header h2"), sub = document.querySelector("#smart-home .panel-subtitle");
+        if (head) head.innerHTML = smart ? "Smart Home &amp; Voice" : "Voice";
+        if (sub) sub.textContent = smart ? "Voice control and home automations." : "Talk to Elara instead of typing.";
+        showEl(document.querySelector('.settings-nav-item[data-section="export"]'), mayExport());
+        if (!mayExport() && $("export").classList.contains("active")) show("profile");
     }
 
     /* ---------------- profile ---------------- */
@@ -228,6 +246,7 @@
     document.querySelectorAll("[data-export]").forEach(function (b) {
         b.addEventListener("click", function () {
             if (!F()) return;
+            if (!mayExport()) return toast("Only the home owner and adults can export data.", "error");
             var what = b.dataset.export, load = D.util.load;
             if (what === "energy") return exportEnergy(b);
             if (what === "shopping") {

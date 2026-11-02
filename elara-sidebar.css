@@ -597,3 +597,14 @@ body.light-theme .chore-turn b, body.light-theme .chore-badge{ color:#5b4ee0; }
     body .elara-offline{ bottom:calc(84px + env(safe-area-inset-bottom)); }       /* above the bottom tab bar */
     body .pp-main strong{ font-size:19px; }
 }
+
+/* ===== task rules + paused automations ===== */
+.btn-complete.is-locked{ opacity:.6; cursor:not-allowed; }
+.auto-paused{ display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:12px; border-radius:14px; background:rgba(251,191,36,.12); border:1px solid rgba(251,191,36,.35); }
+.auto-paused > i{ color:#fbbf24; font-size:20px; }
+.auto-paused > div{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.auto-paused span{ font-size:13px; opacity:.8; }
+.automation-item.is-paused{ opacity:.55; }
+.paused-tag{ font-size:12px; padding:4px 10px; border-radius:999px; background:rgba(255,255,255,.08); }
+body.light-theme .auto-paused{ background:rgba(251,191,36,.14); }
+body.light-theme .paused-tag{ background:rgba(0,0,0,.06); }

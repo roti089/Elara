@@ -168,12 +168,17 @@
     }
     function renderAutomations() {
         var paused = !(C.homeAuto ? C.homeAuto().automations : true), list = D.automations.all();
-        $("autoNote").textContent = paused ? "Paused in Settings > Smart Home" : cfg.serverAutomations ? "Run by the server, even when Elara is closed" : "Run while Elara is open on a device in the home";
-        $("automationList").innerHTML = list.map(function (a) {
+        $("autoNote").textContent = paused ? "All automations are paused" : cfg.serverAutomations ? "Run by the server, even when Elara is closed" : "Run while Elara is open on a device in the home";
+        $("addAutomation").disabled = paused;
+        var banner = paused ? '<div class="auto-paused"><i class="fa-solid fa-circle-pause"></i><div><strong>All automations are paused</strong><span>' +
+            (D.household.isOwner ? "Nothing below runs until you resume them." : "The home owner paused them in Settings. Nothing below runs until they resume them.") + "</span></div>" +
+            (D.household.isOwner ? '<button type="button" class="ghost-btn primary-ghost" data-resume>Resume</button>' : "") + "</div>" : "";
+        $("automationList").innerHTML = banner + list.map(function (a) {
             var ctrl = a.kind === "manual"
-                ? '<button type="button" class="ghost-btn" data-run="' + esc(a.id) + '"' + (canEdit() && a.devices.length ? "" : " disabled") + '>Run now</button>'
+                ? '<button type="button" class="ghost-btn" data-run="' + esc(a.id) + '"' + (canEdit() && a.devices.length && !paused ? "" : " disabled") + '>Run now</button>'
+                : paused ? '<span class="paused-tag">Paused</span>'
                 : '<label class="switch"><input type="checkbox" data-auto="' + esc(a.id) + '"' + (a.on ? " checked" : "") + (canEdit() ? "" : " disabled") + ' aria-label="' + esc(a.name) + '"><span class="slider"></span></label>';
-            return '<div class="automation-item' + (a.devices.length ? "" : " incomplete") + '"><div class="automation-left"><i class="fa-solid ' + esc(a.icon) + '"></i><div><h4>' + esc(a.name) + "</h4><p>" + esc(describe(a)) + "</p></div></div>" +
+            return '<div class="automation-item' + (a.devices.length ? "" : " incomplete") + (paused ? " is-paused" : "") + '"><div class="automation-left"><i class="fa-solid ' + esc(a.icon) + '"></i><div><h4>' + esc(a.name) + "</h4><p>" + esc(describe(a)) + "</p></div></div>" +
                 '<div class="auto-actions">' + ctrl + (canEdit() ? '<button type="button" class="device-edit" data-edit-auto="' + esc(a.id) + '" aria-label="Edit ' + esc(a.name) + '"><i class="fa-solid fa-pen"></i></button>' : "") + "</div></div>";
         }).join("") || '<p class="muted">No automations.</p>';
     }
@@ -190,6 +195,11 @@
     });
     $("automationList").addEventListener("click", function (e) {
         var run = e.target.closest("[data-run]"), ed = e.target.closest("[data-edit-auto]");
+        if (e.target.closest("[data-resume]") && D.household.isOwner) {
+            try { localStorage.setItem("elaraHomeAutomation", JSON.stringify({ automations: true })); } catch (x) { /* ignore */ }
+            D.log("resumed the home automations", "fa-robot"); UI.toast("Automations resumed."); return render();
+        }
+        if (run && !(C.homeAuto ? C.homeAuto().automations : true)) return UI.toast("Automations are paused in Settings.", "error");
         if (run && canEdit()) {
             var a = D.automations.all().filter(function (x) { return x.id === run.dataset.run; })[0]; if (!a) return;
             run.disabled = true;
@@ -201,7 +211,7 @@
         }
         if (ed && canEdit()) editAutomation(D.automations.all().filter(function (x) { return x.id === ed.dataset.editAutomation || x.id === ed.dataset.editAuto; })[0]);
     });
-    $("addAutomation").addEventListener("click", function () { if (canEdit()) editAutomation(null); });
+    $("addAutomation").addEventListener("click", function () { if (canEdit() && (C.homeAuto ? C.homeAuto().automations : true)) editAutomation(null); });
 
     function editAutomation(a) {
         var isNew = !a;

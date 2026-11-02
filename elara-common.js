@@ -596,21 +596,38 @@
         stopVoice(false);
         var r = new Recog();
         r.lang = "en-ZA"; r.interimResults = true; r.maxAlternatives = 1; r.continuous = false;
-        var finalText = "";
+        var finalText = "", heard = "", done = false, quiet = null;
+        // act as soon as the browser has the words (or after a short pause), instead of waiting for it to time out
+        function finish() {
+            if (done) return;
+            var text = (finalText || heard).trim();
+            if (!text) return;
+            done = true; clearTimeout(quiet);
+            try { r.stop(); } catch (x) { /* ignore */ }
+            listening = null;
+            runCommand(text);
+        }
         r.onresult = function (e) {
             var interim = "";
             for (var i = e.resultIndex; i < e.results.length; i++) {
                 if (e.results[i].isFinal) finalText += e.results[i][0].transcript; else interim += e.results[i][0].transcript;
             }
-            voiceOverlay("listening", finalText || interim);
+            heard = finalText + interim;
+            voiceOverlay("listening", heard);
+            clearTimeout(quiet);
+            if (finalText.trim()) return finish();
+            quiet = setTimeout(finish, 1100);
         };
         r.onerror = function (e) {
+            clearTimeout(quiet);
+            if (done || e.error === "aborted") return;
             listening = null;
+            if (e.error === "no-speech" && heard.trim()) return finish();
             var msg = e.error === "not-allowed" || e.error === "service-not-allowed" ? "Microphone access is blocked. Allow it in your browser's site settings." :
                       e.error === "no-speech" ? "I didn't hear anything. Tap the microphone and try again." : "Voice error: " + e.error;
             voiceOverlay("error", msg);
         };
-        r.onend = function () { listening = null; if (finalText.trim()) runCommand(finalText.trim()); };
+        r.onend = function () { clearTimeout(quiet); listening = null; finish(); };
         try { r.start(); listening = r; voiceOverlay("listening", ""); } catch (e) { voiceOverlay("error", e.message); }
     }
     function addVoiceButton() {

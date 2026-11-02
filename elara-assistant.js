@@ -330,8 +330,11 @@
         if ((m = raw.match(/^(?:complete|finish|tick off|done with|mark)\s+(?:the\s+)?(?:task\s+)?(.+?)(?:\s+as (?:done|complete[d]?))?$/i)) && !/\b(busy|away|available|home)\b/i.test(raw)) {
             if (!D.can("tasks", "edit")) return noEdit("tasks");
             var needle = norm(m[1]), list = D.tasks.all();
-            var t = list.filter(function (x) { return x.status !== "Completed" && norm(x.title).indexOf(needle) > -1; })[0];
-            if (!t) return "I couldn't find an open task matching “" + m[1] + "”.";
+            var hits = list.filter(function (x) { return x.status !== "Completed" && norm(x.title).indexOf(needle) > -1; })
+                .sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); });
+            if (!hits.length) return "I couldn't find an open task matching “" + m[1] + "”.";
+            var t = hits.filter(function (x) { return !(D.tasks.canComplete && D.tasks.canComplete(x)); })[0];
+            if (!t) return D.tasks.canComplete(hits[0]);
             t.status = "Completed"; t.progress = 100; t.completedBy = D.me().id; t.completedByName = D.me().first; t.completedAt = Date.now();
             D.tasks.save(list); D.log("completed “" + t.title + "”", "fa-circle-check");
             if (t.createdBy && t.createdBy !== D.me().id) D.notify({ to: [t.createdBy], kind: "tasks", title: "Task completed", body: D.me().first + " completed “" + t.title + "”.", href: "dashboard-tasks.html" });

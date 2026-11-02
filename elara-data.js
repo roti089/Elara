@@ -627,6 +627,17 @@
         return t;
     }
     function saveTasks(t) { save("elaraTasks", t); }
+    /* who may do what with a task (the Tasks page, the dashboard and voice commands all use these) */
+    function taskCanComplete(t) {
+        if (!t || !can("tasks", "edit")) return "You can view tasks but not change them.";
+        if (t.choreId && t.date > dayKey()) {
+            var when = t.date === dayKey(addDays(new Date(), 1)) ? "tomorrow" : new Date(t.date + "T00:00:00").toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+            return "\u201c" + t.title + "\u201d is a chore for " + when + ". You can tick it off on that day, not before.";
+        }
+        return null;
+    }
+    function taskCanDelete(t) { return !!t && can("tasks", "edit") && (isOwner() || t.createdBy === me().id); }
+    function taskCanReassign() { return isOwner(); }
 
     /* ---------------------------------------------------------
        14. Household roster (owner + members) from elara_household_links + elara_profiles
@@ -1220,7 +1231,7 @@
         access: { can: can, level: levelOf, get role() { return isOwner() ? "owner" : access.role; }, get perms() { return isOwner() ? null : access.perms; }, AREAS: AREAS, keyArea: keyArea },
         can: can,
         log: log, activity: activity, ago: ago, rid: rid,
-        tasks: { all: tasks, save: saveTasks },
+        tasks: { all: tasks, save: saveTasks, canComplete: taskCanComplete, canDelete: taskCanDelete, canReassign: taskCanReassign },
         members: { all: roster, active: people, find: person, refresh: refreshRoster, ROLE_PERMS: ROLE_PERMS, saveProfile: saveProfile },
         household: household,
         presence: { all: presence, set: setPresence },

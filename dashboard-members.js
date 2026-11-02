@@ -111,12 +111,15 @@
                 esc(d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })) + " • " + esc(D.ago(a.t)) + "</p></div></div></div>";
         }).join("") : '<p class="perm-empty">' + (D.activity(1).length ? "Nothing matches." : "No activity yet.") + "</p>";
         $("logMore").hidden = items.length <= logShown;
+        $("logExport").style.display = mayExportLog() ? "" : "none";
         $("logMore").textContent = "Show more (" + (items.length - logShown) + " older)";
     }
     ["logWho", "logArea"].forEach(function (id) { $(id).addEventListener("change", function () { logShown = 15; renderActivity(); }); });
     $("logSearch").addEventListener("input", function () { logShown = 15; renderActivity(); });
     $("logMore").addEventListener("click", function () { logShown += 30; renderActivity(); });
+    function mayExportLog() { return isOwner() || D.access.role === "adult"; }
     $("logExport").addEventListener("click", function () {
+        if (!mayExportLog()) return UI.toast("Only the home owner and adults can export the activity log.", "error");
         var F = window.ElaraFeatures, items = logEntries();
         if (!F || !items.length) return UI.toast("Nothing to export.", "info");
         F.csv("elara-activity-" + D.util.dayKey() + ".csv", ["Date", "Time", "Who", "What", "Area"], items.map(function (a) {

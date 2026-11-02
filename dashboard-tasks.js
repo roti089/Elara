@@ -77,7 +77,8 @@
     /* ---------- render ---------- */
     function cardHTML(t) {
         var p = PRI[t.priority] || PRI.Medium, done = t.status === "Completed", overdue = isOverdue(t);
-        var mineToEdit = canEdit();
+        var mineToEdit = canEdit(), early = !done && D.tasks.canComplete(t), mayDel = D.tasks.canDelete(t);
+        var earlyLabel = early ? (t.date === toKey(addDays(now(), 1)) ? "From tomorrow" : "From " + DAYS[new Date(t.date + "T00:00").getDay()]) : "";
         return '<div class="task-card ' + p[0] + '" data-id="' + esc(t.id) + '">' +
             '<div class="task-top"><span class="priority ' + p[1] + '">' + p[2] + '</span>' +
             '<span class="status ' + (overdue ? "pending overdue" : STAT[t.status] || "pending") + '">' + (overdue ? "Overdue" : esc(t.status)) + "</span></div>" +
@@ -86,9 +87,11 @@
             '<span><i class="fa-solid ' + (done ? "fa-circle-check" : "fa-clock") + '"></i> ' + (done ? "Done" + (t.completedByName ? " by " + esc(t.completedByName) : "") : esc(dueLabel(t))) + "</span></div>" +
             (t.createdByName ? '<div class="task-meta">Added by ' + esc(t.createdByName) + "</div>" : "") +
             '<div class="task-progress"><div class="progress-bar"><div class="progress-fill" style="width:' + Math.max(0, Math.min(100, +t.progress || 0)) + '%"></div></div><span>' + (+t.progress || 0) + "%</span></div>" +
-            (mineToEdit ? '<div class="task-buttons"><button type="button" class="btn-complete" data-action="toggle">' + (done ? "Reopen" : "Complete") + "</button>" +
+            (mineToEdit ? '<div class="task-buttons">' + (early
+                    ? '<button type="button" class="btn-complete is-locked" data-action="toggle" aria-disabled="true" title="' + esc(early) + '"><i class="fa-solid fa-lock"></i> ' + esc(earlyLabel) + "</button>"
+                    : '<button type="button" class="btn-complete" data-action="toggle">' + (done ? "Reopen" : "Complete") + "</button>") +
                 '<button type="button" class="btn-edit" data-action="edit">Edit</button>' +
-                '<button type="button" class="btn-edit" data-action="delete" aria-label="Delete task"><i class="fa-solid fa-trash"></i></button></div>' : "") +
+                (mayDel ? '<button type="button" class="btn-edit" data-action="delete" aria-label="Delete task"><i class="fa-solid fa-trash"></i></button>' : "") + "</div>" : "") +
             "</div>";
     }
 
@@ -167,15 +170,18 @@
         if (!ppl.length) return UI.toast("Nobody is in the home yet.", "error");
         editingId = t ? t.id : null;
         var defaultAssignee = t && D.members.find(t.assigneeId) ? t.assigneeId : me().id;
+        var lockWho = !!t && !D.tasks.canReassign(), lockWhen = !!t && !!t.choreId && !D.household.isOwner;
+        var whoOptions = lockWho ? [[t.assigneeId, personName(t.assigneeId, t.assignee)]] : ppl.map(function (p) { return [p.userId, p.isMe ? p.name + " (you)" : p.name]; });
         UI.form({
             title: t ? "Edit task" : "Add a task", icon: "fa-list-check", submitText: t ? "Save changes" : "Add task",
             fields: [
                 { name: "title", label: "Title", value: t ? t.title : "", required: true, maxlength: 80, placeholder: "e.g. Service the geyser" },
                 { name: "description", label: "Details (optional)", type: "textarea", value: t && t.description !== "No description." ? t.description : "", maxlength: 500 },
-                { name: "assigneeId", label: "Assigned to (people in your home)", type: "select", value: defaultAssignee,
-                  options: ppl.map(function (p) { return [p.userId, p.isMe ? p.name + " (you)" : p.name]; }) },
+                { name: "assigneeId", label: "Assigned to (people in your home)", type: "select", value: lockWho ? t.assigneeId : defaultAssignee, options: whoOptions,
+                  hint: lockWho ? "Only the home owner can change who this is for." : "" },
                 { name: "priority", label: "Priority", type: "select", value: t ? t.priority : "Medium", options: ["High", "Medium", "Low"] },
-                { name: "date", label: "Due date", type: "date", value: t ? t.date : todayKey(), required: true, min: t && t.date < todayKey() ? t.date : todayKey(), max: toKey(addDays(now(), 5 * 365)) },
+                { name: "date", label: "Due date", type: "date", value: t ? t.date : todayKey(), required: true, min: lockWhen ? t.date : t && t.date < todayKey() ? t.date : todayKey(), max: lockWhen ? t.date : toKey(addDays(now(), 5 * 365)),
+                  hint: lockWhen ? "A chore's day and time are set by the chore rotation." : "" },
                 { name: "time", label: "Due time", type: "time", value: t ? t.time : defaultTime(), required: true },
                 { name: "status", label: "Status", type: "select", value: t ? t.status : "Pending", options: ["Pending", "In Progress", "Completed"] },
                 { name: "progress", label: "Progress (%)", type: "number", value: t ? t.progress : 0, min: 0, max: 100, step: 5 }
@@ -185,8 +191,11 @@
                 if (v.title.length < 2 || v.title.length > 80) return { field: "title", msg: "The title must be 2 to 80 characters." };
                 if (!/[a-z0-9]/i.test(v.title) || /[<>]/.test(v.title)) return { field: "title", msg: "The title needs letters or numbers, and no < or >." };
                 if (v.description.length > 500) return { field: "description", msg: "Details can be at most 500 characters." };
+                if (lockWho && v.assigneeId !== t.assigneeId) return { field: "assigneeId", msg: "Only the home owner can change who this is for." };
+                if (lockWhen && (v.date !== t.date || v.time !== t.time)) return { field: "date", msg: "Only the home owner can move a chore to another day or time." };
+                if (t && v.status === "Completed" && t.status !== "Completed") { var why = D.tasks.canComplete(Object.assign({}, t, { date: v.date })); if (why) return { field: "status", msg: why }; }
                 var who = D.members.find(v.assigneeId);
-                if (!who || who.status !== "active") return { field: "assigneeId", msg: "Choose someone who is in your home." };
+                if (!lockWho && (!who || who.status !== "active")) return { field: "assigneeId", msg: "Choose someone who is in your home." };
                 if (["High", "Medium", "Low"].indexOf(v.priority) < 0) return { field: "priority", msg: "Choose a priority." };
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date) || isNaN(new Date(v.date + "T00:00").getTime())) return { field: "date", msg: "Choose the due date." };
                 if (moved && v.date < todayKey()) return { field: "date", msg: "That day has already passed. Choose today or a later day." };
@@ -209,7 +218,8 @@
     /* new tasks default to 17:00, or the next full hour if 17:00 has passed */
     function defaultTime() { var h = now().getHours(); return h < 17 ? "17:00" : (h >= 23 ? "23:59" : (h + 1 < 10 ? "0" : "") + (h + 1) + ":00"); }
     function save(v, t) {
-        var list = tasks(), m = me(), assignee = D.members.find(v.assigneeId);
+        var list = tasks(), m = me(), assignee = D.members.find(v.assigneeId) || (t ? { userId: t.assigneeId, name: t.assignee } : null);
+        if (!assignee) return UI.toast("Choose someone who is in your home.", "error");
         var status = v.status, progress = status === "Completed" ? 100 : Math.max(0, Math.min(100, parseInt(v.progress, 10) || 0));
         if (progress === 100 && status !== "Completed") status = "Completed";
         var data = { title: v.title, description: v.description || "No description.", priority: v.priority, assigneeId: assignee.userId, assignee: assignee.name,
@@ -270,6 +280,7 @@
         var order = (c.people || []).filter(function (id) { return D.members.find(id); });
         ppl.forEach(function (p) { if (order.indexOf(p.userId) < 0) order.push(p.userId); });
         var nowWho = F.chores.assignee(c, todayKey());
+        var lockPeople = !isNew && !D.household.isOwner, mayDelete = !isNew && (D.household.isOwner || c.createdBy === me().id);
         var ov = document.createElement("div");
         ov.className = "eui-overlay";
         ov.innerHTML = '<form class="eui-box eui-form auto-form" novalidate><div class="eui-icon info"><i class="fa-solid fa-rotate"></i></div><h3>' + (isNew ? "New chore" : "Edit chore") + "</h3>" +
@@ -279,14 +290,14 @@
             }).join("") + "</div></fieldset>" +
             '<label>Time<input type="time" name="time" value="' + esc(c.time || "09:00") + '"></label>' +
             '<label>Points (1 to 10)<input type="number" name="points" min="1" max="10" step="1" value="' + esc(c.points || 2) + '"></label>' +
-            '<fieldset><legend>Who takes turns (use the arrows to set the order)</legend><div class="dev-picks rot-picks">' + order.map(function (id) {
+            '<fieldset' + (lockPeople ? " disabled" : "") + '><legend>' + (lockPeople ? "Who takes turns (only the home owner can change this)" : "Who takes turns (use the arrows to set the order)") + '</legend><div class="dev-picks rot-picks">' + order.map(function (id) {
                 var p = D.members.find(id);
                 return '<div class="rot-row" data-id="' + esc(id) + '"><label><input type="checkbox" name="who" value="' + esc(id) + '"' + ((c.people || []).indexOf(id) > -1 ? " checked" : "") + "> " + esc(p.isMe ? p.name + " (you)" : p.name) + "</label>" +
                     '<span><button type="button" class="icon-act" data-move="-1" aria-label="Move up"><i class="fa-solid fa-arrow-up"></i></button><button type="button" class="icon-act" data-move="1" aria-label="Move down"><i class="fa-solid fa-arrow-down"></i></button></span></div>';
             }).join("") + "</div></fieldset>" +
-            '<label>Whose turn is it this week?<select name="startWho"></select></label>' +
+            '<label>Whose turn is it this week?<select name="startWho"' + (lockPeople ? " disabled" : "") + '></select></label>' +
             (isNew ? "" : '<label>Status<select name="on"><option value="on">Active</option><option value="off">Paused</option></select></label>') +
-            '<p class="eui-err" aria-live="assertive"></p><div class="eui-actions">' + (isNew ? "" : '<button type="button" class="eui-btn danger" data-del>Delete</button>') +
+            '<p class="eui-err" aria-live="assertive"></p><div class="eui-actions">' + (mayDelete ? '<button type="button" class="eui-btn danger" data-del>Delete</button>' : "") +
             '<button type="button" class="eui-btn ghost" data-close>Cancel</button><button type="submit" class="eui-btn primary">Save</button></div></form>';
         document.body.appendChild(ov);
         requestAnimationFrame(function () { ov.classList.add("show"); });
@@ -311,7 +322,7 @@
         function close() { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); }
         ov.addEventListener("click", function (e) {
             if (e.target === ov || e.target.closest("[data-close]")) close();
-            if (e.target.closest("[data-del]")) UI.confirm({ title: "Delete “" + c.title + "”?", message: "It stops rotating. Chore tasks already done stay (with their points); upcoming ones nobody started are removed.", confirmText: "Delete chore" }).then(function (ok) {
+            if (e.target.closest("[data-del]") && mayDelete) UI.confirm({ title: "Delete “" + c.title + "”?", message: "It stops rotating. Chore tasks already done stay (with their points); upcoming ones nobody started are removed.", confirmText: "Delete chore" }).then(function (ok) {
                 if (!ok) return;
                 F.chores.save(F.chores.all().filter(function (x) { return x.id !== c.id; }));
                 F.chores.resetFuture(c.id);
@@ -335,6 +346,7 @@
             var idx = Math.max(0, who.indexOf(start));
             var startKey = F.util.mondayOf(todayKey());
             var rotated = who.slice(idx).concat(who.slice(0, idx));
+            if (lockPeople) { rotated = (c.people || []).slice(); startKey = c.start || startKey; }
             var list = F.chores.all(), m = me(), item = Object.assign({}, c, { title: title, days: days.sort(), time: time, points: pts, people: rotated, start: startKey,
                 on: isNew ? true : f.on.value === "on", updatedAt: Date.now() });
             if (isNew) { item.createdBy = m.id; item.createdAt = Date.now(); list.push(item); }
@@ -368,6 +380,8 @@
         var m = me();
         if (btn.dataset.action === "edit") openForm(t);
         else if (btn.dataset.action === "toggle") {
+            var why = t.status !== "Completed" && D.tasks.canComplete(t);
+            if (why) return UI.toast(why, "error");
             if (t.status === "Completed") {
                 t.status = "Pending"; t.progress = 0; delete t.completedBy; delete t.completedByName; delete t.completedAt;
                 D.log("reopened task “" + t.title + "”", "fa-rotate-left"); UI.toast("Task reopened.", "info");
@@ -379,6 +393,7 @@
             t.updatedAt = Date.now(); t.updatedBy = m.id;
             D.tasks.save(list); render(); renderCalendar();
         } else if (btn.dataset.action === "delete") {
+            if (!D.tasks.canDelete(t)) return UI.toast("Only the home owner or the person who added this task can delete it.", "error");
             UI.confirm({ title: "Delete this task?", message: "“" + t.title + "” will be permanently removed for everyone." + (t.choreId ? " The chore carries on next time; only this day is skipped." : ""), confirmText: "Delete task" })
                 .then(function (ok) {
                     if (!ok) return;
