@@ -266,6 +266,7 @@
         }
         offBar.innerHTML = '<i class="fa-solid fa-wifi"></i> You’re offline. ' + (D.user ? "What you add is saved on this device and syncs when you’re back online." : "Some things won’t load until you’re back online.");
         offBar.classList.toggle("show", off);
+        offBar.hidden = !off;                    // on phones the slid-away bar still peeked out above the bottom menu
         document.body.classList.toggle("is-offline", off);
     }
     window.addEventListener("offline", offlineBar);
