@@ -309,8 +309,21 @@
         if (!prefs().push || !("Notification" in window) || Notification.permission !== "granted") return Promise.resolve(false);
         return registerSW().then(function (reg) {
             if (!reg || !cfg.vapidPublicKey || !reg.pushManager || !D || !D.user) return false;
+            var key = urlB64ToUint8(cfg.vapidPublicKey);
+            function sameKey(sub) {
+                var k = sub && sub.options && sub.options.applicationServerKey;
+                if (!k) return true;                                   // browser doesn't say: keep it
+                k = new Uint8Array(k);
+                if (k.length !== key.length) return false;
+                for (var i = 0; i < k.length; i++) if (k[i] !== key[i]) return false;
+                return true;
+            }
             return reg.pushManager.getSubscription().then(function (sub) {
-                return sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(cfg.vapidPublicKey) });
+                if (sub && sameKey(sub)) return sub;
+                // made with an old push key (or none yet): sign this device up again with the current key
+                return (sub ? sub.unsubscribe().catch(function () {}) : Promise.resolve()).then(function () {
+                    return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+                });
             }).then(function (sub) {
                 var j = sub.toJSON();
                 return D.getClient().then(function (c) {
