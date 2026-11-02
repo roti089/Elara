@@ -20,7 +20,7 @@ window.ELARA_CONFIG = {
     /* ---- Energy ---- */
     tariffPerKwh: 2.5,            // Rand per kWh, used for the cost estimates
     tuyaPollSeconds: 60,          // how often an open Elara screen reads the switches (one Tuya API call each time)
-    serverAutomations: false,     // true once the elara-tuya scheduled job is running (README, step 8): then automations
+    serverAutomations: true,     // true once the elara-tuya scheduled job is running (README, step 8): then automations
                                   // run on the server only, even when nobody has Elara open
 
     /* ---- Weather fallback when no location is known ---- */
