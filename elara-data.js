@@ -849,7 +849,7 @@
     function guessType(name, cat) {
         var n = String(name).toLowerCase();
         if (/geyser|water heater|boiler/.test(n) || cat === "rs") return "Geyser";
-        if (/light|lamp|bulb/.test(n) || cat === "dj" || cat === "dd") return "Light";
+        if (/light|lamp|bulb|led|downlight|chandelier/.test(n) || ["dj", "dd", "fwd", "xdd", "dc", "tgq", "tgkg", "tyndj", "sxd", "gyd", "fsd"].indexOf(cat) > -1) return "Light";
         if (/air ?con|aircon|\bac\b/.test(n) || cat === "kt") return "Air conditioner";
         if (/heater/.test(n)) return "Heater";
         if (/fridge|freezer/.test(n)) return "Fridge";
@@ -895,10 +895,10 @@
         (list || []).forEach(function (t) {
             if (!t || !t.id) return;
             var ex = all.filter(function (d) { return d.tuyaId === t.id; })[0];
-            if (ex) { ex.tuyaCode = t.code || ex.tuyaCode; ex.hasMeter = !!t.hasMeter; ex.on = !!t.on; return; }
-            var name = String(t.name || "CBi switch").slice(0, 40), type = guessType(name, t.category);
+            if (ex) { ex.tuyaCode = t.code || ex.tuyaCode; ex.hasMeter = !!t.hasMeter; ex.on = !!t.on; ex.canSwitch = t.canSwitch !== false; return; }
+            var name = String(t.name || "Smart device").slice(0, 40), type = guessType(name, t.category);
             all.push({ id: "t_" + String(t.id).slice(0, 60), tuyaId: String(t.id), tuyaCode: t.code || "switch_1", name: name, room: "CBi Devices",
-                       type: type, icon: DEVICE_TYPES[type], hasMeter: !!t.hasMeter, on: !!t.on, created: Date.now() });
+                       type: type, icon: DEVICE_TYPES[type], hasMeter: !!t.hasMeter, canSwitch: t.canSwitch !== false, on: !!t.on, created: Date.now() });
             added++;
         });
         saveDevices(all);

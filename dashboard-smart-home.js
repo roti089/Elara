@@ -25,9 +25,9 @@
     function renderBanner() {
         var b = $("smartBanner"), devs = D.devices.all();
         var msg = "";
-        if (D.demo) msg = '<i class="fa-solid fa-flask"></i> Demo mode: these devices aren’t real. Log in and connect CBi Home to control your own switches.';
-        else if (!cfg.tuyaEndpoint) msg = '<i class="fa-solid fa-link-slash"></i> CBi Home isn’t connected yet. Deploy the <code>elara-tuya</code> function (README, step 8), then press <strong>CBi Home</strong>.';
-        else if (!devs.length) msg = '<i class="fa-solid fa-plug-circle-plus"></i> No switches yet. <button type="button" class="link-guide" data-guide>Read how to connect your switches</button>, then press <strong>CBi Home</strong> to import them.';
+        if (D.demo) msg = '<i class="fa-solid fa-flask"></i> Demo mode: these devices aren’t real. Log in and connect Smart Life to control your own devices.';
+        else if (!cfg.tuyaEndpoint) msg = '<i class="fa-solid fa-link-slash"></i> Smart devices aren’t set up on this Elara yet. Whoever runs Elara deploys the <code>elara-tuya</code> function once (README, step 8).';
+        else if (!devs.length) msg = '<i class="fa-solid fa-plug-circle-plus"></i> No devices yet. ' + (canEdit() ? '<button type="button" class="link-guide" data-connect>Connect your Smart Life account</button> to bring in your switches, plugs and lights, or <button type="button" class="link-guide" data-guide>read how it works</button>.' : '<button type="button" class="link-guide" data-guide>Read how devices get connected</button>.');
         b.hidden = !msg; b.innerHTML = msg;
     }
 
@@ -53,7 +53,7 @@
         return '<div class="device' + (offline ? " is-offline" : "") + (lim && onFor >= lim ? " left-on" : "") + '" data-id="' + esc(d.id) + '"><div class="device-left"><i class="fa-solid ' + esc(d.icon || "fa-plug") + '"></i><div class="device-info"><h4>' + esc(d.name) + "</h4><p>" +
             esc(power + (who ? " • " + who : "")) + "</p></div></div>" +
             '<div class="device-right"><span class="device-status ' + (offline ? "offline" : d.on ? "online" : "standby") + '">' + (offline ? "Offline" : d.on ? "ON" : "OFF") + "</span>" +
-            '<label class="switch"><input type="checkbox"' + (d.on ? " checked" : "") + (canEdit() && !offline ? "" : " disabled") + ' aria-label="' + esc(d.name + " in " + d.room) + '"><span class="slider"></span></label>' +
+            '<label class="switch"><input type="checkbox"' + (d.on ? " checked" : "") + (canEdit() && !offline && d.canSwitch !== false ? "" : " disabled") + ' aria-label="' + esc(d.name + " in " + d.room) + '"><span class="slider"></span></label>' +
             (canEdit() ? '<button type="button" class="device-edit" title="Edit" aria-label="Edit ' + esc(d.name) + '"><i class="fa-solid fa-pen"></i></button>' : "") + "</div></div>";
     }
     $("roomsGrid").addEventListener("change", function (e) {
@@ -91,7 +91,7 @@
             var room = v.room === "New room..." ? v.newRoom : v.room;
             D.devices.update(d.id, { name: v.name, room: room, type: v.type, hidden: v.hidden === "yes", leftOnHours: v.type !== d.type && d.leftOnHours == null && F && Number(v.leftOnHours) === F.leftOn.hours(d) ? null : Number(v.leftOnHours) });
             D.log("updated device " + v.name, "fa-pen");
-            UI.toast(v.hidden === "yes" ? v.name + " is hidden. Show it again from CBi Home." : "Saved."); render();
+            UI.toast(v.hidden === "yes" ? v.name + " is hidden. Show it again from the Smart Life button." : "Saved."); render();
         });
     });
 
@@ -120,7 +120,7 @@
         $("eToday").textContent = any ? kwh(t.total) : "—"; $("eTodayNote").textContent = any ? compare(t.change, "yesterday") : "";
         $("eWeek").textContent = any ? kwh(w.total) : "—"; $("eWeekNote").textContent = any ? compare(w.change, "the week before") : "";
         $("eMonth").textContent = any ? kwh(m.total) : "—"; $("eMonthNote").textContent = any ? "About R" + m.cost.toFixed(0) + " at R" + m.tariff.toFixed(2) + "/kWh" : "";
-        $("energyNote").textContent = !t.connected ? "Connect CBi switches with a power meter to see real energy use"
+        $("energyNote").textContent = !t.connected ? "Connect Smart Life switches with a power meter to see real energy use"
             : !t.metered ? "Your switches are connected, but none of them report power"
             : "Measured by " + t.metered + " switch" + (t.metered === 1 ? "" : "es") + (t.updated ? " • updated " + D.ago(t.updated) : "");
         drawChart(w);
@@ -232,7 +232,7 @@
             '<label>Switch them<select name="action"><option value="on">On</option><option value="off">Off</option></select></label>' +
             '<fieldset><legend>Which devices</legend><div class="dev-picks">' + (devs.length ? devs.map(function (d) {
                 return '<label><input type="checkbox" name="dev" value="' + esc(d.id) + '"' + (a.devices.indexOf(d.id) > -1 ? " checked" : "") + "> " + esc(d.name) + " <small>" + esc(d.room) + "</small></label>";
-            }).join("") : "<p>No devices yet. Connect CBi Home first.</p>") + "</div></fieldset>" +
+            }).join("") : "<p>No devices yet. Connect Smart Life first.</p>") + "</div></fieldset>" +
             '<p class="eui-err" aria-live="assertive"></p><div class="eui-actions">' + (isNew ? "" : '<button type="button" class="eui-btn danger" data-del>Delete</button>') +
             '<button type="button" class="eui-btn ghost" data-close>Cancel</button><button type="submit" class="eui-btn primary">Save</button></div></form>';
         document.body.appendChild(ov);
@@ -399,7 +399,7 @@
     function renderGeyser() {
         if (!$("geyserBody")) return;
         var gs = D.devices.all().filter(function (d) { return d.type === "Geyser" && d.tuyaId; }), box = $("geyserBody");
-        if (!gs.length) { box.innerHTML = '<div class="feature-empty"><i class="fa-solid fa-fire"></i><p>No geyser switch yet. Set your geyser switch\'s type to <b>Geyser</b> with its pencil button. It needs a power meter (most CBi geyser switches have one).</p></div>'; return; }
+        if (!gs.length) { box.innerHTML = '<p class="gs-none"><i class="fa-solid fa-fire"></i> No geyser yet. Set your geyser switch\'s type to <b>Geyser</b> with its pencil button to get a heating schedule (it needs a power meter, which most geyser switches have).</p>'; return; }
         box.innerHTML = gs.map(function (d) {
             var a = analyseGeyser(d), plan = planAutomations(d), on = plan.length && plan.every(function (x) { return x.on; });
             var others = D.automations.all().filter(function (x) { return !x.plan && x.on && x.kind !== "manual" && (x.devices || []).indexOf(d.id) > -1; });
@@ -449,6 +449,107 @@
             if (!ok) return;
             D.automations.save(rest.concat(plan));
             D.log("put " + d.name + " on a heating schedule (" + hhmm(w[0][0]) + "–" + hhmm(w[0][1]) + ", " + hhmm(w[1][0]) + "–" + hhmm(w[1][1]) + ")", "fa-fire");
+            UI.toast("Schedule saved." + (cfg.serverAutomations ? "" : " It runs while Elara is open on a device; see README step 8 to run it all the time."));
+            render();
+        });
+    });
+
+    /* =========================================================
+       SAVINGS FOR EVERY OTHER DEVICE (same idea as the geyser, from each device's own meter)
+       - Lights: one schedule for all of them, on at sunset and off at bedtime
+       - Pool pump: run 6 hours in the middle of the day
+       - Heater / aircon: off at bedtime
+       - Plugs and other devices: off overnight when the meter shows standby use
+       Savings are only worked out from measured kWh (the hours the device would now be off).
+       Fridges and gates are never put on a schedule.
+    ========================================================= */
+    function usage(d) {
+        if (!d.tuyaId || !d.hasMeter) return { metered: false };
+        var sod = D.util.startOfDay(new Date()).getTime(), from = sod - 14 * 86400000, rows = D.energy.rows().filter(function (r) { return r.d === d.tuyaId && r.h >= from && r.h < sod; });
+        var days = {}, byHour = new Array(24).fill(0), total = 0, peak = 0;
+        rows.forEach(function (r) { var dt = new Date(r.h); days[D.util.dayKey(dt)] = 1; byHour[dt.getHours()] += r.k; total += r.k; if (r.p > peak) peak = r.p; });
+        var n = Object.keys(days).length;
+        if (n < 3) return { metered: true, ready: false, days: n };
+        var avg = byHour.map(function (k) { return k / n; });
+        return { metered: true, ready: true, days: n, perDay: total / n, avg: avg, kw: peak / 1000, standbyW: Math.round((avg[1] + avg[2] + avg[3] + avg[4]) / 4 * 1000) };
+    }
+    /** kWh a day saved if the device is off between the hours "from" and "to" (wrapping past midnight) */
+    function offSaving(u, from, to) { var k = 0; for (var h = from; h !== to; h = (h + 1) % 24) k += u.avg[h]; return k; }
+    function sunsetHour() {
+        var c = D.util.load("elaraHomeCoords", null);
+        if (!c || c.lat == null) return 18;
+        var now = new Date(), start = new Date(now.getFullYear(), 0, 0), day = Math.floor((now - start) / 86400000);
+        var decl = -23.44 * Math.cos(2 * Math.PI / 365 * (day + 10)) * Math.PI / 180, lat = c.lat * Math.PI / 180;
+        var ha = Math.acos(Math.max(-1, Math.min(1, -Math.tan(lat) * Math.tan(decl)))) * 180 / Math.PI / 15;
+        var solarNoon = 12 - (c.lon - (-now.getTimezoneOffset() / 60) * 15) / 15;
+        return Math.round(solarNoon + ha);
+    }
+    function savingPlans() {
+        var all = D.devices.all().filter(function (d) { return d.tuyaId && d.canSwitch !== false; }), plans = [];
+        var lights = all.filter(function (d) { return d.type === "Light"; });
+        if (lights.length) {
+            var ss = sunsetHour(), metered = lights.map(usage).filter(function (u) { return u.ready; });
+            var save = metered.reduce(function (k, u) { return k + offSaving(u, 23, ss); }, 0);
+            plans.push({ id: "lights-all", icon: "fa-lightbulb", title: lights.length === 1 ? lights[0].name : "Lights (" + lights.length + ")", devices: lights,
+                plan: "On at sunset (about " + hhmm(ss) + "), off at 23:00. They never stay on all night or through the day.",
+                saving: metered.length ? save : null, measured: metered.length + " of " + lights.length + " light" + (lights.length === 1 ? "" : "s") + " report power",
+                rules: [{ suffix: "on", name: "Lights on at sunset", kind: "sunset", offset: 0, action: "on" }, { suffix: "off", name: "Lights off at bedtime", kind: "time", at: "23:00", action: "off" }] });
+        }
+        all.forEach(function (d) {
+            if (d.type === "Light" || d.type === "Geyser" || d.type === "Fridge" || d.type === "Gate") return;
+            var u = usage(d), p = { id: "save-" + hash(d.id).slice(0, 8), icon: d.icon || "fa-plug", title: d.name, devices: [d], u: u };
+            if (d.type === "Pool") {
+                p.plan = "Run the pump 6 hours a day, 10:00–16:00 (enough to filter most home pools; sunny hours also help solar).";
+                p.saving = u.ready && u.kw > 0.1 ? Math.max(0, u.perDay - u.kw * 6) : null;
+                p.rules = [{ suffix: "on", name: d.name + " on", kind: "time", at: "10:00", action: "on" }, { suffix: "off", name: d.name + " off", kind: "time", at: "16:00", action: "off" }];
+            } else if (d.type === "Heater" || d.type === "Air conditioner") {
+                p.plan = "Switch off at 23:00 every night, in case it was left on.";
+                p.saving = u.ready ? offSaving(u, 23, 6) : null;
+                p.rules = [{ suffix: "off", name: d.name + " off at night", kind: "time", at: "23:00", action: "off" }];
+            } else {
+                if (!u.ready || u.standbyW < 3) return;             // only when its own meter shows it using power through the night
+                p.plan = "Off from 23:00 to 06:00: it draws about " + u.standbyW + " W through the night. Don't use this for Wi-Fi routers, alarms or medical equipment.";
+                p.saving = u.ready ? offSaving(u, 23, 6) : null;
+                p.rules = [{ suffix: "off", name: d.name + " off overnight", kind: "time", at: "23:00", action: "off" }, { suffix: "on", name: d.name + " on in the morning", kind: "time", at: "06:00", action: "on" }];
+            }
+            p.measured = !u.metered ? "No power meter, so Elara can't measure the saving" : !u.ready ? "Elara needs 3 days of readings (it has " + u.days + ")" : "Worked out from " + u.days + " days of readings";
+            plans.push(p);
+        });
+        return plans;
+    }
+    function renderSavings() {
+        var box = $("savingsBody"); if (!box) return;
+        var plans = savingPlans(), tariff = D.energy.tariff();
+        box.innerHTML = plans.map(function (p) {
+            var mine = D.automations.all().filter(function (a) { return a.plan === p.id; }), on = mine.length && mine.every(function (x) { return x.on; });
+            var u = p.u;
+            return '<div class="gs-card" data-plan="' + esc(p.id) + '"><div class="gs-head"><strong><i class="fa-solid ' + esc(p.icon) + '"></i> ' + esc(p.title) + "</strong>" + (on ? '<span class="gs-badge">Schedule on</span>' : "") + "</div>" +
+                (u && u.ready ? '<div class="gs-stats"><span><small>Uses</small><b>' + u.perDay.toFixed(2) + " kWh/day</b><small>about R" + Math.round(u.perDay * 30 * tariff) + "/month</small></span>" +
+                    "<span><small>At night</small><b>" + u.standbyW + " W</b><small>average 01:00–05:00</small></span></div>" : "") +
+                '<p class="gs-plan"><i class="fa-solid fa-clock"></i> ' + esc(p.plan) + "</p>" +
+                (p.saving != null ? (p.saving >= 0.05 ? '<p class="gs-save">You\'d save about <b>R' + Math.round(p.saving * 30 * tariff) + " a month</b> (" + p.saving.toFixed(2) + " kWh a day).</p>" : '<p class="gs-save">It already uses little at those times, so the saving is small, but it stops it being left on.</p>') : "") +
+                '<p class="gs-how">' + esc(p.measured) + ".</p>" +
+                (canEdit() ? '<div class="feature-actions">' + (mine.length ? '<button type="button" class="ghost-btn" data-sv="off">Remove schedule</button>' : "") +
+                    '<button type="button" class="ghost-btn primary-ghost" data-sv="on">' + (mine.length ? "Update schedule" : "Use this schedule") + "</button></div>" : "") + "</div>";
+        }).join("") || '<p class="gs-none"><i class="fa-solid fa-leaf"></i> Lights, pool pumps, heaters and metered plugs get their own savings tips here once they\'re imported and have a type.</p>';
+    }
+    $("savingsBody").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-sv]"); if (!b || !canEdit()) return;
+        var id = b.closest("[data-plan]").dataset.plan, p = savingPlans().filter(function (x) { return x.id === id; })[0]; if (!p) return;
+        var rest = D.automations.all().filter(function (a) { return a.plan !== id; });
+        if (b.dataset.sv === "off") { D.automations.save(rest); D.log("removed the saving schedule for " + p.title, "fa-leaf"); UI.toast("Schedule removed.", "info"); return render(); }
+        var old = D.automations.all().filter(function (a) { return a.plan === id; }), now = Date.now(), since = old.length ? Math.min.apply(null, old.map(function (x) { return x.since || now; })) : now;
+        var list = p.rules.map(function (r) {
+            var a = { id: id + "-" + r.suffix, name: r.name, icon: r.action === "on" ? p.icon : "fa-power-off", kind: r.kind, days: [], action: r.action, on: true, devices: p.devices.map(function (d) { return d.id; }), plan: id, since: since };
+            if (r.kind === "time") a.at = r.at; else a.offset = r.offset || 0;
+            return a;
+        });
+        if (rest.length + list.length > 30) return UI.toast("You have too many automations. Delete a few first.", "error");
+        if (list.some(function (a) { return a.kind === "sunset"; }) && !D.util.load("elaraHomeCoords", null)) return UI.toast("Set the home's location in Settings first, so Elara knows when the sun sets.", "error");
+        UI.confirm({ title: "Put " + p.title + " on a schedule?", message: p.plan + " Elara adds " + list.length + " automation" + (list.length === 1 ? "" : "s") + ". You can change or remove them any time.", confirmText: "Use schedule", danger: false, icon: "fa-leaf" }).then(function (ok) {
+            if (!ok) return;
+            D.automations.save(rest.concat(list));
+            D.log("put " + p.title + " on a saving schedule", "fa-leaf");
             UI.toast("Schedule saved." + (cfg.serverAutomations ? "" : " It runs while Elara is open on a device; see README step 8 to run it all the time."));
             render();
         });
@@ -583,34 +684,149 @@
     var search = $("deviceSearch");
     if (search) search.addEventListener("input", function () { query = this.value.toLowerCase().trim().slice(0, 60); renderRooms(); });
 
-    /* ---------------- CBi Home (Tuya cloud): connect + import ---------------- */
-    function openCbi() {
-        if (!canEdit()) return UI.toast("Only people who can change Smart Home can connect CBi.", "error");
-        var hidden = D.devices.everything().filter(function (d) { return d.hidden; });
+    /* ---------------- Smart Life (Tuya cloud): link this home's account, then import ----------------
+       Every home links its OWN free Tuya cloud project. The keys go straight to the elara-tuya function,
+       which tests them, encrypts the secret and keeps it where no browser can read it. */
+    var TUYA_REGIONS = [{ id: "eu", label: "Central Europe (South Africa and the rest of Africa)" }, { id: "euw", label: "Western Europe" },
+                        { id: "us", label: "Western America" }, { id: "use", label: "Eastern America" }, { id: "in", label: "India" }, { id: "cn", label: "China" }];
+    function overlay(html, cls) {
         var ov = document.createElement("div");
         ov.className = "eui-overlay";
-        ov.innerHTML = '<div class="eui-box cbi-box" role="dialog" aria-modal="true"><div class="eui-icon info"><i class="fa-solid fa-link"></i></div><h3>CBi Home</h3>' +
-            "<p>Elara controls your switches through the Smart Life account they're in (CBi Home runs on the same Tuya cloud). Switches with a power meter also send their energy use.</p>" +
-            (cbiReady ? '<div class="eui-actions">' + (hidden.length ? '<button type="button" class="eui-btn ghost" data-unhide>Show ' + hidden.length + " hidden</button>" : "") +
-                        '<button type="button" class="eui-btn ghost" data-close>Close</button><button type="button" class="eui-btn primary" data-sync>Import / refresh switches</button></div>'
-                      : '<ol class="cbi-steps"><li>In <strong>CBi Home</strong>, remove the switch and reset it into pairing mode.</li><li>Add it in <strong>Smart Life</strong>.</li>' +
-                        "<li>On iot.tuya.com link your Smart Life account, then deploy <code>elara-tuya</code> (README, step 8).</li><li>Its URL goes in <code>tuyaEndpoint</code> in <code>elara-config.js</code>.</li></ol>" +
-                        '<div class="eui-actions"><button type="button" class="eui-btn ghost" data-close>Close</button></div>') + "</div>";
+        ov.innerHTML = '<div class="eui-box ' + (cls || "cbi-box") + '" role="dialog" aria-modal="true">' + html + "</div>";
         document.body.appendChild(ov);
         requestAnimationFrame(function () { ov.classList.add("show"); });
+        ov.shut = function () { ov.classList.remove("show"); setTimeout(function () { ov.remove(); }, 180); };
+        ov.addEventListener("keydown", function (e) { if (e.key === "Escape") ov.shut(); });
+        return ov;
+    }
+    function importNow(devices, btn) {
+        var r = D.devices.import(devices || []);
+        var n = (devices || []).length, metered = (devices || []).filter(function (t) { return t.hasMeter; }).length;
+        D.util.save("elaraCbiLinked", true);
+        D.log("imported Smart Life devices (" + r.added + " new)", "fa-link");
+        D.devices.poll(); D.energy.load(true); render();
+        UI.toast(n + " device" + (n === 1 ? "" : "s") + " found, " + r.added + " new. " + metered + " report power." + (r.added ? " Give each one a room and type with its pencil button." : ""), "success");
+        return r;
+    }
+    function openCbi() {
+        if (D.demo || !cbiReady) return openGuide();
+        if (!canEdit()) return UI.toast("Only people who can change Smart Home can connect devices.", "error");
+        var ov = overlay('<div class="eui-icon info"><i class="fa-solid fa-link"></i></div><h3>Smart Life</h3><p class="cbi-wait"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking your home\'s link...</p>');
+        ov.addEventListener("click", function (e) { if (e.target === ov) ov.shut(); });
+        D.callFunction(cfg.tuyaEndpoint, { action: "linkStatus" }).then(function (st) {
+            ov.remove();
+            if (st.linked) return linkedView(st);
+            if (st.isOwner) return linkWizard(st);
+            notLinkedMember();
+        }).catch(function (err) {
+            ov.querySelector(".cbi-wait").innerHTML = '<span class="warn-text">Couldn’t reach Elara’s server: ' + esc(err.message) + "</span>";
+        });
+    }
+    function notLinkedMember() {
+        var owner = (D.members.all ? D.members.all() : []).filter(function (m) { return m.role === "owner" || m.isOwner; })[0];
+        var ov = overlay('<div class="eui-icon info"><i class="fa-solid fa-link-slash"></i></div><h3>Not linked yet</h3>' +
+            "<p>" + esc(owner ? owner.name : "The home owner") + " needs to link the home's Smart Life account first (Smart Home &gt; <b>Smart Life</b>). After that, anyone with Edit access to Smart Home can import and switch the devices.</p>" +
+            '<div class="eui-actions"><button type="button" class="eui-btn ghost" data-guide>How it works</button><button type="button" class="eui-btn primary" data-close>OK</button></div>');
         ov.addEventListener("click", function (e) {
-            if (e.target === ov || e.target.closest("[data-close]")) return ov.remove();
-            if (e.target.closest("[data-unhide]")) { hidden.forEach(function (d) { D.devices.update(d.id, { hidden: false }); }); ov.remove(); render(); return UI.toast("Hidden devices are shown again."); }
+            if (e.target === ov || e.target.closest("[data-close]")) return ov.shut();
+            if (e.target.closest("[data-guide]")) { ov.shut(); setTimeout(openGuide, 200); }
+        });
+    }
+    function linkedView(st) {
+        var hidden = D.devices.everything().filter(function (d) { return d.hidden; });
+        var ov = overlay('<div class="eui-icon success"><i class="fa-solid fa-link"></i></div><h3>Smart Life is linked</h3>' +
+            "<p>Elara sees every device in this home's Smart Life account: switches, plugs, lights, multi-gang wall switches (each button becomes its own device) and geyser switches. Cameras are left out.</p>" +
+            '<dl class="cbi-facts">' +
+            (st.source === "legacy" ? "<dt>Linked by</dt><dd>the server set-up (README, step 8)</dd>" : "") +
+            (st.regionLabel ? "<dt>Data centre</dt><dd>" + esc(st.regionLabel) + "</dd>" : "") +
+            (st.accessId ? "<dt>Access ID</dt><dd><code>" + esc(st.accessId) + "</code></dd>" : "") +
+            (st.uid ? "<dt>Smart Life UID</dt><dd><code>" + esc(st.uid) + "</code></dd>" : "") +
+            (st.linkedAt ? "<dt>Linked</dt><dd>" + esc(new Date(st.linkedAt).toLocaleDateString()) + "</dd>" : "") + "</dl>" +
+            '<p class="guide-note"><i class="fa-solid fa-circle-info"></i> Added a new device in Smart Life? Press <b>Import / refresh</b> and it appears here.</p>' +
+            '<div class="eui-actions cbi-actions">' +
+            (st.isOwner ? '<button type="button" class="eui-btn ghost" data-change>' + (st.source === "legacy" ? "Link my own account" : "Change account") + "</button>" : "") +
+            (st.isOwner && st.source === "own" ? '<button type="button" class="eui-btn ghost danger-text" data-unlink>Unlink</button>' : "") +
+            (hidden.length ? '<button type="button" class="eui-btn ghost" data-unhide>Show ' + hidden.length + " hidden</button>" : "") +
+            '<button type="button" class="eui-btn ghost" data-close>Close</button><button type="button" class="eui-btn primary" data-sync>Import / refresh</button></div>');
+        ov.addEventListener("click", function (e) {
+            if (e.target === ov || e.target.closest("[data-close]")) return ov.shut();
+            if (e.target.closest("[data-unhide]")) { hidden.forEach(function (d) { D.devices.update(d.id, { hidden: false }); }); ov.shut(); render(); return UI.toast("Hidden devices are shown again."); }
+            if (e.target.closest("[data-change]")) { ov.remove(); return linkWizard(st, true); }
+            if (e.target.closest("[data-unlink]")) {
+                return UI.confirm({ title: "Unlink Smart Life?", message: "Elara forgets this home's Tuya keys. Your devices stay in Smart Life and in Elara's list, but they can't be switched, measured or automated until you link again.", confirmText: "Unlink" }).then(function (ok) {
+                    if (!ok) return;
+                    D.callFunction(cfg.tuyaEndpoint, { action: "linkRemove" }).then(function (r) {
+                        ov.shut(); D.log("unlinked the home's Smart Life account", "fa-link-slash");
+                        UI.toast(r.stillLegacy ? "Unlinked. This home still uses the server's set-up account." : "Smart Life unlinked.", "info");
+                    }).catch(function (err) { UI.toast("Couldn’t unlink: " + err.message, "error"); });
+                });
+            }
             var s = e.target.closest("[data-sync]"); if (!s) return;
-            s.disabled = true; s.textContent = "Connecting...";
-            D.callFunction(cfg.tuyaEndpoint, { action: "list" }).then(function (res) {
-                var r = D.devices.import(res.devices || []);
-                var metered = (res.devices || []).filter(function (t) { return t.hasMeter; }).length;
-                D.util.save("elaraCbiLinked", true);
-                D.log("synced CBi Home (" + r.added + " new switch" + (r.added === 1 ? "" : "es") + ")", "fa-link");
-                ov.remove(); D.devices.poll(); D.energy.load(true); render();
-                UI.toast((res.devices || []).length + " switch" + ((res.devices || []).length === 1 ? "" : "es") + " found, " + r.added + " new. " + metered + " report power.");
-            }).catch(function (err) { s.disabled = false; s.textContent = "Try again"; UI.toast("Couldn’t reach CBi: " + err.message, "error"); });
+            s.disabled = true; s.textContent = "Importing...";
+            D.callFunction(cfg.tuyaEndpoint, { action: "list" }).then(function (res) { ov.shut(); importNow(res.devices); })
+                .catch(function (err) { s.disabled = false; s.textContent = "Try again"; UI.toast("Couldn’t reach Smart Life: " + err.message, "error"); });
+        });
+    }
+    /* the owner links their own free Tuya cloud project: 4 short steps, then the keys are tested before they're saved */
+    function linkWizard(st, changing) {
+        var regions = (st && st.regions && st.regions.length ? st.regions : TUYA_REGIONS), step = 0;
+        var steps = [
+            { t: "Your devices in Smart Life", b: "<p>Elara reaches your devices through the <b>Smart Life</b> app's cloud (CBi, Tuya and most Smart Life switches, plugs and bulbs).</p>" +
+                "<ol class=\"guide-steps\"><li>Install <b>Smart Life</b> and make an account.</li><li>Moving from <b>CBi Home</b>? Remove the switch there first, then reset it (hold its button 5 to 10 seconds until it blinks fast).</li>" +
+                "<li>In Smart Life tap <b>+</b> &gt; <i>Add Device</i>, on your <b>2.4 GHz</b> Wi-Fi. Check it switches on and off in Smart Life.</li></ol>" },
+            { t: "Make a free Tuya cloud project", b: "<p>This gives your home its own keys, so Elara can talk to <i>your</i> devices only. It takes about 5 minutes on a computer.</p>" +
+                "<ol class=\"guide-steps\"><li>Go to <a href=\"https://iot.tuya.com\" target=\"_blank\" rel=\"noopener\"><b>iot.tuya.com</b></a> and sign up (free).</li>" +
+                "<li>Open <b>Cloud</b> &gt; <b>Development</b> &gt; <b>Create Cloud Project</b>.</li>" +
+                "<li>Any name. Industry: <i>Smart Home</i>. Development method: <i>Smart Home</i>. Data centre: <b>Central Europe</b> if you're in South Africa.</li>" +
+                "<li>Keep the services it offers (<i>IoT Core</i> and <i>Authorization Token Management</i>) and press <b>Authorize</b>.</li></ol>" },
+            { t: "Scan the QR code with Smart Life", b: "<p>This links your Smart Life account to the project, so the project can see your devices.</p>" +
+                "<ol class=\"guide-steps\"><li>In the project open <b>Devices</b> &gt; <b>Link App Account</b> &gt; <b>Add App Account</b>. A QR code appears on the screen.</li>" +
+                "<li>In the Smart Life app go to <b>Me</b> and tap the <b>scan</b> icon (top right). Scan the QR code and confirm.</li>" +
+                "<li>Choose <i>Automatic link</i> and <i>Read, write and manage</i>. Your devices now show under <b>All Devices</b> in the project.</li></ol>" +
+                '<p class="guide-note"><i class="fa-solid fa-circle-info"></i> A Smart Life account can be linked to at most 2 cloud projects.</p>' },
+            { t: "Copy your keys into Elara", b: '<form class="cbi-form" novalidate autocomplete="off">' +
+                "<label>Access ID / Client ID<input name=\"accessId\" required spellcheck=\"false\" autocapitalize=\"off\" placeholder=\"From the project's Overview\"></label>" +
+                "<label>Access Secret / Client Secret<input name=\"accessSecret\" type=\"password\" required spellcheck=\"false\" autocapitalize=\"off\" placeholder=\"Overview: press the eye to show it\"></label>" +
+                "<label>Smart Life UID<input name=\"uid\" required spellcheck=\"false\" autocapitalize=\"off\" placeholder=\"Devices > Link App Account, the UID column\"></label>" +
+                '<label>Data centre<select name="region">' + regions.map(function (r) { return '<option value="' + esc(r.id) + '"' + (r.id === ((st && st.region) || "eu") ? " selected" : "") + ">" + esc(r.label) + "</option>"; }).join("") + "</select></label>" +
+                '<p class="guide-note"><i class="fa-solid fa-lock"></i> The secret goes straight to Elara\'s server, is encrypted there and is never shown again or kept in this browser.</p>' +
+                '<p class="cbi-error warn-text" role="alert" hidden></p></form>' }
+        ];
+        var ov = overlay('<div class="eui-icon info"><i class="fa-solid fa-link"></i></div><h3>' + (changing ? "Link a different account" : "Connect Smart Life") + "</h3>" +
+            '<ol class="cbi-dots" aria-hidden="true">' + steps.map(function (x, i) { return "<li data-i=\"" + i + "\">" + (i + 1) + "</li>"; }).join("") + "</ol>" +
+            steps.map(function (x, i) { return '<section class="cbi-step" data-step="' + i + '"' + (i ? " hidden" : "") + "><h4>" + (i + 1) + ". " + x.t + "</h4>" + x.b + "</section>"; }).join("") +
+            '<div class="eui-actions"><button type="button" class="eui-btn ghost" data-back>Close</button><button type="button" class="eui-btn primary" data-next>Next</button></div>', "cbi-box guide-box");
+        var f = ov.querySelector(".cbi-form"), errBox = ov.querySelector(".cbi-error"), back = ov.querySelector("[data-back]"), next = ov.querySelector("[data-next]");
+        function show(n) {
+            step = n;
+            ov.querySelectorAll(".cbi-step").forEach(function (x) { x.hidden = Number(x.dataset.step) !== n; });
+            ov.querySelectorAll(".cbi-dots li").forEach(function (x) { x.classList.toggle("on", Number(x.dataset.i) <= n); });
+            back.textContent = n ? "Back" : "Close";
+            next.textContent = n === steps.length - 1 ? "Test & connect" : "Next";
+            if (n === steps.length - 1) setTimeout(function () { f.accessId.focus(); }, 50);
+        }
+        show(0);
+        function submit() {
+            var v = { accessId: f.accessId.value.trim(), accessSecret: f.accessSecret.value.trim(), uid: f.uid.value.trim(), region: f.region.value };
+            var miss = !v.accessId ? f.accessId : !v.accessSecret ? f.accessSecret : !v.uid ? f.uid : null;
+            if (miss) { errBox.textContent = "Fill in all three keys."; errBox.hidden = false; return miss.focus(); }
+            errBox.hidden = true; next.disabled = true; next.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Testing...';
+            D.callFunction(cfg.tuyaEndpoint, Object.assign({ action: "linkSave" }, v)).then(function (res) {
+                f.accessSecret.value = "";
+                ov.shut();
+                D.log("linked the home's Smart Life account", "fa-link");
+                var r = importNow(res.devices);
+                if (!(res.devices || []).length) UI.toast("Linked, but the project sees no devices yet. Check they show under All Devices on iot.tuya.com, then press Smart Life > Import.", "info");
+            }).catch(function (err) {
+                next.disabled = false; next.textContent = "Test & connect";
+                errBox.textContent = err.message; errBox.hidden = false;
+            });
+        }
+        f.addEventListener("submit", function (e) { e.preventDefault(); submit(); });
+        ov.addEventListener("click", function (e) {
+            if (e.target === ov) return ov.shut();
+            if (e.target.closest("[data-back]")) return step ? show(step - 1) : ov.shut();
+            if (e.target.closest("[data-next]")) return step < steps.length - 1 ? show(step + 1) : submit();
         });
     }
     $("cbiBtn").addEventListener("click", openCbi);
@@ -621,21 +837,23 @@
         var ov = document.createElement("div");
         ov.className = "eui-overlay";
         ov.innerHTML = '<div class="eui-box guide-box" role="dialog" aria-modal="true" aria-labelledby="guideTitle"><div class="eui-icon info"><i class="fa-solid fa-book-open"></i></div>' +
-            '<h3 id="guideTitle">Connect your smart switches</h3>' +
-            "<p>Elara works with CBi and other Smart Life (Tuya) Wi-Fi switches and plugs. The switches have to be in the <b>Smart Life</b> app, in the home that is linked to Elara.</p>" +
+            '<h3 id="guideTitle">Connect your smart devices</h3>' +
+            "<p>Elara works with CBi and other Smart Life (Tuya) Wi-Fi switches, plugs, wall switches and light bulbs. Every Elara home links its own Smart Life account, so you only ever see your own devices.</p>" +
             '<ol class="guide-steps">' +
-            "<li><b>Install Smart Life</b> from the Play Store or App Store and log in" + (owner ? " with the account that is linked to Elara." : ". Ask the home owner to invite you to their Smart Life home (Smart Life: Me &gt; Home Management &gt; the home &gt; Add Member), so new switches land in the right home.") + "</li>" +
+            "<li><b>Install Smart Life</b> from the Play Store or App Store and log in" + (owner ? "." : ". Ask the home owner to invite you to their Smart Life home (Smart Life: Me &gt; Home Management &gt; the home &gt; Add Member), so new devices land in the home that's linked to Elara.") + "</li>" +
             "<li><b>Switch already in CBi Home?</b> Open it in CBi Home and choose <i>Remove device</i>. CBi Home and Smart Life can't share a switch.</li>" +
             "<li><b>Put the switch in pairing mode:</b> hold its button for about 5 to 10 seconds until the light blinks fast. For a geyser or DIN-rail switch, check its manual.</li>" +
             "<li><b>Add it in Smart Life:</b> tap <b>+</b> &gt; <i>Add Device</i>. Use your home's <b>2.4 GHz</b> Wi-Fi (not 5 GHz). If scanning finds nothing, add it by category: <i>Electrical &gt; Switch</i>.</li>" +
             "<li><b>Test it in Smart Life:</b> it must switch on and off there before Elara can use it.</li>" +
-            "<li><b>Import it into Elara:</b> on this page press <b>CBi Home</b> &gt; <b>Import / refresh switches</b>" + (owner ? "." : " (people with Edit access to Smart Home can do this).") + "</li>" +
-            "<li><b>Give it a room and a type</b> with its pencil button. The type matters: <i>Geyser</i> turns on Geyser Savings and the Geyser button, <i>Light</i> the Lights button, and each type has its own \u201cleft on\u201d warning.</li>" +
+            (owner ? "<li><b>Link Smart Life to Elara (once):</b> press <b>Smart Life</b> on this page. Elara walks you through making a free Tuya cloud project on iot.tuya.com, scanning its QR code with the Smart Life app, and pasting 3 keys. Elara tests them and imports your devices straight away.</li>"
+                   : "<li><b>The owner links Smart Life to Elara (once)</b> with the <b>Smart Life</b> button on this page.</li>") +
+            "<li><b>New device later?</b> Press <b>Smart Life</b> &gt; <b>Import / refresh</b>" + (owner ? "." : " (people with Edit access to Smart Home can do this).") + " A 2- or 3-gang wall switch shows one device per button.</li>" +
+            "<li><b>Give it a room and a type</b> with its pencil button. The type matters: <i>Geyser</i> gets a heating schedule, <i>Light</i> a sunset-to-bedtime schedule and the Lights button, <i>Pool</i> a pump schedule, plugs a night-time standby saver, and each type has its own \u201cleft on\u201d warning. Every device can be used in automations and load-shedding.</li>" +
             "</ol>" +
             '<p class="guide-note"><i class="fa-solid fa-bolt"></i> Energy, cost and Analytics only work for switches with a <b>power meter</b> (most geyser switches and many plugs have one). Readings start after the import and fill in every 5 minutes.</p>' +
             '<p class="guide-note"><i class="fa-solid fa-eye-slash"></i> Don\'t want a switch in Elara? Its pencil button &gt; <i>Show in Elara: No</i>. Elara stops showing it and stops measuring its energy. It stays in Smart Life.</p>' +
-            (owner && !cbiReady ? '<p class="guide-note warn-text"><i class="fa-solid fa-triangle-exclamation"></i> The connection to the Tuya cloud isn\'t set up yet. That is a one-time job for whoever runs Elara (README, step 8).</p>' : "") +
-            '<div class="eui-actions"><button type="button" class="eui-btn ghost" data-close>Close</button>' + (canEdit() && cbiReady ? '<button type="button" class="eui-btn primary" data-go>Import switches now</button>' : "") + "</div></div>";
+            (owner && !cbiReady && !D.demo ? '<p class="guide-note warn-text"><i class="fa-solid fa-triangle-exclamation"></i> The elara-tuya function isn\'t deployed yet. That is a one-time job for whoever runs Elara (README, step 8).</p>' : "") +
+            '<div class="eui-actions"><button type="button" class="eui-btn ghost" data-close>Close</button>' + (canEdit() && cbiReady ? '<button type="button" class="eui-btn primary" data-go>' + (owner ? "Connect Smart Life" : "Import devices") + "</button>" : "") + "</div></div>";
         document.body.appendChild(ov);
         requestAnimationFrame(function () { ov.classList.add("show"); });
         var first = ov.querySelector("[data-close]"); if (first) first.focus();
@@ -647,7 +865,7 @@
         ov.addEventListener("keydown", function (e) { if (e.key === "Escape") shut(); });
     }
     $("guideBtn").addEventListener("click", openGuide);
-    $("smartBanner").addEventListener("click", function (e) { if (e.target.closest("[data-guide]")) openGuide(); });
+    $("smartBanner").addEventListener("click", function (e) { if (e.target.closest("[data-guide]")) openGuide(); if (e.target.closest("[data-connect]")) openCbi(); });
     if (/[#&]guide\b/.test(location.hash)) setTimeout(openGuide, 400);
     $("syncFab").addEventListener("click", openCbi);
 
@@ -672,7 +890,7 @@
         }).join("") : '<p class="muted" style="padding:16px">No activity yet.</p>';
     }
 
-    function render() { renderBanner(); renderRooms(); renderStats(); renderEnergy(); renderByPerson(); renderAutomations(); renderPrepaid(); renderGeyser(); renderLs(); renderActivity(); }
+    function render() { renderBanner(); renderRooms(); renderStats(); renderEnergy(); renderByPerson(); renderAutomations(); renderPrepaid(); renderGeyser(); renderSavings(); renderLs(); renderActivity(); }
     D.onChange(render);
     document.addEventListener("elara:refresh", render);
     setInterval(render, 60000);

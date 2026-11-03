@@ -140,25 +140,51 @@ The key only ever goes into Supabase secrets, never into `elara-config.js` or th
 Elara sends the AI a short summary of the home that the asking person is allowed to see; don't add a key from a service
 whose terms you aren't comfortable with for that.
 
-## 8. CBi / Smart Life switches, real energy and automations (`elara-tuya`)
+## 8. Smart Life / CBi devices, real energy and automations (`elara-tuya`)
 This is what makes Smart Home, Analytics and the energy part of Reports work. Elara shows **only real switches** and
 **only measured energy**: nothing is estimated or made up. A switch without a power meter can still be switched, it just
 shows no energy.
 
-CBi Home is the Smart Life app with CBi's name on it; Tuya only lets Elara link to **Smart Life**, so move each switch:
-1. In CBi Home delete the device, put the switch in pairing mode, add it in **Smart Life** (by category if scanning finds
-   nothing: Electrical > Switch Module). Check you can switch it in Smart Life.
-2. At **iot.tuya.com** create a Cloud project (pick the data centre of your Smart Life account; South African accounts are usually on Central Europe), then
-   **Devices > Link App Account** and scan the QR code with Smart Life. Copy the Access ID, Access Secret and the UID.
-3. Deploy (note `--no-verify-jwt`: the scheduled job below has no login; every person's call is still checked inside):
+**Every home links its own Smart Life account** from inside Elara. Nobody edits `elara-config.js` or the server secrets
+for a new home, and each home only ever sees its own devices.
+
+**One-time server set-up (whoever runs Elara):**
+1. Run the newest `elara-setup.sql` (step 2). It adds the `elara_tuya_accounts` table, which browsers can't read at all.
+2. Deploy (note `--no-verify-jwt`: the scheduled job below has no login; every person's call is still checked inside):
 ```
 supabase functions deploy elara-tuya --no-verify-jwt
-supabase secrets set TUYA_ACCESS_ID=... TUYA_ACCESS_SECRET=... TUYA_UID=... TUYA_BASE_URL=https://openapi.tuyaeu.com
-supabase secrets set TUYA_ALLOWED_EMAILS=owner@example.com CRON_SECRET=pick-a-long-random-text
+supabase secrets set CRON_SECRET=pick-a-long-random-text
+supabase secrets set TUYA_ENC_KEY=another-long-random-text   # optional, encrypts the homes' Access Secrets
 ```
-   `TUYA_ALLOWED_EMAILS` is **required** (the home owner's login email). Use the same `CRON_SECRET` as in step 6.
-4. Smart Home > **CBi Home** > **Import / refresh switches**. Give each one a room and a **type** with its pencil button
-   (the type drives the Lights / Geyser / Aircon buttons and the suggested automations).
+   In the dashboard: Edge Functions > elara-tuya > Details > **Verify JWT: off**. Use the same `CRON_SECRET` as in step 6.
+   Keep `TUYA_ENC_KEY` the same forever: if it changes, every home has to link again. (Without it, a key made from the
+   service role key is used.)
+3. Put the function's URL in `tuyaEndpoint` in `elara-config.js` (once, the same for every home).
+
+**Each home owner (in the app):** Smart Home > **Smart Life**. Elara walks through it:
+1. Add the devices in the **Smart Life** app. Moving from CBi Home? Delete the device there first, reset it (pairing mode)
+   and add it in Smart Life (by category if scanning finds nothing: Electrical > Switch). CBi Home is Smart Life with CBi's
+   name on it, but Tuya only lets outside apps link to **Smart Life**.
+2. At **iot.tuya.com** create a free Cloud project (Smart Home; data centre Central Europe for South African accounts).
+3. In the project: **Devices > Link App Account > Add App Account**. A QR code appears; scan it with the Smart Life app
+   (Me > scan icon). Tuya allows a Smart Life account to be linked to at most 2 cloud projects.
+4. Paste the Access ID, Access Secret and the UID into Elara and press **Test & connect**. The `elara-tuya` function signs
+   in to Tuya with them first, and only saves them if that works (the secret is encrypted with AES-GCM). Every device is
+   imported straight away.
+5. Give each device a room and a **type** with its pencil button (the type drives the Lights / Geyser / Aircon buttons,
+   the left-on warnings and the Energy Savings tips). New device later? Smart Life > **Import / refresh**.
+   **Unlink** (or Delete home) removes the keys from the server.
+
+**What shows up:** every device in that Smart Life account except cameras: switches, plugs, geyser switches, light bulbs
+(`switch_led`), and 2-, 3- and 4-gang wall switches and power strips, where **each button becomes its own device**
+(`<id>_ch2`, `<id>_ch3`...). Sensors and remotes show but can't be switched. Every switchable device works with
+automations, the quick buttons, load-shedding switch-off and left-on alerts; the ones with a power meter also get energy,
+cost, Analytics and Reports.
+
+**Older single-home set-up:** the secrets `TUYA_ACCESS_ID`, `TUYA_ACCESS_SECRET`, `TUYA_UID`, `TUYA_BASE_URL` and
+`TUYA_ALLOWED_EMAILS` still work for the homes listed in `TUYA_ALLOWED_EMAILS`. A home that links its own account in the
+app uses that instead. They're no longer required.
+
 5. Make the readings and automations run every 5 minutes, even when nobody has Elara open. SQL Editor:
 ```sql
 create extension if not exists pg_cron;
@@ -175,7 +201,8 @@ $$);
    the free plan allows 50 checks a day), then `supabase secrets set ESKOMSEPUSH_TOKEN=your-key` and redeploy `elara-tuya`.
    Smart Home > Load-shedding > **Set up**: search your suburb, tick the devices to switch off before a slot (your geyser),
    and whether to switch them back on afterwards. The schedule refreshes every 2 hours through the job in point 5
-   (about 12 to 20 checks a day). Elara uses EskomSePush API **v3.1** (v2.0 was retired). If EskomSePush changes its API
+   (about 12 to 20 checks a day per home; every home with an area set shares the one key's 50 a day, so with more than
+   2 or 3 homes get a paid key or let each home use the schedule less often). Elara uses EskomSePush API **v3.1** (v2.0 was retired). If EskomSePush changes its API
    again, the panel shows the error it returns.
 
 **How energy is measured:** each reading of a switch's power (watts) is stored with the time. Energy between two readings
@@ -188,6 +215,12 @@ switch is counted for the person who last switched it on in Elara; switching in 
 **Automations** (Smart Home page): pick the switches, on or off, and when: at a time (with days), at sunset or at sunrise
 (with an offset, needs the home location in Settings), or **Run now** scenes such as Away Mode. Settings > Smart Home
 pauses all of them at once.
+
+**Energy Savings** (Smart Home): one card per device type, each with a one-press schedule made of normal automations.
+Lights: on at sunset, off at 23:00 (one schedule for all lights). Pool pump: 10:00 to 16:00. Heater / aircon: off at 23:00.
+Plugs and other devices whose meter shows them using power through the night: off 23:00 to 06:00. Savings are only shown
+when they can be worked out from the device's own readings (the kWh it used in the hours it would now be off). Fridges and
+gates are never scheduled.
 
 **Geyser savings** (Smart Home): after 3 days of readings from a switch whose type is Geyser, Elara works out a heating
 schedule (heat only before the morning and evening hot-water times) and what it saves. The saving is an estimate: Elara
