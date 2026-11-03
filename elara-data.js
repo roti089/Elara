@@ -337,8 +337,12 @@
     function doFlush() {
         var keys = Object.keys(dirty);
         if (!keys.length || !user) return Promise.resolve();
-        if (navigator.onLine === false) return Promise.resolve();          // no signal: keep everything queued
-        dirty = {};
+        if (navigator.onLine === false || resetting) return Promise.resolve();          // no signal: keep everything queued
+        if (!isHydrated) {                                                // household changes wait for the cloud copy
+            keys = keys.filter(function (qk) { return PERSONAL.test(qk.slice(qk.indexOf("|") + 1)); });
+            if (!keys.length) return Promise.resolve();
+            keys.forEach(function (qk) { delete dirty[qk]; });
+        } else dirty = {};
         return getClient().then(function (c) {
             return keys.reduce(function (p, qk) {
                 var i = qk.indexOf("|"), uid = qk.slice(0, i), k = qk.slice(i + 1);
@@ -358,7 +362,7 @@
     window.addEventListener("beforeunload", function () { if (Object.keys(dirty).length) flush(); });
     document.addEventListener("visibilitychange", function () { if (document.hidden && Object.keys(dirty).length) flush(); });
     // offline (e.g. a phone with no signal): changes stay on the device and are sent when the connection is back
-    window.addEventListener("online", function () { if (Object.keys(dirty).length) flush(); });
+    window.addEventListener("online", function () { if (!isHydrated && user && cfg.supabaseUrl) hydrate(); if (Object.keys(dirty).length) flush(); });
     if (Object.keys(dirty).length) setTimeout(flush, 1500);              // left over from last time (e.g. added offline)
     setInterval(function () { if (navigator.onLine !== false && Object.keys(dirty).length) flush(); }, 30000);
 
@@ -416,8 +420,27 @@
 
     /* "this screen has the latest cloud data" (things that create shared data automatically wait for it) */
     var isHydrated = !user || !cfg.supabaseUrl, hydratedWaiters = [];
-    function markHydrated() { isHydrated = true; hydratedWaiters.splice(0).forEach(function (fn) { try { fn(); } catch (e) { /* ignore */ } }); emit(["hydrated"]); }
+    function markHydrated() { isHydrated = true; if (Object.keys(dirty).length) setTimeout(flush, 300); hydratedWaiters.splice(0).forEach(function (fn) { try { fn(); } catch (e) { /* ignore */ } }); emit(["hydrated"]); }
     function whenHydrated() { return new Promise(function (res) { if (isHydrated) res(); else hydratedWaiters.push(res); }); }
+
+    /* "Delete home" leaves one marker row, elaraHomeReset = when it happened. Any device that still holds
+       the old home (another phone, a member, a device that was offline) wipes its copy before syncing,
+       so nothing old is uploaded again. */
+    var resetting = false;
+    function resetSeenKey() { return "elaraResetSeen|" + user.id + "|" + dataId; }
+    function wipeLocalHome(stamp) {
+        var p = "elara:" + dataId + ":";
+        for (var i = localStorage.length - 1; i >= 0; i--) {
+            var fk = localStorage.key(i);
+            if (fk && fk.indexOf(p) === 0) { var k = fk.slice(p.length); if (synced(k) && !PERSONAL.test(k)) { lsDel(fk); setBase(dataId, k, null); } }
+        }
+        Object.keys(dirty).forEach(function (qk) { var k = qk.slice(qk.indexOf("|") + 1); if (qk.indexOf(dataId + "|") === 0 && !PERSONAL.test(k)) delete dirty[qk]; });
+        keepPending();
+        ["elaraAlerts", "elaraFired", "elaraNotifDismissed", "elaraAutomationRuns"].forEach(function (k) { lsDel(fullKey(user.id, k)); });
+        lsDel("elaraEnergyCache:" + user.id + ":" + dataId);
+        try { indexedDB.deleteDatabase("elaraReceiptFiles:" + user.id); } catch (e) { /* ignore */ }
+        lsSet(resetSeenKey(), String(stamp));
+    }
 
     /* pull everything this person may see, then keep it live */
     function hydrate() {
@@ -431,6 +454,9 @@
         }).then(function (res) {
             if (res.error) throw res.error;
             var changed = [], seen = {};
+            var mark = (res.data || []).filter(function (r) { return r.user_id === dataId && r.key === "elaraHomeReset"; })[0];
+            var stamp = mark ? Number(valueStr(mark.value)) || 0 : 0;
+            if (stamp && stamp > (Number(lsGet(resetSeenKey())) || 0)) { wipeLocalHome(stamp); location.reload(); return; }
             (res.data || []).forEach(function (row) {
                 if (scopeUid(row.key) !== row.user_id || !synced(row.key)) return;
                 seen[row.user_id + "|" + row.key] = 1;
@@ -473,6 +499,11 @@
                 live.on("postgres_changes", { event: "*", schema: "public", table: TABLE, filter: "user_id=eq." + uid }, function (p) {
                     var row = p.new && p.new.key ? p.new : p.old;
                     if (!row || !row.key || scopeUid(row.key) !== uid || !synced(row.key)) return;
+                    if (row.key === "elaraHomeReset" && p.eventType !== "DELETE" && uid === dataId) {
+                        var st = Number(valueStr(p.new.value)) || 0;
+                        if (st > (Number(lsGet(resetSeenKey())) || 0)) { resetting = true; wipeLocalHome(st); location.reload(); }
+                        return;
+                    }
                     var remote = p.eventType === "DELETE" ? null : valueStr(p.new.value);
                     if (applyRemote(uid, row.key, remote)) emit([row.key]);
                 });
@@ -1211,25 +1242,26 @@
 
     /* everything this person has stored (owners: the home's data; members: their personal settings only) */
     function resetData() {
-        var base = shared ? fullKey(user.id, "") : (user ? fullKey(dataId, "") : ""), keys = [];
-        for (var i = 0; i < localStorage.length; i++) {
-            var k = localStorage.key(i);
-            if (!user) { if (/^elara[A-Z]/.test(k)) keys.push(k); continue; }
-            if (k.indexOf(base) === 0) {
-                var short = k.slice(base.length);
-                if (synced(short) && (!shared || PERSONAL.test(short))) keys.push(short);
-            }
+        if (!user || !cfg.supabaseUrl) {                                // demo / no cloud: just this browser
+            for (var i = localStorage.length - 1; i >= 0; i--) { var k = localStorage.key(i); if (/^elara/.test(k) && !/^elara(Theme|LocationConsent)/.test(k)) realRemove.call(localStorage, k); }
+            return Promise.resolve({});
         }
-        keys.forEach(function (k) { localStorage.removeItem(k); });
-        // the measured energy and switch readings live in their own tables: the owner clears those too
-        energyStore = { rows: [], state: {}, at: 0 }; lsDel(EN_KEY);
-        var server = user && cfg.supabaseUrl && !shared
-            ? getClient().then(function (c) { return c.rpc("elara_reset_home"); }).then(function (r) {
-                  if (r && r.error) { console.warn("[Elara] reset energy:", r.error.message); return { energyKept: true }; }
-                  return {};
-              }).catch(function (e) { console.warn("[Elara] reset energy:", e.message || e); return { energyKept: true }; })
-            : Promise.resolve({});
-        return server.then(function (info) { return flush().then(function () { return info; }); });
+        if (shared) return Promise.reject(new Error("Only the home owner can delete the home."));
+        resetting = true;
+        energyStore = { rows: [], state: {}, at: 0 };
+        // everything the home has in the database goes in one step (members, tasks, shopping, schedule,
+        // devices, energy, notifications, guest links); personal settings and the backups stay
+        return getClient().then(function (c) { return c.rpc("elara_reset_home"); }).then(function (r) {
+            if (r.error) throw r.error;
+            wipeLocalHome(Number(r.data) || Date.now());
+            return {};
+        }).catch(function (e) {
+            resetting = false;
+            var msg = String(e && (e.message || e.code) || e);
+            throw new Error(/elara_reset_home|does not exist|PGRST202|42883|schema cache/i.test(msg)
+                ? "Deleting the home needs the latest elara-setup.sql. Run it in Supabase (SQL Editor), then try again."
+                : "Couldn't delete the home: " + msg);
+        });
     }
 
     /* ---------------------------------------------------------
