@@ -441,6 +441,146 @@
             (off.length ? " Heads-up: " + listify(off) + " that day" + (off.some(function (x) { return !/^you /.test(x); }) ? "; they've been told." : ".") : "");
     }
 
+    /* ---------------- deleting by voice (with "undo") ----------------
+       "cancel the dentist on Friday", "delete the braai", "cancel every soccer practice",
+       "remove bread and milk from the shopping list", "we don't need eggs any more",
+       "we're out of / finished the milk" stays shopping, but "remove eggs from in the house" or "the milk is finished" marks it used up,
+       "delete task clean the garage" */
+    var lastUndo = null;
+    function remember(label, key, removed, revert) {
+        lastUndo = { label: label, at: Date.now(), run: function () {
+            if (revert) return revert();
+            var list = D.util.load(key, []), have = {};
+            list.forEach(function (x) { have[String(x.id)] = 1; });
+            removed.forEach(function (x) { if (!have[String(x.id)]) list.push(x); });
+            D.util.save(key, list);
+        } };
+    }
+    function undoLast() {
+        if (!lastUndo || Date.now() - lastUndo.at > 10 * 60000) return "There's nothing to undo. I can only undo something I deleted in the last 10 minutes, on this page.";
+        var u = lastUndo; lastUndo = null; u.run();
+        D.log("undid: " + u.label, "fa-rotate-left");
+        return "Done, I brought back " + u.label + ".";
+    }
+    function matchByName(list, needle, nameOf) {
+        var n = norm(needle).replace(/^(the|my|our|a|an) /, "");
+        if (!n) return [];
+        var exact = list.filter(function (x) { return norm(nameOf(x)) === n; });
+        if (exact.length) return exact;
+        return list.filter(function (x) { var h = norm(nameOf(x)); return h.indexOf(n) > -1 || (n.indexOf(h) > -1 && h.length > 3); });
+    }
+    function deleteCommand(raw) {
+        var m;
+        // shopping list
+        if ((m = raw.match(/^(?:delete|remove|take|cross)\s+(.+?)\s+(?:off|from)\s+(?:of\s+)?(?:the\s+|my\s+|our\s+)?(?:shopping\s+|grocery\s+)?(?:list|basket|cart)$/i)) ||
+            (m = raw.match(/^(?:delete|remove|take|cross)\s+(.+?)\s+(?:off|from)\s+(?:the\s+|my\s+|our\s+)?shopping$/i)) ||
+            (m = raw.match(/^(?:we|i)\s+(?:don't|do not|dont|no longer)\s+need\s+(?:any\s+)?(.+?)(?:\s+any\s*more|\s+anymore)?$/i)))
+            return deleteShopping(m[1]);
+        // in the house
+        if ((m = raw.match(/^(?:delete|remove|take)\s+(.+?)\s+(?:off|from|out of)\s+(?:the\s+)?(?:in the house|house|pantry|stock|cupboard|fridge)$/i)) ||
+            (m = raw.match(/^(?:the\s+)?(.+?)\s+(?:is|are)\s+(?:finished|used up|all gone|done|empty)$/i)) ||
+            (m = raw.match(/^(?:we|i)\s+(?:finished|used up)\s+(?:the\s+|all the\s+)?(.+)$/i)))
+            return usePantry(m[1]);
+        // tasks
+        if ((m = raw.match(/^(?:delete|remove|cancel)\s+(?:the\s+)?task\s+(.+)$/i))) return deleteTask(m[1]);
+        // events: "delete / cancel / remove (the) (event) X (on friday) (from the calendar)"
+        if ((m = raw.match(/^(?:delete|remove|cancel|call off|clear)\s+(.+)$/i))) {
+            var rest = m[1].replace(/\s+(?:from|off|on)\s+(?:the\s+|my\s+|our\s+)?(?:calendar|schedule|diary)$/i, "");
+            var all = /^(?:all|every|each)\s+/i.test(rest) || /\b(?:and (?:the|all) repeats|and all repeats|series)\b/i.test(rest);
+            rest = rest.replace(/^(?:all\s+(?:the\s+)?|every\s+|each\s+)/i, "").replace(/\s*\b(?:and (?:the|all) repeats|series)\b/ig, "").replace(/^(?:the\s+|my\s+|our\s+)?(?:event|appointment|meeting)s?\s+(?:called\s+)?/i, "");
+            var r = deleteEvent(rest, all, raw);
+            if (r != null) return r;
+            // "remove the light bulbs": try the shopping list, then the house, before giving up
+            var items = D.util.load("elaraShoppingItems", []), cart = D.util.load("elaraCartItems", []);
+            if (matchByName(items.filter(function (i) { return !cart.some(function (c) { return c.id === i.id; }); }), rest, function (i) { return i.name; }).length) return deleteShopping(rest);
+            var inHouse = usePantry(rest);
+            if (inHouse != null) return inHouse;
+            return "I couldn't find “" + rest + "” on the calendar, the shopping list or in the house.";
+        }
+        return null;
+    }
+    function deleteShopping(text) {
+        if (!D.can("shopping", "edit")) return noEdit("the shopping list");
+        var items = D.util.load("elaraShoppingItems", []), cart = D.util.load("elaraCartItems", []);
+        var open = items.filter(function (i) { return !cart.some(function (c) { return c.id === i.id; }); });
+        var asked = text.split(/\s*(?:,|\band\b|&)\s*/).map(function (x) { return x.trim(); }).filter(Boolean);
+        var gone = [], missing = [];
+        asked.forEach(function (a) {
+            var hits = matchByName(open.filter(function (i) { return gone.indexOf(i) < 0; }), a, function (i) { return i.name; });
+            if (hits.length) gone.push(hits[0]); else missing.push(a);
+        });
+        if (!gone.length) return "I couldn't find " + listify(missing.map(function (x) { return "“" + x + "”"; })) + " on the shopping list.";
+        D.util.save("elaraShoppingItems", items.filter(function (i) { return gone.indexOf(i) < 0; }));
+        var names = gone.map(function (i) { return i.name; });
+        D.log("removed " + listify(names) + " from the shopping list", "fa-trash");
+        remember(listify(names) + " on the shopping list", "elaraShoppingItems", gone);
+        return "Removed " + listify(names) + " from the shopping list." + (missing.length ? " I couldn't find " + listify(missing) + "." : "") + " Say “undo” to bring " + (gone.length === 1 ? "it" : "them") + " back.";
+    }
+    function usePantry(text) {
+        if (!D.can("shopping", "edit")) return noEdit("In the House");
+        var p = D.util.load("elaraPantry", []), open = p.filter(function (x) { return !x.usedUp; });
+        var asked = text.replace(/\s+(?:in the house|at home)$/i, "").split(/\s*(?:,|\band\b|&)\s*/).filter(Boolean), done = [], missing = [];
+        asked.forEach(function (a) {
+            var hit = matchByName(open.filter(function (x) { return done.indexOf(x) < 0; }), a, function (x) { return x.name; })[0];
+            if (hit) done.push(hit); else missing.push(a);
+        });
+        if (!done.length) return null;                                               // not something in the house: let other commands try
+        var before = JSON.parse(JSON.stringify(p)), t = Date.now();
+        done.forEach(function (x) { x.usedUp = true; x.usedAt = t; x.updatedAt = t; });
+        D.util.save("elaraPantry", p);
+        var names = done.map(function (x) { return x.name; });
+        D.log(listify(names) + (done.length === 1 ? " is" : " are") + " used up", "fa-box-open");
+        remember(listify(names) + " in the house", null, null, function () { D.util.save("elaraPantry", before); });
+        return listify(names) + (done.length === 1 ? " is" : " are") + " marked as used up." + (missing.length ? " I couldn't find " + listify(missing) + " in the house." : "") +
+            " Say “add " + names[0].toLowerCase() + "” to put it on the shopping list, or “undo”.";
+    }
+    function deleteTask(text) {
+        if (!D.can("tasks", "edit")) return noEdit("tasks");
+        var list = D.tasks.all(), hits = matchByName(list.filter(function (t) { return t.status !== "Completed"; }), stripWhen(text), function (t) { return t.title; });
+        if (!hits.length) return "I couldn't find an open task called “" + text + "”.";
+        if (hits.length > 1 && norm(hits[0].title) !== norm(hits[1].title)) return "Which one: " + listify(hits.slice(0, 3).map(function (t) { return "“" + t.title + "”"; })) + "?";
+        var t = hits[0];
+        if (!D.tasks.canDelete(t)) return "Only the home owner or the person who added “" + t.title + "” can delete it.";
+        D.tasks.save(list.filter(function (x) { return x !== t; }));
+        D.log("deleted task “" + t.title + "”", "fa-trash");
+        remember("the task “" + t.title + "”", null, null, function () { var l = D.tasks.all(); if (!l.some(function (x) { return x.id === t.id; })) { l.unshift(t); D.tasks.save(l); } });
+        if (t.assigneeId && t.assigneeId !== D.me().id) D.notify({ to: [t.assigneeId], kind: "tasks", title: "Task removed", body: D.me().first + " deleted “" + t.title + "”.", href: "dashboard-tasks.html" });
+        return "Deleted the task “" + t.title + "”. Say “undo” to bring it back.";
+    }
+    function deleteEvent(text, wholeSeries, raw) {
+        if (!D.can("schedule", "edit")) return noEdit("the schedule");
+        var day = parseDay(text), at = parseTimeFull(text), name = stripWhen(text).replace(/^(?:the|my|our)\s+/i, "");
+        var all = D.util.load("elaraSchedules", []), nowKey = today(), nowHM = hm();
+        var upcoming = all.filter(function (e) { return e.date > nowKey || (e.date === nowKey && (e.allDay || e.time >= nowHM)); });
+        var hits = name ? matchByName(upcoming, name, function (e) { return e.title; }) : upcoming.slice();
+        if (day) hits = hits.filter(function (e) { return e.date === day; });
+        if (at) hits = hits.filter(function (e) { return e.time === at.time || (!at.explicit && e.time === D.util.pad(+at.time.slice(0, 2) + 12) + at.time.slice(2)); });
+        if (!name && !day) return null;
+        if (!hits.length) {
+            // "remove the light bulbs" etc.: not an event, so don't claim it was one
+            if (!/\b(event|appointment|meeting|calendar|schedule)\b/i.test(raw) && !day) return null;
+            return "I couldn't find an upcoming event" + (name ? " called “" + name + "”" : "") + (day ? " on " + prettyDay(day) : "") + ".";
+        }
+        hits.sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); });
+        var first = hits[0];
+        var sameEvent = hits.every(function (e) { return norm(e.title) === norm(first.title) && (e.series ? e.series === first.series : false); }) || hits.length === 1;
+        if (!sameEvent && !wholeSeries) {
+            var opts = hits.slice(0, 3).map(function (e) { return "“" + e.title + "” " + prettyDay(e.date) + " at " + e.time; });
+            return "There's more than one: " + listify(opts) + ". Say which day, e.g. “cancel " + norm(first.title) + " on " + (first.date === today() ? "today" : new Date(first.date + "T12:00:00").toLocaleDateString("en", { weekday: "long" }).toLowerCase()) + "”.";
+        }
+        var gone = wholeSeries ? hits.filter(function (e) { return norm(e.title) === norm(first.title); }) : [first];
+        if (wholeSeries && first.series) gone = all.filter(function (e) { return e.series === first.series && e.date >= first.date; });
+        var ids = gone.map(function (e) { return e.id; });
+        D.util.save("elaraSchedules", all.filter(function (e) { return ids.indexOf(e.id) < 0; }));
+        D.log("deleted event “" + first.title + "”" + (gone.length > 1 ? " (" + gone.length + " dates)" : " on " + prettyDay(first.date)), "fa-trash");
+        remember("“" + first.title + "”", "elaraSchedules", gone);
+        var meId = D.me().id, tell = (first.involves || []).filter(function (id) { return id !== meId; });
+        if (tell.length) D.notify({ to: tell, kind: "schedule", title: "Event cancelled", body: D.me().first + " cancelled “" + first.title + "” on " + prettyDay(first.date) + (gone.length > 1 ? " and its repeats" : "") + ".", href: "dashboard-schedule.html?date=" + first.date });
+        var more = first.series && !wholeSeries ? all.filter(function (e) { return e.series === first.series && e.date > first.date; }).length : 0;
+        return "Cancelled “" + first.title + "” " + (gone.length > 1 ? "(" + gone.length + " dates from " + prettyDay(first.date) + ")" : prettyDay(first.date) + " at " + first.time) + "." +
+            (more ? " It repeats " + more + " more time" + (more === 1 ? "" : "s") + "; say “cancel every " + norm(first.title) + "” to remove those too." : "") + " Say “undo” to bring it back.";
+    }
+
     function local(raw) {
         raw = clean(raw);
         var q = norm(raw), m, d, who;
@@ -449,6 +589,12 @@
         // "put the car service on the calendar for Friday at 9", "book a doctor's appointment on the 12th at 10:30"
         var ev = eventCommand(raw);
         if (ev) return addEvent(ev.text);
+
+        // undo the last thing deleted by voice
+        if (/^(undo|undo that|undo it|bring it back|put it back|restore it|oops)$/i.test(raw)) return undoLast();
+        // delete: events, shopping-list items, things in the house, tasks
+        var del = deleteCommand(raw);
+        if (del) return del;
 
         // add a task (optionally for someone, on a day, at a time)
         if ((m = raw.match(/^(?:please\s+)?(?:add|create|new)\s+(?:a\s+)?task\s*(?:to|:)?\s*(.+)$/i)) || (m = raw.match(/^remind me to\s+(.+)$/i))) {
@@ -592,7 +738,7 @@
             return onNow.length ? onNow.length + " device(s) are on: " + listify(onNow.slice(0, 6).map(function (x) { return x.name; })) + "." : "Everything is switched off.";
         }
         if (/^(hi|hello|hey|good (morning|afternoon|evening))\b/.test(q)) return "Hi " + D.me().first + "! I can add tasks and events, switch devices, suggest meals, check energy, the weather and your schedule. Just ask.";
-        if (/\b(help|what can you do)\b/.test(q)) return "Try: “add task clean the garage for Thabo tomorrow at 10”, “turn off the geyser”, “add bread to the shopping list”, “what can I cook tonight”, “I'm busy on Friday”, “add an event dentist tomorrow at 3pm”, “schedule a braai on Saturday at 2 with Thabo”, “what's on tomorrow” or “how much energy did we use”.";
+        if (/\b(help|what can you do)\b/.test(q)) return "Try: “add task clean the garage for Thabo tomorrow at 10”, “turn off the geyser”, “add bread to the shopping list”, “what can I cook tonight”, “I'm busy on Friday”, “add an event dentist tomorrow at 3pm”, “schedule a braai on Saturday at 2 with Thabo”, “cancel the dentist on Friday”, “remove bread from the shopping list”, “what's on tomorrow” or “how much energy did we use”.";
         return null;
     }
 
