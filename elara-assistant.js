@@ -24,6 +24,7 @@
     function parseDay(text) {
         var t = norm(text), now = new Date();
         if (/\btoday\b|\btonight\b/.test(t)) return today();
+        if (/\bday after tomorrow\b/.test(t)) return D.util.dayKey(D.util.addDays(now, 2));
         if (/\btomorrow\b/.test(t)) return D.util.dayKey(D.util.addDays(now, 1));
         for (var i = 0; i < 7; i++) {
             if (new RegExp("\\b(on |this |next )?" + DAYS[i] + "\\b").test(t)) {
@@ -32,28 +33,59 @@
                 return D.util.dayKey(D.util.addDays(now, diff));
             }
         }
-        var m = t.match(/\b(\d{1,2}) (jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/);
+        var MON = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+        var m = t.match(/\b(\d{1,2})(?:st|nd|rd|th)?(?: of)? (jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/) ||
+                (function (x) { return x && [x[0], x[2], x[1]]; })(t.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* (?:the )?(\d{1,2})(?:st|nd|rd|th)?\b/));
         if (m) {
-            var month = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"].indexOf(m[2]);
+            var month = MON.indexOf(m[2]);
             var d = new Date(now.getFullYear(), month, +m[1]);
             if (d < D.util.startOfDay(now)) d.setFullYear(d.getFullYear() + 1);
             if (d.getMonth() === month) return D.util.dayKey(d);
         }
+        // "on the 12th": this month, or next month if that day has passed
+        var o = t.match(/\bthe (\d{1,2})(?:st|nd|rd|th)\b/);
+        if (o) {
+            var dd = new Date(now.getFullYear(), now.getMonth(), +o[1]);
+            if (dd < D.util.startOfDay(now)) dd = new Date(now.getFullYear(), now.getMonth() + 1, +o[1]);
+            if (dd.getDate() === +o[1]) return D.util.dayKey(dd);
+        }
+        if (/\bnext week\b/.test(t)) return D.util.dayKey(D.util.addDays(now, 7));
+        if (/\bday after tomorrow\b/.test(t)) return D.util.dayKey(D.util.addDays(now, 2));
         return null;
     }
     /* "at 5pm", "at 17:30", "at 9" -> HH:MM (or null) */
-    function parseTime(text) {
-        var m = String(text).toLowerCase().match(/\bat (\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/);
-        if (!m) return null;
-        var h = +m[1], mi = +(m[2] || 0);
-        if (m[3] === "pm" && h < 12) h += 12;
-        if (m[3] === "am" && h === 12) h = 0;
-        if (h > 23 || mi > 59) return null;
-        return D.util.pad(h) + ":" + D.util.pad(mi);
+    function timeText(text) {
+        return String(text).toLowerCase().replace(/\b([ap])\.?\s?m\b\.?/g, "$1m").replace(/(\d)\.(\d{2})\b/g, "$1:$2").replace(/\bo'?clock\b/g, "");
     }
+    function parseTimeFull(text) {
+        var t = timeText(text), h, mi = 0, ap = null, m;
+        if (/\b(at )?(noon|midday|lunchtime)\b/.test(t)) return { time: "12:00", explicit: true };
+        if (/\b(at )?midnight\b/.test(t)) return { time: "00:00", explicit: true };
+        if ((m = t.match(/\b(?:at )?half past (\d{1,2})\b/))) { h = +m[1]; mi = 30; }
+        else if ((m = t.match(/\b(?:at )?quarter past (\d{1,2})\b/))) { h = +m[1]; mi = 15; }
+        else if ((m = t.match(/\b(?:at )?quarter to (\d{1,2})\b/))) { h = +m[1] - 1; mi = 45; }
+        else if ((m = t.match(/\bat (\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/)) || (m = t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/)) || (m = t.match(/\b(\d{1,2}):(\d{2})\b()/))) {
+            h = +m[1]; mi = +(m[2] || 0); ap = m[3] || null;
+        } else return null;
+        if (!ap && /\b(in the )?(afternoon|evening|tonight|at night)\b/.test(t)) ap = "pm";
+        if (!ap && /\bin the morning\b/.test(t)) ap = "am";
+        if (ap === "pm" && h < 12) h += 12;
+        if (ap === "am" && h === 12) h = 0;
+        if (h > 23 || mi > 59 || h < 0) return null;
+        return { time: D.util.pad(h) + ":" + D.util.pad(mi), explicit: !!ap || h >= 13 || /:\d{2}/.test(m[0]) || h === 0 };
+    }
+    function parseTime(text) { var r = parseTimeFull(text); return r ? r.time : null; }
+    var MONTH_RE = "(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*";
     function stripWhen(text) {
-        return String(text).replace(/\s*\b(for |by )?(today|tonight|tomorrow|(on |this |next )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)|on \d{1,2} [a-z]+)\b/ig, "")
-            .replace(/\s*\bat \d{1,2}(:\d{2})?\s*(am|pm)?\b/ig, "").replace(/\s+/g, " ").trim().replace(/[.!]$/, "");
+        return timeText(text)
+            .replace(new RegExp("\\s*\\b(?:on |for |by )?(?:the )?\\d{1,2}(?:st|nd|rd|th)?(?: of)? " + MONTH_RE + "\\b", "ig"), "")
+            .replace(new RegExp("\\s*\\b(?:on |for |by )?" + MONTH_RE + " (?:the )?\\d{1,2}(?:st|nd|rd|th)?\\b", "ig"), "")
+            .replace(/\s*\b(?:on |for |by )?the \d{1,2}(?:st|nd|rd|th)\b/ig, "")
+            .replace(/\s*\b(for |by )?(the day after tomorrow|day after tomorrow|today|tonight|tomorrow|next week|(on |this |next )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday))\b/ig, "")
+            .replace(/\s*\b(?:at )?(?:half past|quarter past|quarter to) \d{1,2}\b/ig, "").replace(/\s*\b(?:at )?(?:noon|midday|lunchtime|midnight)\b/ig, "")
+            .replace(/\s*\bat \d{1,2}(:\d{2})?(?:\s*(am|pm))?\b/ig, "").replace(/\s*\b\d{1,2}(:\d{2})?\s*(am|pm)\b/ig, "").replace(/\s*\b\d{1,2}:\d{2}\b/ig, "")
+            .replace(/\s*\b(in the|this) (morning|afternoon|evening)\b/ig, "").replace(/\s*\bat night\b/ig, "")
+            .replace(/\s+/g, " ").trim().replace(/[.!,]$/, "");
     }
     function findPerson(name) {
         var n = norm(name);
@@ -298,9 +330,125 @@
         return (x.qty > 1 ? x.qty + " × " : "") + x.name + (bits.length ? " (" + bits.join(", ") + ")" : "") + " in " + x.category;
     }
 
+    /* ---------------- schedule: add events by voice ---------------- */
+    var EVENT_WORDS = "appointment|meeting|party|braai|birthday|dinner|lunch|breakfast|visit|service|class|lesson|practice|training|match|game|event|interview|call|check-?up|wedding|funeral|church|service|trip|flight|exam|test|concert|movie|outing|date|celebration|gathering|reunion|delivery|installation|inspection";
+    function eventCommand(raw) {
+        if (/\btasks?\b/i.test(raw) || /^remind me to\b/i.test(raw)) return null;
+        var m;
+        if ((m = raw.match(/^(?:add|create|make|new|set up|book|plan|put in)\s+(?:an?\s+|the\s+)?(?:new\s+)?(event|appointment|meeting|calendar event)\s*(?:for|called|named|about|:)?\s*(.+)$/i)))
+            return { text: /event/i.test(m[1]) && !/^(with|on|at|tomorrow|today|tonight|next|this)\b/i.test(m[2]) ? m[2] : cap(m[1].toLowerCase().replace("calendar ", "")) + " " + m[2] };
+        if ((m = raw.match(/^(?:add|put|schedule|book)\s+(.+?)\s+(?:to|on|in|into)\s+(?:the\s+|my\s+|our\s+)?(?:calendar|schedule|diary|planner)\b\s*(.*)$/i))) return { text: m[1] + " " + m[2] };
+        if ((m = raw.match(/^schedule\s+(?:an?\s+|the\s+)?(.+)$/i)) && !/^(for|on)\b/i.test(m[1])) return { text: m[1] };
+        // "add / book a dentist appointment tomorrow at 3": an event word plus a day or time
+        if ((m = raw.match(new RegExp("^(?:add|book|make|plan|organi[sz]e|set up)\\s+(?:an?\\s+|the\\s+|my\\s+|our\\s+)?(.*\\b(?:" + EVENT_WORDS + ")\\b.*)$", "i"))) &&
+            !/\b(shopping|grocery|groceries)?\s*(list|basket|cart)\b/i.test(raw) && (parseDay(raw) || parseTimeFull(raw))) return { text: m[1] };
+        return null;
+    }
+    function eventCategory(t) {
+        t = t.toLowerCase();
+        var c = t.match(/\b(?:in |under )?(?:category\s+)?(personal|household|shopping|maintenance|smart home)(?:\s+category)?\b/);
+        if (c && /category|\bin |\bunder /.test(c[0])) return cap(c[1]).replace("Smart home", "Smart Home");
+        if (/\b(service|plumber|electrician|repair|fix|mechanic|car|maintenance|technician|inspection|pest|gardener|pool guy|roof|leak)\b/.test(t)) return "Maintenance";
+        if (/\b(shopping|grocer|groceries|mall|market|makro|checkers|woolworths|pick n pay|shoprite)\b/.test(t)) return "Shopping";
+        if (/\b(geyser|solar|inverter|wi-?fi|internet|fibre|dstv|smart|installation|cbi)\b/.test(t)) return "Smart Home";
+        if (/\b(braai|family|party|guests|visit(?:ors)?|birthday|cleaning|clean|church|dinner|lunch|celebration|gathering|reunion|house ?meeting|rent|bill|levy|municipal|delivery)\b/.test(t)) return "Household";
+        return "Personal";
+    }
+    function eventPeople(text) {
+        var all = D.members.active(), meP = D.members.find(D.me().id) || { userId: D.me().id, name: D.me().first, isMe: true };
+        var m = text.match(/\s+(?:with|for|and invite|invite)\s+(everyone|everybody|all of us|us all|the (?:whole )?(?:family|household|house)|[a-z][a-z' ,-]*?)(?=\s+(?:today|tonight|tomorrow|on|at|this|next|every|in|from|the \d)\b|[.,]?$)/i);
+        if (!m) return { people: [meP], text: text };
+        if (/^(everyone|everybody|all of us|us all|the (?:whole )?(?:family|household|house))$/i.test(m[1].trim())) return { people: all.length ? all : [meP], text: text.replace(m[0], "") };
+        var names = m[1].split(/\s*(?:,|\band\b|&)\s*/).map(function (x) { return x.trim(); }).filter(Boolean), found = [], missing = [];
+        names.forEach(function (n) { var p = findPerson(n); if (p) { if (!found.some(function (f) { return f.userId === p.userId; })) found.push(p); } else missing.push(n); });
+        // a name nobody in the home has ("with Sipho") is an error; "lunch with the team" is just part of the event's name
+        var GENERIC = /^(the|my|our|a|today|tonight|tomorrow|next|this|sunday|monday|tuesday|wednesday|thursday|friday|saturday|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|team|friends?|colleagues?|family|kids|children|boss|clients?|customers?|guys|girls|mom|mum|dad|parents|neighbours?|neighbors?|doctor|dentist|teacher|coach)\b/i;
+        var named = missing.filter(function (n) { return !GENERIC.test(n) && n.split(" ").length <= 2 && new RegExp("\\b" + n.charAt(0).toUpperCase() + n.slice(1).toLowerCase() + "\\b").test(text); });
+        if (!found.length && !named.length) return { people: [meP], text: text };
+        if (!found.length) missing = named;
+        if (missing.length) return { error: "I couldn't find " + listify(missing.map(cap)) + " in your home. Events can include: " + listify(all.map(function (x) { return x.name; })) + "." };
+        if (/^\s+with\b/i.test(m[0]) && !found.some(function (f) { return f.userId === meP.userId; })) found.unshift(meP);   // "with Thabo" = you and Thabo
+        return { people: found, text: text.replace(m[0], "") };
+    }
+    function stateOn(date, uid) {
+        var pres = D.presence.all()[uid];
+        if (date === today() && pres && pres.state === "away" && D.availability.on(date, uid) === "available") return "away";
+        return D.availability.on(date, uid);
+    }
+    function prettyDay(k) { return k === today() ? "today" : k === D.util.dayKey(D.util.addDays(new Date(), 1)) ? "tomorrow" : new Date(k + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }); }
+    function addEvent(text) {
+        if (!D.can("schedule", "edit")) return noEdit("the schedule");
+        var repeat = /\b(every ?day|daily)\b/i.test(text) ? "daily" : /\b(every ?week|weekly|every (sunday|monday|tuesday|wednesday|thursday|friday|saturday))\b/i.test(text) ? "weekly" : /\b(every ?month|monthly)\b/i.test(text) ? "monthly" : "";
+        var body = text.replace(/\s*\b(every ?day|daily|every ?week|weekly|every ?month|monthly)\b/ig, "").replace(/\bevery (sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/ig, "on $1");
+        var who = eventPeople(body);
+        if (who.error) return who.error;
+        var category = eventCategory(body);
+        body = who.text.replace(/\s*\b(?:in |under )?(?:the\s+)?(?:category\s+)?(?:personal|household|shopping|maintenance|smart home)\s+category\b/ig, "").replace(/\s*\bcategory\s+(?:personal|household|shopping|maintenance|smart home)\b/ig, "");
+        if (/\byesterday\b|\blast (week|night|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i.test(body)) return "That day has already passed. Give a day from today on.";
+        var date = parseDay(body), t = parseTimeFull(body), nowD = new Date(), nowHM = hm(nowD);
+        if (!date) date = today();
+        var time = t ? t.time : null, guessed = false;
+        if (t && !t.explicit) {                                                       // "at 3" for an event almost always means the afternoon
+            var hh = +time.slice(0, 2);
+            if (hh >= 1 && hh <= 6) { time = D.util.pad(hh + 12) + time.slice(2); guessed = true; }
+        }
+        if (!time) {
+            guessed = true;
+            if (/\btonight\b|\bevening\b/i.test(body)) time = "19:00";
+            else if (/\bafternoon\b/i.test(body)) time = "14:00";
+            else if (date === today()) { var nh = Math.min(23, nowD.getHours() + 1); time = D.util.pad(nh) + ":00"; }
+            else time = "09:00";
+        }
+        var called = body.match(/\s*\b(?:called|named|titled)\s+(.+)$/i);
+        if (called) body = body.replace(called[0], "").replace(/^\s*(?:an?\s+)?(?:event|appointment|meeting)\b/i, "") + " ";
+        var title = cap(stripWhen(called ? called[1] : body).replace(/^(?:an?|the)\s+/i, "").replace(/\s+(?:on|at|for|from)$/i, "").replace(/^(?:called|named)\s+/i, "")).slice(0, 80);
+        if (date < today()) return "That day has already passed. Give a day from today on.";
+        if (date > D.util.dayKey(D.util.addDays(nowD, 5 * 365))) return "Choose a date within the next 5 years.";
+        if (date === today() && time <= nowHM) return time + " has already passed today. Say a later time, or “tomorrow at " + time + "”.";
+        if (title.length < 2 || !/[a-z0-9]/i.test(title) || /[<>]/.test(title)) return "What's the event called? Try “add an event dentist tomorrow at 3pm”.";
+        var list = D.util.load("elaraSchedules", []);
+        if (list.some(function (e) { return e.date === date && e.time === time && String(e.title).toLowerCase() === title.toLowerCase(); })) return "“" + title + "” is already on the calendar " + prettyDay(date) + " at " + time + ".";
+        var dates = [date];
+        if (repeat) {
+            var n = repeat === "daily" ? 14 : repeat === "weekly" ? 13 : 12, d0 = new Date(date + "T12:00:00");
+            for (var i = 1; i < n; i++) dates.push(D.util.dayKey(repeat === "daily" ? D.util.addDays(d0, i) : repeat === "weekly" ? D.util.addDays(d0, 7 * i) : new Date(d0.getFullYear(), d0.getMonth() + i, d0.getDate())));
+        }
+        var meNow = D.me(), involves = who.people.map(function (p) { return p.userId; }), series = dates.length > 1 ? "s" + Date.now() : undefined, stamp = Date.now();
+        dates.forEach(function (k, idx) {
+            list.push({ id: stamp + idx, title: title, category: category, date: k, time: time, description: "Added by voice.", involves: involves,
+                        createdBy: meNow.id, createdByName: meNow.first, createdAt: stamp, series: series });
+        });
+        D.util.save("elaraSchedules", list);
+        D.log("scheduled “" + title + "” for " + prettyDay(date) + " at " + time + (dates.length > 1 ? " (repeats " + repeat + ")" : ""), "fa-calendar-check");
+        // tell people, the same way the Schedule page does
+        var when = prettyDay(date) + " at " + time, told = {}, off = [];
+        D.members.active().forEach(function (p) {
+            var st = stateOn(date, p.userId);
+            if (involves.indexOf(p.userId) > -1 && st !== "available") off.push((p.isMe ? "you are " : p.name + " is ") + st);
+            if (p.isMe) return;
+            if (st !== "available") { told[p.userId] = 1; D.notify({ to: [p.userId], kind: "schedule", title: "Event on a day you're " + st, body: meNow.first + " added “" + title + "” on " + when + ". You're marked " + st + ".", href: "dashboard-schedule.html?date=" + date }); }
+        });
+        involves.forEach(function (id) {
+            if (id === meNow.id || told[id]) return; told[id] = 1;
+            D.notify({ to: [id], kind: "schedule", title: "You're in a new event", body: meNow.first + " added you to “" + title + "” on " + when + ".", href: "dashboard-schedule.html?date=" + date });
+        });
+        var rest = D.members.active().filter(function (p) { return !p.isMe && !told[p.userId]; }).map(function (p) { return p.userId; });
+        if (rest.length) D.notify({ to: rest, kind: "schedule", title: "New event", body: meNow.first + " added “" + title + "” on " + when + ".", href: "dashboard-schedule.html?date=" + date });
+        var names = who.people.filter(function (p) { return !p.isMe; }).map(function (p) { return p.name; });
+        return "Added “" + title + "” to the calendar for " + prettyDay(date) + " at " + time + (dates.length > 1 ? ", repeating " + repeat + " (" + dates.length + " times)" : "") +
+            (names.length ? ", with " + listify(names) : "") + " (" + category + ")." +
+            (guessed ? " I guessed the time, so change it on the Schedule page if it's wrong." : "") +
+            (off.length ? " Heads-up: " + listify(off) + " that day" + (off.some(function (x) { return !/^you /.test(x); }) ? "; they've been told." : ".") : "");
+    }
+
     function local(raw) {
         raw = clean(raw);
         var q = norm(raw), m, d, who;
+
+        // add an event to the schedule: "add an event dentist tomorrow at 3pm", "schedule a braai on Saturday at 2 with Thabo and Lerato",
+        // "put the car service on the calendar for Friday at 9", "book a doctor's appointment on the 12th at 10:30"
+        var ev = eventCommand(raw);
+        if (ev) return addEvent(ev.text);
 
         // add a task (optionally for someone, on a day, at a time)
         if ((m = raw.match(/^(?:please\s+)?(?:add|create|new)\s+(?:a\s+)?task\s*(?:to|:)?\s*(.+)$/i)) || (m = raw.match(/^remind me to\s+(.+)$/i))) {
@@ -443,8 +591,8 @@
             var onNow = D.devices.all().filter(function (x) { return x.on; });
             return onNow.length ? onNow.length + " device(s) are on: " + listify(onNow.slice(0, 6).map(function (x) { return x.name; })) + "." : "Everything is switched off.";
         }
-        if (/^(hi|hello|hey|good (morning|afternoon|evening))\b/.test(q)) return "Hi " + D.me().first + "! I can add tasks, switch devices, suggest meals, check energy, the weather and your schedule. Just ask.";
-        if (/\b(help|what can you do)\b/.test(q)) return "Try: “add task clean the garage for Thabo tomorrow at 10”, “turn off the geyser”, “add bread to the shopping list”, “what can I cook tonight”, “I'm busy on Friday”, “what's on tomorrow” or “how much energy did we use”.";
+        if (/^(hi|hello|hey|good (morning|afternoon|evening))\b/.test(q)) return "Hi " + D.me().first + "! I can add tasks and events, switch devices, suggest meals, check energy, the weather and your schedule. Just ask.";
+        if (/\b(help|what can you do)\b/.test(q)) return "Try: “add task clean the garage for Thabo tomorrow at 10”, “turn off the geyser”, “add bread to the shopping list”, “what can I cook tonight”, “I'm busy on Friday”, “add an event dentist tomorrow at 3pm”, “schedule a braai on Saturday at 2 with Thabo”, “what's on tomorrow” or “how much energy did we use”.";
         return null;
     }
 
