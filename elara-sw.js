@@ -7,7 +7,7 @@
    Pages: network first (always the newest version when online), cached copy when offline.
    Scripts, styles, icons: also network first, cached copy when offline.
    Supabase, weather and other websites are never cached (your data always comes live). */
-var CACHE = "elara-v8";   // change this number after updating files so phones fetch the new version
+var CACHE = "elara-v10";   // change this number after updating files so phones fetch the new version
 var SHELL = [
     "dashboard-content.html", "dashboard-tasks.html", "dashboard-shopping.html", "dashboard-schedule.html",
     "dashboard-smart-home.html", "dashboard-analytics.html", "dashboard-reports.html", "dashboard-members.html",
@@ -24,22 +24,15 @@ self.addEventListener("install", function (e) {
 });
 self.addEventListener("activate", function (e) {
     e.waitUntil(caches.keys().then(function (keys) {
-        return Promise.all(keys.filter(function (k) { return k.indexOf("elara-") === 0 && k !== CACHE && !/-lib$/.test(k); }).map(function (k) { return caches.delete(k); }));
+        return Promise.all(keys.filter(function (k) { return k.indexOf("elara-") === 0 && k !== CACHE; }).map(function (k) { return caches.delete(k); }));
     }).then(function () { return self.clients.claim(); }));
 });
 self.addEventListener("fetch", function (e) {
     var req = e.request, url = new URL(req.url);
     if (req.method !== "GET") return;
-    // versioned libraries (icons font, Supabase, charts, receipt reader): keep a copy so Elara works offline
-    if (/^https:\/\/(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net)\//.test(req.url) && /@\d|\/\d+\.\d+\.\d+\//.test(req.url)) {
-        e.respondWith(caches.open("elara-lib").then(function (c) {
-            return c.match(req).then(function (hit) {
-                return hit || fetch(req).then(function (res) { if (res.ok || res.type === "opaque") c.put(req, res.clone()); return res; });
-            });
-        }));
-        return;
-    }
-    if (url.origin !== self.location.origin) return;                              // Supabase, APIs: straight to the network
+    // other websites (icons, charts, Supabase, APIs) go straight to the network and are never stored:
+    // a copy saved during a bad moment could otherwise break the icons until the cache is cleared
+    if (url.origin !== self.location.origin) return;
     if (req.mode === "navigate") {
         e.respondWith(fetch(req).then(function (res) {
             var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(url.pathname.split("/").pop() || "Homepage.html", copy); });
