@@ -161,7 +161,7 @@
         }).join("") || '<p class="dash-empty">Invite people on the Members page.</p>';
     }
 
-    /* ---------------- weather (home location, or your location if you allowed it) ---------------- */
+    /* ---------------- weather (where YOU are if you allowed your location, else the home's address) ---------------- */
     var WMO = { 0: ["Clear sky", "fa-sun"], 1: ["Mainly clear", "fa-sun"], 2: ["Partly cloudy", "fa-cloud-sun"], 3: ["Overcast", "fa-cloud"], 45: ["Foggy", "fa-smog"], 48: ["Foggy", "fa-smog"],
         51: ["Light drizzle", "fa-cloud-rain"], 53: ["Drizzle", "fa-cloud-rain"], 55: ["Heavy drizzle", "fa-cloud-rain"], 61: ["Light rain", "fa-cloud-rain"], 63: ["Rain", "fa-cloud-rain"], 65: ["Heavy rain", "fa-cloud-showers-heavy"],
         71: ["Light snow", "fa-snowflake"], 73: ["Snow", "fa-snowflake"], 75: ["Heavy snow", "fa-snowflake"], 80: ["Rain showers", "fa-cloud-showers-heavy"], 81: ["Rain showers", "fa-cloud-showers-heavy"], 82: ["Violent showers", "fa-cloud-showers-heavy"],
@@ -176,7 +176,7 @@
     }
     function loadWeather() {
         var home = D.util.load("elaraHomeCoords", null), mine = localStorage.getItem("elaraLocationConsent") === "granted" ? D.util.load("elaraMyLocation", null) : null;
-        var p = home || mine, lat = p ? p.lat : (cfg.defaultLat || -26.2041), lon = p ? p.lon : (cfg.defaultLon || 28.0473);
+        var p = mine || home, lat = p ? p.lat : (cfg.defaultLat || -26.2041), lon = p ? p.lon : (cfg.defaultLon || 28.0473);
         var city = p ? (p.city || String(p.label || "").split(",")[0]) : (cfg.defaultCity || "Johannesburg") + " (default)";
         var key = lat + "," + lon;
         try { var c = JSON.parse(sessionStorage.getItem("elaraWeather") || "null"); if (c && c.key === key && Date.now() - c.t < 15 * 60000) return paintWeather(c); } catch (e) { /* ignore */ }

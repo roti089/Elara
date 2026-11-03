@@ -171,7 +171,14 @@
         editingId = t ? t.id : null;
         var defaultAssignee = t && D.members.find(t.assigneeId) ? t.assigneeId : me().id;
         var lockWho = !!t && !D.tasks.canReassign(), lockWhen = !!t && !!t.choreId && !D.household.isOwner;
-        var whoOptions = lockWho ? [[t.assigneeId, personName(t.assigneeId, t.assignee)]] : ppl.map(function (p) { return [p.userId, p.isMe ? p.name + " (you)" : p.name]; });
+        var whoOptions = lockWho ? [[t.assigneeId, personName(t.assigneeId, t.assignee)]] : ppl.map(function (p) {
+            var gone = (D.presence.all()[p.userId] || {}).state === "away";
+            return [p.userId, (p.isMe ? p.name + " (you)" : p.name) + (gone ? " (away)" : "")];
+        });
+        if (!t && D.tasks.awayReason(defaultAssignee, todayKey())) {
+            var free = ppl.filter(function (p) { return !D.tasks.awayReason(p.userId, todayKey()); })[0];
+            if (free) defaultAssignee = free.userId;
+        }
         UI.form({
             title: t ? "Edit task" : "Add a task", icon: "fa-list-check", submitText: t ? "Save changes" : "Add task",
             fields: [
@@ -195,6 +202,9 @@
                 if (lockWhen && (v.date !== t.date || v.time !== t.time)) return { field: "date", msg: "Only the home owner can move a chore to another day or time." };
                 if (t && v.status === "Completed" && t.status !== "Completed") { var why = D.tasks.canComplete(Object.assign({}, t, { date: v.date })); if (why) return { field: "status", msg: why }; }
                 var who = D.members.find(v.assigneeId);
+                var whoChanged = !t || v.assigneeId !== t.assigneeId || v.date !== t.date;
+                var away = whoChanged && v.status !== "Completed" && D.tasks.awayReason(v.assigneeId, v.date);
+                if (away) return { field: "assigneeId", msg: away };
                 if (!lockWho && (!who || who.status !== "active")) return { field: "assigneeId", msg: "Choose someone who is in your home." };
                 if (["High", "Medium", "Low"].indexOf(v.priority) < 0) return { field: "priority", msg: "Choose a priority." };
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date) || isNaN(new Date(v.date + "T00:00").getTime())) return { field: "date", msg: "Choose the due date." };

@@ -99,12 +99,14 @@
         { name: "Chicken wraps", needs: ["chicken", "wrap|tortilla|bread", "lettuce|tomato|cheese"], time: 20 },
         { name: "Vetkoek with mince", needs: ["flour", "yeast", "mince", "onion"], time: 90 }
     ];
+    /* only food counts for meals: toothpaste or bleach in the house must never become an "ingredient" */
+    function isFood(x) { return !x.category || x.category === "Groceries"; }
     function pantry() {
-        var p = D.util.load("elaraPantry", []).filter(function (x) { return !x.usedUp; });
+        var p = D.util.load("elaraPantry", []).filter(function (x) { return !x.usedUp && isFood(x); });
         // things bought recently count as "in the house" too
         var cutoff = Date.now() - 14 * 86400000;
         D.util.load("elaraCartItems", []).forEach(function (c) {
-            if ((c.addedAt || 0) > cutoff && !p.some(function (x) { return norm(x.name) === norm(c.name); })) p.push({ name: c.name, category: c.category, fromCart: true });
+            if ((c.addedAt || 0) > cutoff && isFood(c) && !p.some(function (x) { return norm(x.name) === norm(c.name); })) p.push({ name: c.name, category: c.category, fromCart: true });
         });
         return p;
     }
@@ -318,6 +320,8 @@
                 var nh = Math.min(23, nowD.getHours() + 1); time = (nh < 10 ? "0" : "") + nh + ":00";        // no time given: the next full hour
                 if (nowD.getHours() >= 23) { date = D.util.dayKey(D.util.addDays(nowD, 1)); time = "09:00"; }
             }
+            var away = D.tasks.awayReason && D.tasks.awayReason(assignee.userId, date);
+            if (away) return away;
             if (title.length < 2 || title.length > 80) return "Tell me the task in 2 to 80 characters, e.g. “add task clean the garage tomorrow at 10”.";
             var all = D.tasks.all(), meNow = D.me();
             all.unshift({ id: Date.now(), title: title, description: "Added by Elara AI.", priority: "Medium", assigneeId: assignee.userId, assignee: assignee.name,

@@ -658,7 +658,11 @@
     /* ---------------- LOCATION (asked once, can be changed in Settings) ---------------- */
     function reverseCity(lat, lon) {
         return fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" + lat + "&longitude=" + lon + "&localityLanguage=en")
-            .then(function (r) { return r.json(); }).then(function (j) { return { city: j.city || j.locality || j.principalSubdivision || "Your location", country: j.countryName || "" }; })
+            .then(function (r) { return r.json(); }).then(function (j) {
+                // the suburb (locality) is more precise than the city: "Fourways, Johannesburg"
+                var place = j.locality && j.city && j.locality !== j.city ? j.locality + ", " + j.city : j.city || j.locality || j.principalSubdivision || "Your location";
+                return { city: j.locality || j.city || j.principalSubdivision || "Your location", place: place, country: j.countryName || "" };
+            })
             .catch(function () { return { city: "Your location", country: "" }; });
     }
     function tzFor(lat, lon) {
@@ -674,7 +678,7 @@
                 var lat = +pos.coords.latitude.toFixed(4), lon = +pos.coords.longitude.toFixed(4);
                 Promise.all([reverseCity(lat, lon), tzFor(lat, lon)]).then(function (res) {
                     var place = res[0], tz = res[1];
-                    var loc = { lat: lat, lon: lon, city: place.city, label: [place.city, place.country].filter(Boolean).join(", "), tz: tz, t: Date.now() };
+                    var loc = { lat: lat, lon: lon, city: place.city, label: [place.place || place.city, place.country].filter(Boolean).join(", "), tz: tz, t: Date.now() };
                     set("elaraLocationConsent", "granted");
                     set("elaraMyLocation", JSON.stringify(loc));
                     var isOwner = !D || D.household.isOwner;
@@ -690,10 +694,20 @@
             }, function (err) {
                 if (err.code === 1) set("elaraLocationConsent", "denied");
                 reject(new Error(err.code === 1 ? "Location access was blocked. You can allow it in your browser's site settings." : "Couldn't get your location (" + err.message + ")."));
-            }, { timeout: 12000, maximumAge: 600000, enableHighAccuracy: false });
+            }, { timeout: 15000, maximumAge: opts.maxAge == null ? 0 : opts.maxAge, enableHighAccuracy: true });
         });
     }
+    /* each person's own position, refreshed quietly (at most every 30 minutes) once they allowed it */
+    function refreshMyLocation() {
+        if (get("elaraLocationConsent") !== "granted" || !navigator.geolocation) return;
+        var mine = json("elaraMyLocation", null);
+        if (mine && Date.now() - (mine.t || 0) < 30 * 60000) return;
+        requestLocation({ maxAge: 5 * 60000 }).then(function (loc) {
+            document.dispatchEvent(new CustomEvent("elara:location", { detail: loc }));
+        }).catch(function () { /* keep the last one */ });
+    }
     function askLocationOnce() {
+        if (get("elaraLocationConsent") === "granted") return refreshMyLocation();
         if (get("elaraLocationConsent") || !navigator.geolocation || document.querySelector(".eui-overlay")) return;
         ui.confirm({
             title: "Use your location?",

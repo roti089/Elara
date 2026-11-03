@@ -562,9 +562,24 @@
             if (old && !lsGet(fullKey(user.id, k))) localStorage.setItem(k, old);
             lsDel(fullKey(user.id, k + ":" + user.id)); lsDel(fullKey(dataId, k + ":" + user.id));
         });
-        var names = user.name.split(/\s+/);
-        [["elaraFirstName", names[0]], ["elaraLastName", names.slice(1).join(" ")], ["elaraEmail", user.email]].forEach(function (p) {
-            if (p[1] && !localStorage.getItem(p[0])) localStorage.setItem(p[0], p[1]);
+        if (user.email && !localStorage.getItem("elaraEmail")) localStorage.setItem("elaraEmail", user.email);
+    }
+    /* The name someone chose stays theirs. It is only filled in once the cloud copy has loaded and has none:
+       from their Elara profile first, and only then from the login provider. (Signing in with Google or
+       GitHub later replaces the account's name with the one on that account; it must not rename the person.) */
+    function seedName() {
+        if (!user || localStorage.getItem("elaraFirstName")) return Promise.resolve();
+        var found = cfg.supabaseUrl
+            ? getClient().then(function (c) { return c.from("elara_profiles").select("display_name").eq("user_id", user.id).maybeSingle(); })
+                .then(function (r) { return (r && r.data && r.data.display_name) || user.name; }, function () { return user.name; })
+            : Promise.resolve(user.name);
+        return found.then(function (full) {
+            if (localStorage.getItem("elaraFirstName")) return;
+            var n = String(full || "").trim().split(/\s+/).filter(Boolean);
+            if (!n.length) return;
+            localStorage.setItem("elaraFirstName", n[0]);
+            if (n.length > 1 && !localStorage.getItem("elaraLastName")) localStorage.setItem("elaraLastName", n.slice(1).join(" "));
+            emit(["elaraFirstName"]);
         });
     }
 
@@ -638,6 +653,15 @@
     }
     function taskCanDelete(t) { return !!t && can("tasks", "edit") && (isOwner() || t.createdBy === me().id); }
     function taskCanReassign() { return isOwner(); }
+    /* nobody gets a task while they're away: marked away from home now, or away on the task's day */
+    function taskAwayReason(uid, date) {
+        if (!uid) return null;
+        var p = person(uid), name = p ? (p.userId === me().id ? "You are" : p.name + " is") : "They are";
+        var pr = presence()[uid];
+        if (pr && pr.state === "away") return name + " marked as away from home. Tasks can be given to them again once they're back.";
+        if (date && availabilityOn(date, uid) === "away") return name + " away on " + (date === dayKey() ? "that day (today)" : new Date(date + "T00:00:00").toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })) + ". Choose someone else or another day.";
+        return null;
+    }
 
     /* ---------------------------------------------------------
        14. Household roster (owner + members) from elara_household_links + elara_profiles
@@ -1215,7 +1239,7 @@
         resolveHome();
         hydrate();
         homeReady.then(function () { refreshRoster(); notifications.load(); });
-        if (!ssGet("elaraProfileSaved:" + user.id)) { ssSet("elaraProfileSaved:" + user.id, "1"); homeReady.then(saveProfile); }
+        if (!ssGet("elaraProfileSaved:" + user.id)) { ssSet("elaraProfileSaved:" + user.id, "1"); whenHydrated().then(seedName).then(saveProfile); }
         if (cfg.requireLogin) {
             getClient().then(function (c) {
                 return c.auth.getSession().then(function (r) {
@@ -1239,7 +1263,7 @@
         access: { can: can, level: levelOf, get role() { return isOwner() ? "owner" : access.role; }, get perms() { return isOwner() ? null : access.perms; }, AREAS: AREAS, keyArea: keyArea },
         can: can,
         log: log, activity: activity, ago: ago, rid: rid,
-        tasks: { all: tasks, save: saveTasks, canComplete: taskCanComplete, canDelete: taskCanDelete, canReassign: taskCanReassign },
+        tasks: { all: tasks, save: saveTasks, canComplete: taskCanComplete, canDelete: taskCanDelete, canReassign: taskCanReassign, awayReason: taskAwayReason },
         members: { all: roster, active: people, find: person, refresh: refreshRoster, ROLE_PERMS: ROLE_PERMS, saveProfile: saveProfile },
         household: household,
         presence: { all: presence, set: setPresence },

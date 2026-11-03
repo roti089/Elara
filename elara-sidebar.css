@@ -619,3 +619,10 @@ body.light-theme .paused-tag{ background:rgba(0,0,0,.06); }
 .guide-note i.fa-solid{ margin-right:6px; color:#9b8cff; }
 body.light-theme .guide-note{ background:#f3f5fb; }
 .link-guide{ border:none; background:none; padding:0; color:#9d95ff; text-decoration:underline; font:inherit; cursor:pointer; }
+
+/* ===== shopping: warranty document button, Bought all ===== */
+.warranty-file{ width:34px; height:34px; border:none; border-radius:10px; background:rgba(108,99,255,.15); color:#9d95ff; cursor:pointer; flex-shrink:0; margin-left:auto; }
+.warranty-file:hover{ background:rgba(108,99,255,.3); }
+.warranty-file + .warranty-del{ margin-left:6px; }
+#listPanel .panel-actions{ align-items:center; }
+#buyAllBtn[hidden]{ display:none !important; }

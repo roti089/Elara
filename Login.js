@@ -82,10 +82,10 @@ function openModal({ title, text, fields, button, onSubmit, noCancel, onCancel }
     overlay.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !noCancel) close(); });
     form.addEventListener("submit", async (ev) => {
         ev.preventDefault();
-        err.textContent = ""; ok.disabled = true;
+        err.textContent = ""; ok.disabled = true; const label = ok.textContent; ok.textContent = "Saving...";
         let done = false;
         try { done = await onSubmit((m) => { err.textContent = m; }); } catch (e) { err.textContent = friendly(e.message); }
-        ok.disabled = false;
+        ok.disabled = false; ok.textContent = label;
         if (done) overlay.remove();
     });
 }
@@ -108,13 +108,42 @@ function askNewPassword(title, text) {
             const problem = passwordProblem(password);
             if (problem) { fail(problem); return false; }
             if (password !== again) { fail("The two passwords don't match."); return false; }
-            const { error } = await supabase.auth.updateUser({ password });
-            if (error) { fail(friendly(error.message)); return false; }
+            const error = await savePassword(password);
+            if (error) { fail(friendly(error)); return false; }
             showSuccess("All set! Taking you to your dashboard...");
             goToDashboard();
             return true;
         }
     });
+}
+
+/* Save the new password. Straight after an invite or reset link, supabase-js is often still busy taking
+   the login out of the address bar, and updateUser() can wait on it forever, so the button seemed dead.
+   With the session's token we call the same Supabase endpoint directly; updateUser() is the fallback. */
+let linkToken = hashParams.get("access_token") || "";
+async function savePassword(password) {
+    if (!linkToken) {
+        try { const { data } = await Promise.race([supabase.auth.getSession(), new Promise((r) => setTimeout(() => r({ data: null }), 4000))]); linkToken = data?.session?.access_token || ""; } catch (e) { /* ignore */ }
+    }
+    if (linkToken) {
+        try {
+            const r = await fetch(cfg.supabaseUrl.replace(/\/$/, "") + "/auth/v1/user", {
+                method: "PUT", headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: "Bearer " + linkToken },
+                body: JSON.stringify({ password })
+            });
+            if (r.ok) {
+                // make sure the login is saved on this device before the dashboard opens
+                const saved = Object.keys(localStorage).some((k) => /^sb-.+-auth-token$/.test(k));
+                const refresh = hashParams.get("refresh_token");
+                if (!saved && refresh) await Promise.race([supabase.auth.setSession({ access_token: linkToken, refresh_token: refresh }).catch(() => null), new Promise((x) => setTimeout(x, 5000))]);
+                return null;
+            }
+            const j = await r.json().catch(() => ({}));
+            return j.msg || j.message || j.error_description || "Couldn't save the password (" + r.status + ").";
+        } catch (e) { return "Can't reach the server. Check your internet connection."; }
+    }
+    const res = await Promise.race([supabase.auth.updateUser({ password }), new Promise((r) => setTimeout(() => r({ error: { message: "This took too long. Open the link from your email again." } }), 15000))]);
+    return res?.error ? res.error.message : null;
 }
 
 /* an invited person clicked the link in their email: they are logged in but have no password yet */

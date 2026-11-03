@@ -89,6 +89,7 @@
     function renderList() {
         var list = visibleList();
         $("#listCount").textContent = listItems().length + " item" + (listItems().length === 1 ? "" : "s");
+        $("#buyAllBtn").hidden = !listItems().length;
         $("#shoppingList").innerHTML = list.length ? list.map(rowHTML).join("")
             : '<div class="empty-shopping"><i class="fa-solid fa-cart-shopping"></i><p>' + (listItems().length ? "No items match." : "Your shopping list is empty.") + "</p></div>";
         var recent = bought().slice().sort(function (a, b) { return b.addedAt - a.addedAt; }).slice(0, 6);
@@ -183,6 +184,28 @@
             D.log("removed " + item.name + " from the shopping list", "fa-trash"); UI.toast(item.name + " deleted."); renderAll();
         });
     });
+    /* everything on the list was bought in one trip: one confirmation, then each item goes to "In the House" */
+    $("#buyAllBtn").addEventListener("click", function () {
+        if (!canEdit()) return UI.toast("You can view Shopping but not change it.", "error");
+        var todo = listItems();
+        if (!todo.length) return UI.toast("The shopping list is empty.", "info");
+        var total = todo.reduce(function (s, x) { return s + (Number(x.price) || 0) * (Number(x.qty) || 1); }, 0);
+        var noPrice = todo.filter(function (x) { return !(Number(x.price) > 0); }).length;
+        UI.confirm({ title: "Mark all " + todo.length + " item" + (todo.length === 1 ? "" : "s") + " as bought?",
+                     message: "They move to “In the House” at the prices on the list (" + money(total) + " in total)" + (noPrice ? ". " + noPrice + " item" + (noPrice === 1 ? " has" : "s have") + " no price yet and count as R0" : "") + ". You can undo single items under “Bought recently”.",
+                     confirmText: "Bought all", danger: false, icon: "fa-bag-shopping" }).then(function (ok) {
+            if (!ok) return;
+            var m = me(), cart = bought(), now = Date.now();
+            todo.forEach(function (item, i) {
+                cart.push({ id: item.id, name: item.name, price: Number(item.price) || 0, qty: Number(item.qty) || 1, category: item.category, addedAt: now + i, by: m.id, byName: m.first });
+                addToPantry(item.name, Number(item.qty) || 1, item.category, F ? F.expiry.suggest(item.name, item.category) : "");
+            });
+            save("elaraCartItems", cart);
+            D.log("bought everything on the shopping list (" + todo.length + " items, " + money(total) + ")", "fa-bag-shopping");
+            D.notify({ to: "household", kind: "shopping", title: "Shopping done", body: m.first + " bought all " + todo.length + " items on the list (" + money(total) + ").", href: "dashboard-shopping.html" });
+            UI.toast("All " + todo.length + " items marked as bought."); renderAll();
+        });
+    });
     $("#boughtList").addEventListener("click", function (e) {
         var b = e.target.closest("[data-act]"); if (!b || !canEdit()) return;
         var id = Number(b.closest("[data-id]").dataset.id), c = bought().filter(function (x) { return x.id === id; })[0];
@@ -221,15 +244,16 @@
             var age = Math.floor((Date.now() - (x.addedAt || Date.now())) / DAY), e = expiryOf(x);
             return '<div class="pantry-item' + (e && e.cls ? " exp-" + e.cls : "") + '" data-id="' + esc(x.id) + '"><div><strong>' + esc(x.name) + "</strong><small>" + esc(x.qty) + " " + esc(x.unit === "items" && Number(x.qty) === 1 ? "item" : x.unit || "") +
                 (e ? " • " + esc(e.label) : age ? " • " + age + "d" : "") + "</small></div>" +
-                (canEdit() ? '<div class="pantry-acts"><button type="button" class="icon-act" data-act="date" title="Best-before date" aria-label="Best-before date for ' + esc(x.name) + '"><i class="fa-regular fa-calendar"></i></button><button type="button" class="icon-act" data-act="use" title="Use one" aria-label="Use one ' + esc(x.name) + '"><i class="fa-solid fa-minus"></i></button>' +
+                (canEdit() ? '<div class="pantry-acts"><button type="button" class="icon-act" data-act="edit" title="Edit" aria-label="Edit ' + esc(x.name) + '"><i class="fa-solid fa-pen"></i></button><button type="button" class="icon-act" data-act="date" title="Best-before date" aria-label="Best-before date for ' + esc(x.name) + '"><i class="fa-regular fa-calendar"></i></button><button type="button" class="icon-act" data-act="use" title="Use one" aria-label="Use one ' + esc(x.name) + '"><i class="fa-solid fa-minus"></i></button>' +
                  '<button type="button" class="icon-act" data-act="add" title="Add one" aria-label="Add one ' + esc(x.name) + '"><i class="fa-solid fa-plus"></i></button>' +
                  '<button type="button" class="icon-act danger" data-act="gone" title="Used up" aria-label="' + esc(x.name) + ' used up"><i class="fa-solid fa-check"></i></button></div>' : "") + "</div>";
         }).join("") + "</div>" : '<p class="muted">Nothing recorded yet. Items you mark as bought appear here, or press Add.</p>';
     }
     $("#pantryList").addEventListener("click", function (e) {
         var b = e.target.closest("[data-act]"); if (!b || !canEdit()) return;
-        var id = Number(b.closest("[data-id]").dataset.id), p = pantry(), x = p.filter(function (y) { return y.id === id; })[0];
+        var id = b.closest("[data-id]").dataset.id, p = pantry(), x = p.filter(function (y) { return String(y.id) === id; })[0];
         if (!x) return;
+        if (b.dataset.act === "edit") return editPantry(x);
         if (b.dataset.act === "date") {
             return UI.form({
                 title: "Best before: " + x.name, icon: "fa-hourglass-half", submitText: "Save",
@@ -238,7 +262,7 @@
                 validate: function (v) { return v.expires && v.expires < D.util.dayKey() ? { field: "expires", msg: "Choose today or a later day, or leave it empty." } : null; }
             }).then(function (v) {
                 if (!v) return;
-                var list = pantry(), y = list.filter(function (z) { return z.id === id; })[0]; if (!y) return;
+                var list = pantry(), y = list.filter(function (z) { return String(z.id) === id; })[0]; if (!y) return;
                 if (v.expires) y.expires = v.expires; else delete y.expires;
                 y.updatedAt = Date.now(); save("elaraPantry", list); renderAll();
             });
@@ -258,6 +282,33 @@
         }
         renderAll();
     });
+    /* change an item in the house in place (name, amount, unit, category, best before) */
+    function editPantry(x) {
+        UI.form({
+            title: "Edit " + x.name, icon: "fa-box-open", submitText: "Save changes",
+            fields: [
+                { name: "name", label: "Item", value: x.name, required: true, maxlength: 60 },
+                { name: "qty", label: "Quantity", type: "number", value: x.qty, min: 0.1, max: 999, step: "0.1", required: true },
+                { name: "unit", label: "Unit", type: "select", value: x.unit || "items", options: UNITS.filter(Boolean) },
+                { name: "category", label: "Category", type: "select", value: x.category || "Groceries", options: CATEGORIES },
+                { name: "expires", label: "Best before (optional)", type: "date", value: x.expires || "", min: x.expires && x.expires < D.util.dayKey() ? x.expires : D.util.dayKey() }
+            ],
+            validate: function (v) {
+                if (v.name.length < 2 || v.name.length > 60 || !/[a-z]/i.test(v.name) || /[<>]/.test(v.name)) return { field: "name", msg: "The item name must be 2 to 60 characters with at least one letter." };
+                var q = Number(v.qty); if (!isFinite(q) || q <= 0 || q > 999) return { field: "qty", msg: "Quantity must be more than 0 and at most 999." };
+                if (v.expires && v.expires !== x.expires && v.expires < D.util.dayKey()) return { field: "expires", msg: "The best-before date can't be in the past." };
+                var dup = pantry().some(function (y) { return !y.usedUp && String(y.id) !== String(x.id) && norm(y.name) === norm(v.name); });
+                return dup ? { field: "name", msg: "“" + v.name + "” is already in the house. Edit that one instead." } : null;
+            }
+        }).then(function (v) {
+            if (!v) return;
+            var list = pantry(), y = list.filter(function (z) { return String(z.id) === String(x.id); })[0];
+            if (!y) return UI.toast("Someone else removed this item.", "error");
+            Object.assign(y, { name: v.name, qty: Number(v.qty), unit: v.unit, category: v.category, updatedAt: Date.now() });
+            if (v.expires) y.expires = v.expires; else delete y.expires;
+            save("elaraPantry", list); D.log("updated " + v.name + " in the house stock", "fa-pen"); UI.toast(v.name + " updated."); renderAll();
+        });
+    }
     $("#addPantryBtn").addEventListener("click", function () {
         if (!canEdit()) return;
         UI.form({
@@ -739,7 +790,8 @@
         var id = Number(b.closest("[data-id]").dataset.id), r = receipts().filter(function (x) { return x.id === id; })[0];
         if (r) openReceipt(r);
     });
-    function openReceipt(r) {
+    function openReceipt(r, opts) {
+        opts = opts || {};
         var ov = document.createElement("div");
         ov.className = "eui-overlay receipt-viewer";
         ov.innerHTML = '<div class="eui-box rv-box"><div class="rv-head"><div><h3>' + esc(r.store) + "</h3><p>" + esc(r.date || "") + (r.total != null ? " • " + money(r.total) : "") + '</p></div><button type="button" class="ev-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div><div class="rv-body"><p>Loading...</p></div><div class="rv-foot"></div></div>';
@@ -749,7 +801,7 @@
         function close() { if (url) URL.revokeObjectURL(url); ov.remove(); }
         ov.addEventListener("click", function (e) { if (e.target === ov || e.target.closest(".ev-close")) close(); });
         var foot = ov.querySelector(".rv-foot"), body = ov.querySelector(".rv-body");
-        if (canEdit()) {
+        if (canEdit() && !opts.noDelete) {
             var del = document.createElement("button"); del.type = "button"; del.className = "eui-btn danger"; del.innerHTML = '<i class="fa-solid fa-trash"></i> Delete';
             del.onclick = function () {
                 UI.confirm({ title: "Delete this receipt?", message: "The " + r.store + " receipt will be removed from the archive.", confirmText: "Delete receipt" }).then(function (ok) {
@@ -762,7 +814,7 @@
             foot.appendChild(del);
         }
         RDB.get(r.id).then(function (blob) {
-            if (!blob) { body.innerHTML = "<p>This receipt's file is on " + (r.byName ? esc(r.byName) + "'s" : "another") + " device. Receipt files stay on the device they were added from.</p>"; return; }
+            if (!blob) { body.innerHTML = "<p>This " + (opts.what || "receipt") + "'s file is on " + (r.byName ? esc(r.byName) + "'s" : "another") + " device. Receipt files stay on the device they were added from.</p>"; return; }
             url = URL.createObjectURL(blob);
             var isPdf = (blob.type || r.mime) === "application/pdf" || /\.pdf$/i.test(r.fileName || "");
             body.innerHTML = isPdf ? '<iframe src="' + url + '" title="Receipt"></iframe>' : '<img src="' + url + '" alt="Receipt from ' + esc(r.store) + '">';
@@ -799,11 +851,18 @@
         $("#warrantyList").innerHTML = list.length ? list.map(function (w) {
             var r = remaining(w.expires);
             return '<div class="warranty-item ' + r.cls + '" data-id="' + esc(w.id) + '"><div class="warranty-main"><h3>' + esc(w.name) + "</h3><p>" + esc(r.text) + (w.store ? " • " + esc(w.store) : "") + "</p></div>" +
+                (w.hasFile ? '<button type="button" class="warranty-file" aria-label="View the warranty document for ' + esc(w.name) + '" title="View document"><i class="fa-solid fa-file-shield"></i></button>' : "") +
                 (canEdit() ? '<button type="button" class="warranty-del" aria-label="Delete warranty"><i class="fa-solid fa-trash"></i></button>' : "") + "</div>";
         }).join("") : '<p class="warranty-empty">No warranties saved yet.</p>';
     }
     $("#warrantyList").addEventListener("click", function (e) {
-        var row = e.target.closest(".warranty-item"); if (!row || !canEdit()) return;
+        var row = e.target.closest(".warranty-item"); if (!row) return;
+        if (e.target.closest(".warranty-file")) {
+            var wf = warranties().filter(function (x) { return String(x.id) === row.dataset.id; })[0];
+            if (wf) openReceipt({ id: "w" + wf.id, store: wf.name, date: "Warranty until " + wf.expires, total: null, fileName: wf.fileName, mime: wf.mime, byName: wf.fileByName }, { noDelete: true, what: "warranty" });
+            return;
+        }
+        if (!canEdit()) return;
         var w = warranties().filter(function (x) { return String(x.id) === row.dataset.id; })[0]; if (!w) return;
         if (e.target.closest(".warranty-del")) {
             UI.confirm({ title: "Delete this warranty?", message: "“" + w.name + "” will no longer be tracked.", confirmText: "Delete warranty" }).then(function (ok) {
@@ -812,30 +871,42 @@
             });
         } else openWarranty(w);
     });
+    var pendingWarrantyFile = null;
     function openWarranty(w) {
         var today = D.util.dayKey();
+        pendingWarrantyFile = null;
         UI.form({
             title: w ? "Edit warranty" : "Add a warranty", icon: "fa-shield-halved", submitText: "Save warranty",
             fields: [
                 { name: "name", label: "Product", value: w ? w.name : "", required: true, maxlength: 60, placeholder: "e.g. Samsung Fridge" },
                 { name: "store", label: "Store (optional)", value: w ? w.store || "" : "", maxlength: 40 },
                 { name: "purchased", label: "Purchase date", type: "date", value: w ? w.purchased : today, required: true, max: today },
-                { name: "months", label: "Warranty length (months)", type: "number", value: w ? Math.max(1, Math.round((new Date(w.expires) - new Date(w.purchased)) / 2629800000)) : 12, min: 1, max: 120, step: 1, required: true }
+                { name: "months", label: "Warranty length (months)", type: "number", value: w ? Math.max(1, Math.round((new Date(w.expires) - new Date(w.purchased)) / 2629800000)) : 12, min: 1, max: 120, step: 1, required: true },
+                { name: "file", label: (w && w.hasFile ? "Replace the warranty document" : "Warranty document (optional): photo or PDF, up to 15 MB"), type: "file" }
             ],
             validate: function (v) {
                 if (v.name.length < 2) return "Enter the product (2 to 60 characters).";
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(v.purchased) || v.purchased > today) return "The purchase date can't be in the future.";
                 if (v.purchased < D.util.dayKey(D.util.addDays(new Date(), -365 * 15))) return "That purchase date is too long ago.";
                 var m = Number(v.months); if (!Number.isInteger(m) || m < 1 || m > 120) return "Warranty length must be 1 to 120 whole months.";
+                var inp = document.querySelector('.eui-form input[name="file"]'), f = inp && inp.files && inp.files[0];
+                if (f && !(/^image\//.test(f.type) || f.type === "application/pdf" || /\.pdf$/i.test(f.name))) return { field: "file", msg: "The document must be a photo or a PDF." };
+                if (f && f.size > 15 * 1024 * 1024) return { field: "file", msg: "That file is bigger than 15 MB." };
+                pendingWarrantyFile = f || null;
                 return null;
             }
         }).then(function (v) {
             if (!v) return;
             var d = new Date(v.purchased + "T00:00:00"); d.setMonth(d.getMonth() + Number(v.months));
-            var expires = D.util.dayKey(d), list = warranties();
-            if (w) list.forEach(function (x) { if (x.id === w.id) Object.assign(x, { name: v.name, store: v.store, purchased: v.purchased, expires: expires }); });
-            else list.push({ id: Date.now(), name: v.name, store: v.store, purchased: v.purchased, expires: expires, by: me().id });
-            save("elaraWarranties", list); D.log((w ? "updated" : "added") + " warranty for " + v.name, "fa-shield"); UI.toast("Warranty saved."); renderWarranties();
+            var expires = D.util.dayKey(d), list = warranties(), id = w ? w.id : Date.now(), file = pendingWarrantyFile, m = me();
+            pendingWarrantyFile = null;
+            var info = file ? { hasFile: true, fileName: file.name.slice(0, 80), mime: file.type || "", fileBy: m.id, fileByName: m.first } : {};
+            if (w) list.forEach(function (x) { if (x.id === w.id) Object.assign(x, { name: v.name, store: v.store, purchased: v.purchased, expires: expires }, info); });
+            else list.push(Object.assign({ id: id, name: v.name, store: v.store, purchased: v.purchased, expires: expires, by: m.id }, info));
+            var stored = file ? RDB.put("w" + id, file) : Promise.resolve();
+            stored.then(function () {
+                save("elaraWarranties", list); D.log((w ? "updated" : "added") + " warranty for " + v.name + (file ? " (with its document)" : ""), "fa-shield"); UI.toast("Warranty saved."); renderWarranties();
+            }).catch(function () { UI.toast("Couldn't store the document. Your browser may be blocking storage.", "error"); });
         });
     }
 

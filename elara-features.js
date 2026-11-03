@@ -65,6 +65,11 @@
                     if (c.createdAt && due < c.createdAt) continue;          // made after this one was due
                     if (date === today && due < nowMs - 12 * 3600000) continue;
                     var who = choreAssignee(c, date), p = who && D.members.find(who);
+                    if (p && D.tasks.awayReason && D.tasks.awayReason(p.userId, date)) {
+                        var ring = (c.people || []).filter(function (id) { return D.members.find(id); }), at = ring.indexOf(p.userId);
+                        p = null;
+                        for (var j = 1; j < ring.length && !p; j++) { var alt = D.members.find(ring[(at + j) % ring.length]); if (alt && !D.tasks.awayReason(alt.userId, date)) p = alt; }
+                    }
                     if (!p) continue;
                     tasks.push({ id: id, choreId: c.id, title: c.title, description: "Chore rotation: " + p.name + "'s turn this week • " + (c.points || 1) + " point" + ((c.points || 1) === 1 ? "" : "s"),
                                  priority: "Medium", assigneeId: p.userId, assignee: p.name, date: date, time: c.time || "09:00", status: "Pending", progress: 0,

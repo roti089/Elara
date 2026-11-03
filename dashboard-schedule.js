@@ -338,6 +338,7 @@
     ["eventTitle", "eventDate", "eventTime", "eventDescription"].forEach(function (id) { $(id).addEventListener("input", function () { this.classList.remove("invalid"); }); });
     $("eventPeople").addEventListener("change", function () { this.classList.remove("invalid"); });
 
+    var unavailableOk = false;
     form.addEventListener("submit", function (e) {
         e.preventDefault();
         var v = { title: $("eventTitle").value.trim(), category: $("eventCategory").value, date: $("eventDate").value, time: $("eventTime").value,
@@ -347,6 +348,22 @@
         var errs = validateEvent(v, before);
         showErrors(errs);
         if (errs.length) return;
+        // people in this event who aren't available that day: the person adding it is told before saving
+        var dateChanged = !before || before.date !== v.date || (v.involves || []).some(function (id) { return (before.involves || []).indexOf(id) < 0; });
+        var off = dateChanged ? people().filter(function (p) { return v.involves.indexOf(p.userId) > -1 && stateOf(v.date, p.userId) !== "available"; }) : [];
+        if (off.length && !unavailableOk) {
+            var names = off.map(function (p) { return (p.isMe ? "You are " : p.name + " is ") + stateOf(v.date, p.userId); });
+            UI.confirm({ title: (off.length === 1 ? "Someone isn't" : off.length + " people aren't") + " available on " + prettyDate(v.date),
+                         message: names.join(", ") + " that day. Save “" + v.title + "” anyway? " + (off.some(function (p) { return !p.isMe; }) ? "They'll be told about it." : ""),
+                         confirmText: "Save anyway", cancelText: "Change it", danger: false, icon: "fa-user-clock" }).then(function (ok) {
+                if (!ok) return;
+                unavailableOk = true;
+                try { form.requestSubmit(); } finally { unavailableOk = false; }
+                if (window.ElaraNotify && ElaraNotify.fire) ElaraNotify.fire("schedule", "unavail:" + v.date + ":" + v.title + ":" + Date.now(), "Not everyone is free",
+                    names.join(", ") + " on " + prettyDate(v.date) + " (“" + v.title + "”).", "fa-user-clock", "orange", "dashboard-schedule.html?date=" + v.date);
+            });
+            return;
+        }
         var list = events(), m = me();
         if (editingId !== null) {
             var before = list.filter(function (x) { return x.id === editingId; })[0];
